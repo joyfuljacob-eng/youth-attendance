@@ -9,7 +9,7 @@ function App() {
     people: '👥',
     list: '📋',
     addUser: '👤₊',
-    bell: '🔔' // 알림 아이콘 추가
+    bell: '🔔'
   };
 
   const stats = {
@@ -21,6 +21,7 @@ function App() {
 
   const HomeDashboard = () => (
     <div style={styles.content}>
+      {/* 요약 숫자 카드 */}
       <div style={styles.statsGrid}>
         {[
           { color: '#007bff', label: '전체 청년', value: stats.total },
@@ -35,15 +36,16 @@ function App() {
         ))}
       </div>
 
+      {/* 주요 기능 버튼 (알림 센터는 여기에만 유지) */}
       <div style={styles.actionGrid}>
         {[
-          { icon: icons.calendar, label: '예배 출석 체크' },
-          { icon: icons.people, label: '샘 출석 체크' },
-          { icon: icons.list, label: '청년 명단' },
-          { icon: icons.addUser, label: '새가족 관리' },
-          { icon: icons.bell, label: '알림 센터' } // 메인 화면에도 알림 버튼 추가
+          { key: 'worship', icon: icons.calendar, label: '예배 출석 체크' },
+          { key: 'cell', icon: icons.people, label: '샘 출석 체크' },
+          { key: 'members', icon: icons.list, label: '청년 명단' },
+          { key: 'newcomers', icon: icons.addUser, label: '새가족 관리' },
+          { key: 'notifications', icon: icons.bell, label: '알림 센터' }
         ].map((action, idx) => (
-          <div key={idx} style={styles.actionCard} onClick={() => setActiveTab(action.label === '알림 센터' ? 'notifications' : 'home')}>
+          <div key={idx} style={styles.actionCard} onClick={() => setActiveTab(action.key)}>
             <div style={styles.actionIcon}>{action.icon}</div>
             <div style={styles.actionLabel}>{action.label}</div>
           </div>
@@ -77,25 +79,24 @@ function App() {
         {activeTab === 'worship' && <div style={styles.placeholder}>🗓️ 예배 출석 화면입니다.</div>}
         {activeTab === 'cell' && <div style={styles.placeholder}>👥 샘 출석 화면입니다.</div>}
         {activeTab === 'newcomers' && <div style={styles.placeholder}>👤₊ 새가족 화면입니다.</div>}
-        {/* 알림 화면 추가 */}
         {activeTab === 'notifications' && (
           <div style={styles.card}>
             <h3 style={{marginBottom: '15px'}}>🔔 실시간 알림</h3>
             <div style={styles.alertBox}>🎂 <b>오늘 생일:</b> 김철수 청년</div>
-            <div style={styles.alertBox}>🗓️ <b>이번 주 행사:</b> 청년부 연합 수련회</div>
             <div style={{...styles.alertBox, backgroundColor:'#fff3f3'}}>
-              ⚠️ <b>장기 결석:</b> 4주 이상 결석자 2명 확인
+              ⚠️ <b>장기 결석:</b> 4주 이상 결석자 확인 필요
             </div>
           </div>
         )}
       </main>
 
+      {/* 하단 탭 메뉴: 알림을 빼고 '샘 출석'을 다시 넣었습니다. */}
       <nav style={styles.bottomNav}>
         {[
           { key: 'home', icon: '🏠', label: '홈' },
           { key: 'members', icon: '👤', label: '청년 명단' },
           { key: 'worship', icon: '🗓️', label: '예배 출석' },
-          { key: 'notifications', icon: '🔔', label: '알림' }, // 하단 탭에 알림 추가
+          { key: 'cell', icon: '👥', label: '샘 출석' }, // 복구된 메뉴
           { key: 'newcomers', icon: '👤₊', label: '새가족' }
         ].map(tab => (
           <button 
@@ -114,7 +115,7 @@ function App() {
 
 const styles = {
   container: { fontFamily: 'sans-serif', backgroundColor: '#f9fafb', minHeight: '100vh', paddingBottom: '70px', color: '#333' },
-  header: { padding: '20px 20px 10px', textAlign: 'left', backgroundColor: '#f9fafb' },
+  header: { padding: '20px 20px 10px', textAlign: 'left' },
   headerTitle: { fontSize: '20px', fontWeight: 'bold' },
   headerSub: { fontSize: '14px', color: '#666', marginTop: '3px' },
   blueCardWrapper: { padding: '0 15px' },
@@ -126,15 +127,15 @@ const styles = {
   crossIconBg: { backgroundColor: 'rgba(255,255,255,0.2)', width: '40px', height: '40px', borderRadius: '5px', fontSize: '24px', display: 'flex', justifyContent: 'center', alignItems: 'center' },
   main: { padding: '20px' },
   statsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' },
-  statCard: { backgroundColor: 'white', padding: '15px', borderRadius: '10px', textAlign: 'left', border: '1px solid #ddd' },
+  statCard: { backgroundColor: 'white', padding: '15px', borderRadius: '10px', border: '1px solid #ddd' },
   statValue: { fontSize: '22px', fontWeight: 'bold' },
   statLabel: { fontSize: '12px', color: '#666', marginTop: '3px' },
   actionGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' },
-  actionCard: { backgroundColor: 'white', padding: '20px', borderRadius: '10px', textAlign: 'left', cursor: 'pointer', border: '1px solid #ddd', display: 'flex', flexDirection: 'column', gap: '10px' },
+  actionCard: { backgroundColor: 'white', padding: '20px', borderRadius: '10px', border: '1px solid #ddd', display: 'flex', flexDirection: 'column', gap: '10px', cursor: 'pointer' },
   actionIcon: { fontSize: '20px' },
   actionLabel: { fontSize: '13px', fontWeight: 'bold' },
   placeholder: { fontSize: '14px', textAlign: 'center', color: '#888', marginTop: '30px' },
-  card: { backgroundColor: 'white', padding: '20px', borderRadius: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' },
+  card: { backgroundColor: 'white', padding: '20px', borderRadius: '10px' },
   alertBox: { padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '5px', marginBottom: '10px', fontSize: '14px' },
   bottomNav: { display: 'flex', backgroundColor: 'white', borderTop: '1px solid #ddd', position: 'fixed', bottom: 0, left: 0, right: 0, height: '65px', zIndex: 100 },
   navTab: { flex: 1, padding: '10px', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'center', color: '#666' },
