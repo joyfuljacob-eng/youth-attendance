@@ -32,6 +32,7 @@ export default async function handler(req, res) {
       "날짜": date || new Date().toLocaleDateString('ko-KR'),
       "이름": name,
       "성별": gender,
+      "샘이름": cell_name,
       "예배참여": worship,
       "샘참여": cell,
       "폰번호": phone,
