@@ -1,32 +1,26 @@
 import React, { useState } from 'react';
 
 function App() {
-  // 1. 모든 입력 항목을 저장할 상자(State) 만들기
+  // 이전처럼 심플하게 이름만 입력받습니다.
   const [name, setName] = useState('');
-  const [gender, setGender] = useState('남');
-  const [worship, setWorship] = useState('참석');
-  const [cell, setCell] = useState('참석');
-  const [phone, setPhone] = useState('');
-  const [birthday, setBirthday] = useState('');
-  const [note, setNote] = useState('');
+  const [status, setStatus] = useState('출석');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // 2. 보낼 데이터 뭉치 만들기
+    // 화면에는 안 보이지만, 시트의 다른 칸들을 채워줄 '기본값'들입니다.
     const attendanceData = {
       date: new Date().toLocaleDateString('ko-KR'),
-      name,
-      gender,
-      worship,
-      cell,
-      phone,
-      birthday,
-      note
+      name: name,
+      gender: "-",      // 기본값 설정
+      worship: status,  // 선택한 상태(출석/지각 등)가 들어감
+      cell: "-",        // 기본값 설정
+      phone: "-",       // 기본값 설정
+      birthday: "-",    // 기본값 설정
+      note: ""          // 기본값 설정
     };
 
     try {
-      // 3. 실제 Vercel API로 전송하기 (이 부분이 마법의 연결고리입니다)
       const response = await fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -34,61 +28,56 @@ function App() {
       });
 
       if (response.ok) {
-        alert(`${name}님의 정보가 성공적으로 기록되었습니다!`);
-        // 입력 칸 초기화 (선택 사항)
-        setName('');
-        setPhone('');
-        setNote('');
+        alert(`${name}님의 기록이 시트에 저장되었습니다!`);
+        setName(''); // 입력창 비우기
       } else {
-        throw new Error("서버 전송 실패");
+        throw new Error("전송 실패");
       }
     } catch (error) {
-      alert("전송 중 오류 발생: " + error.message);
+      alert("오류 발생: " + error.message);
     }
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
-      <h2 style={{ textAlign: 'center' }}>청년부 출석 체크</h2>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+    <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'sans-serif' }}>
+      <h1 style={{ color: '#333' }}>청년부 출석 체크</h1>
+      <p style={{ color: '#666' }}>이름을 입력하고 버튼을 눌러주세요.</p>
+      
+      <form onSubmit={handleSubmit} style={{ marginTop: '30px' }}>
+        <input 
+          type="text" 
+          placeholder="이름을 입력하세요" 
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          style={{ 
+            padding: '12px', 
+            width: '200px', 
+            borderRadius: '5px', 
+            border: '1px solid #ccc',
+            fontSize: '16px'
+          }}
+        />
+        <br /><br />
         
-        <label>이름: <input type="text" value={name} onChange={(e) => setName(e.target.value)} required /></label>
+        <select 
+          value={status} 
+          onChange={(e) => setStatus(e.target.value)}
+          style={{ padding: '10px', width: '225px', borderRadius: '5px', fontSize: '16px' }}
+        >
+          <option value="출석">출석</option>
+          <option value="지각">지각</option>
+          <option value="결석">결석</option>
+        </select>
+        <br /><br />
         
-        <label>성별: 
-          <select value={gender} onChange={(e) => setGender(e.target.value)}>
-            <option value="남">남</option>
-            <option value="여">여</option>
-          </select>
-        </label>
-
-        <label>예배참여: 
-          <select value={worship} onChange={(e) => setWorship(e.target.value)}>
-            <option value="참석">참석</option>
-            <option value="결석">결석</option>
-          </select>
-        </label>
-
-        <label>샘참여: 
-          <select value={cell} onChange={(e) => setCell(e.target.value)}>
-            <option value="참석">참석</option>
-            <option value="불참">불참</option>
-          </select>
-        </label>
-
-        <label>폰번호: <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="010-0000-0000" /></label>
-        
-        <label>생일: <input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} /></label>
-        
-        <label>비고: <br/>
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows="3" />
-        </label>
-
         <button type="submit" style={{ 
-          padding: '15px', 
+          padding: '12px 30px', 
           backgroundColor: '#007bff', 
           color: 'white', 
           border: 'none', 
           borderRadius: '5px',
+          fontSize: '16px',
           fontWeight: 'bold',
           cursor: 'pointer'
         }}>
