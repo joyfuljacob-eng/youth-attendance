@@ -357,7 +357,7 @@ export default function App() {
     {id:"newmembers",label:"새가족",icon:"newuser"},
   ];
   const pageTitles = {
-    home:{title:"청년부 출석부",sub:"오늘도 함께해요 🙏"},
+    home:{title:"학익교회 청년부 예배현황",sub:"오늘도 주님을 예배합니다 🙏"},
     members:{title:"청년 명단",sub:`전체 ${members.length}명 · 군복무 ${members.filter(m=>m.military).length}명`},
     attendance:{title:"예배 출석",sub:"주일예배 출석 체크"},
     sam:{title:"샘 모임",sub:"소그룹 출석 체크"},
@@ -431,7 +431,7 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
   return(
     <div>
       <div className="home-banner">
-        <div className="home-banner-title">청년부 출석 관리</div>
+        <div className="home-banner-title">청년부 예배 & 샘모임</div>
         <div className="home-banner-sub">{new Date().toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"})}</div>
       </div>
       {todayBirthdays.length>0&&(
