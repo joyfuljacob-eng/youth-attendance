@@ -21,6 +21,11 @@ const Icon = ({ name, size = 20, color = "currentColor" }) => {
     refresh: (<><polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></>),
     shield: (<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></>),
     assign: (<><circle cx="12" cy="8" r="4" /><path d="M20 21a8 8 0 1 0-16 0" /><line x1="18" y1="11" x2="18" y2="17" /><line x1="15" y1="14" x2="21" y2="14" /></>),
+    logout: (<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></>),
+    lock: (<><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>),
+    eye: (<><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>),
+    eyeoff: (<><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></>),
+    key: (<><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></>),
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -33,16 +38,12 @@ const Icon = ({ name, size = 20, color = "currentColor" }) => {
 const today = () => new Date().toISOString().split("T")[0];
 const formatDate = (d) => { if (!d) return ""; const dt = new Date(d + "T00:00:00"); return `${dt.getFullYear()}.${String(dt.getMonth()+1).padStart(2,"0")}.${String(dt.getDate()).padStart(2,"0")}`; };
 const getDayLabel = (d) => { const days=["일","월","화","수","목","금","토"]; return days[new Date(d+"T00:00:00").getDay()]; };
-
-// 가나다순 정렬
 const sortByName = (arr) => [...arr].sort((a, b) => a.name.localeCompare(b.name, "ko"));
-
 const getAbsentWeeks = (memberId, list) => {
   const recs = list.filter(a => a.member_id === memberId && a.status === true).sort((a,b) => b.date.localeCompare(a.date));
   if (!recs.length) return null;
   return Math.floor((new Date() - new Date(recs[0].date + "T00:00:00")) / (7*24*60*60*1000));
 };
-
 const getTodayBirthdays = (members) => {
   const now = new Date();
   const md = `${String(now.getMonth()+1).padStart(2,"0")}/${String(now.getDate()).padStart(2,"0")}`;
@@ -54,6 +55,9 @@ const getThisMonthBirthdays = (members) => {
     .map(m => ({...m, dayNum: parseInt(m.birthday.split("/")[1]), isPast: parseInt(m.birthday.split("/")[1])<dd, isToday: parseInt(m.birthday.split("/")[1])===dd}))
     .sort((a,b) => a.dayNum - b.dayNum);
 };
+
+// 관리자 여부 판단 (youth 계정은 조회자)
+const isAdmin = (email) => email && !email.startsWith("youth@");
 
 // ==================== STYLES ====================
 const css = `
@@ -84,7 +88,6 @@ const css = `
   .btn-icon:hover{background:#dbeafe;}
   .btn-icon.danger{background:var(--danger-light);color:var(--danger);}
   .btn-icon.danger:hover{background:#fee2e2;}
-  .btn-icon.military{background:var(--military-light);color:var(--military);}
   .form-group{margin-bottom:16px;}
   .form-label{font-size:13px;font-weight:500;color:var(--gray-600);margin-bottom:6px;display:block;}
   .form-label .optional{font-size:11px;color:var(--gray-400);font-weight:400;margin-left:4px;}
@@ -97,6 +100,8 @@ const css = `
   .input-with-icon{position:relative;}
   .input-with-icon .input-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--gray-400);pointer-events:none;}
   .input-with-icon .form-input{padding-left:38px;}
+  .input-with-icon .input-icon-right{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--gray-400);cursor:pointer;background:none;border:none;padding:0;display:flex;align-items:center;}
+  .input-with-icon .form-input.has-right-icon{padding-right:42px;}
   .gender-toggle{display:flex;gap:8px;}
   .gender-btn{flex:1;padding:10px;border:1.5px solid var(--gray-200);border-radius:var(--radius);background:var(--white);cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:700;color:var(--gray-500);display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;}
   .gender-btn.male.active{border-color:#3B82F6;background:#EFF6FF;color:#2563EB;}
@@ -121,6 +126,7 @@ const css = `
   .badge-yellow{background:var(--warning-light);color:#D97706;}
   .badge-pink{background:#FDF2F8;color:#DB2777;}
   .badge-military{background:#D1D5DB;color:#374151;}
+  .badge-viewer{background:#F0FDF4;color:#166534;}
   .attendance-check-btn{width:36px;height:36px;border-radius:50%;border:2px solid var(--gray-200);background:var(--white);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;flex-shrink:0;}
   .attendance-check-btn.checked{background:var(--success);border-color:var(--success);color:var(--white);}
   .attendance-check-btn.military-skip{background:var(--military-light);border-color:var(--gray-300);cursor:default;font-size:14px;}
@@ -217,6 +223,22 @@ const css = `
   .toggle-switch.on{background:#6B7280;}
   .toggle-knob{width:20px;height:20px;background:white;border-radius:50%;position:absolute;top:2px;left:2px;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
   .toggle-switch.on .toggle-knob{transform:translateX(20px);}
+  /* 로그인 화면 */
+  .login-wrapper{min-height:100vh;background:linear-gradient(135deg,#1D4ED8 0%,#2563EB 60%,#3B82F6 100%);display:flex;align-items:center;justify-content:center;padding:20px;}
+  .login-box{background:white;border-radius:24px;padding:32px 28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.15);}
+  .login-logo{text-align:center;margin-bottom:28px;}
+  .login-logo-icon{width:72px;height:72px;background:linear-gradient(135deg,#1D4ED8,#3B82F6);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:32px;}
+  .login-title{font-family:'Montserrat',sans-serif;font-size:22px;font-weight:800;color:var(--gray-900);margin-bottom:4px;}
+  .login-sub{font-size:13px;color:var(--gray-400);}
+  .login-error{background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:10px 14px;font-size:13px;color:#DC2626;margin-bottom:16px;text-align:center;}
+  .login-btn{background:linear-gradient(135deg,#1D4ED8,#2563EB);color:white;border:none;border-radius:var(--radius);padding:13px 20px;font-size:15px;font-weight:600;font-family:'Noto Sans KR',sans-serif;cursor:pointer;width:100%;transition:all 0.15s;margin-top:4px;}
+  .login-btn:hover{opacity:0.92;}
+  .login-btn:disabled{opacity:0.6;cursor:not-allowed;}
+  .login-domain{font-size:13px;color:var(--gray-400);background:var(--gray-50);border:1.5px solid var(--gray-200);border-radius:var(--radius);padding:11px 14px;white-space:nowrap;}
+  .viewer-notice{background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:10px 14px;font-size:12px;color:#166534;margin-top:16px;text-align:center;}
+  /* 비번 변경 */
+  .pw-change-box{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px;}
+  .pw-change-title{font-size:14px;font-weight:600;color:var(--gray-700);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
 `;
 
 function GenderToggle({ gender, setGender }) {
@@ -235,8 +257,158 @@ function GenderToggle({ gender, setGender }) {
   );
 }
 
+// ==================== 로그인 화면 ====================
+function LoginPage({ onLogin }) {
+  const [userId, setUserId] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!userId.trim()) { setError("아이디를 입력해주세요"); return; }
+    if (!password.trim()) { setError("비밀번호를 입력해주세요"); return; }
+    setError(""); setLoading(true);
+    const email = `${userId.trim().toLowerCase()}@hiyouth.com`;
+    const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (err) {
+      setError("아이디 또는 비밀번호가 올바르지 않습니다");
+    } else {
+      onLogin(data.user);
+    }
+  };
+
+  const handleKeyDown = (e) => { if (e.key === "Enter") handleLogin(); };
+
+  return (
+    <div className="login-wrapper">
+      <style>{css}</style>
+      <div className="login-box">
+        <div className="login-logo">
+          <div className="login-logo-icon">✝</div>
+          <div className="login-title">학익교회 청년부</div>
+          <div className="login-sub">출석 관리 시스템</div>
+        </div>
+        {error && <div className="login-error">{error}</div>}
+        <div className="form-group">
+          <label className="form-label">아이디</label>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <input className="form-input" placeholder="예) leader0, youth" value={userId}
+              onChange={e=>setUserId(e.target.value)} onKeyDown={handleKeyDown}
+              style={{flex:1}} autoCapitalize="none" autoCorrect="off"/>
+            <div className="login-domain">@hiyouth.com</div>
+          </div>
+        </div>
+        <div className="form-group" style={{marginBottom:20}}>
+          <label className="form-label">비밀번호</label>
+          <div className="input-with-icon">
+            <span className="input-icon"><Icon name="lock" size={15}/></span>
+            <input className={`form-input has-right-icon`} type={showPw?"text":"password"}
+              placeholder="비밀번호 입력" value={password}
+              onChange={e=>setPassword(e.target.value)} onKeyDown={handleKeyDown}
+              style={{paddingLeft:38}}/>
+            <button className="input-icon-right" onClick={()=>setShowPw(!showPw)} type="button">
+              <Icon name={showPw?"eyeoff":"eye"} size={16}/>
+            </button>
+          </div>
+        </div>
+        <button className="login-btn" onClick={handleLogin} disabled={loading}>
+          {loading ? "로그인 중..." : "로그인"}
+        </button>
+        <div className="viewer-notice">
+          👀 조회 전용 계정: <strong>youth</strong> / hiyouth2026
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==================== 비밀번호 변경 모달 ====================
+function ChangePasswordModal({ onClose }) {
+  const [current, setCurrent] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = async () => {
+    setError("");
+    if (!current || !newPw || !confirm) { setError("모든 항목을 입력해주세요"); return; }
+    if (newPw.length < 6) { setError("새 비밀번호는 6자리 이상이어야 합니다"); return; }
+    if (newPw !== confirm) { setError("새 비밀번호가 일치하지 않습니다"); return; }
+    setLoading(true);
+    // 현재 비번 확인을 위해 재로그인
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error: signInErr } = await supabase.auth.signInWithPassword({ email: user.email, password: current });
+    if (signInErr) { setError("현재 비밀번호가 올바르지 않습니다"); setLoading(false); return; }
+    const { error: updateErr } = await supabase.auth.updateUser({ password: newPw });
+    setLoading(false);
+    if (updateErr) { setError("비밀번호 변경에 실패했습니다"); }
+    else { setSuccess(true); setTimeout(()=>onClose(), 1500); }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
+        <div className="modal-handle"/>
+        <div className="modal-title">🔑 비밀번호 변경</div>
+        {success ? (
+          <div style={{textAlign:"center",padding:"20px 0"}}>
+            <div style={{fontSize:48,marginBottom:12}}>✅</div>
+            <div style={{fontSize:16,fontWeight:600,color:"#10B981"}}>비밀번호가 변경되었습니다!</div>
+          </div>
+        ) : (
+          <>
+            {error && <div className="login-error" style={{marginBottom:16}}>{error}</div>}
+            <div className="form-group">
+              <label className="form-label">현재 비밀번호</label>
+              <div className="input-with-icon">
+                <span className="input-icon"><Icon name="lock" size={15}/></span>
+                <input className="form-input has-right-icon" type={showCurrent?"text":"password"}
+                  placeholder="현재 비밀번호" value={current} onChange={e=>setCurrent(e.target.value)} style={{paddingLeft:38}}/>
+                <button className="input-icon-right" onClick={()=>setShowCurrent(!showCurrent)} type="button">
+                  <Icon name={showCurrent?"eyeoff":"eye"} size={16}/>
+                </button>
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">새 비밀번호 <span className="optional">(6자리 이상)</span></label>
+              <div className="input-with-icon">
+                <span className="input-icon"><Icon name="key" size={15}/></span>
+                <input className="form-input has-right-icon" type={showNew?"text":"password"}
+                  placeholder="새 비밀번호" value={newPw} onChange={e=>setNewPw(e.target.value)} style={{paddingLeft:38}}/>
+                <button className="input-icon-right" onClick={()=>setShowNew(!showNew)} type="button">
+                  <Icon name={showNew?"eyeoff":"eye"} size={16}/>
+                </button>
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">새 비밀번호 확인</label>
+              <div className="input-with-icon">
+                <span className="input-icon"><Icon name="key" size={15}/></span>
+                <input className="form-input" type="password" placeholder="새 비밀번호 재입력"
+                  value={confirm} onChange={e=>setConfirm(e.target.value)} style={{paddingLeft:38}}/>
+              </div>
+            </div>
+            <button className="btn btn-primary" onClick={handleChange} disabled={loading}>
+              <Icon name="check" size={16} color="white"/>
+              {loading ? "변경 중..." : "비밀번호 변경"}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ==================== MAIN APP ====================
 export default function App() {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [members, setMembers] = useState([]);
   const [newMembers, setNewMembers] = useState([]);
   const [sams, setSams] = useState([]);
@@ -246,6 +418,22 @@ export default function App() {
   const [modal, setModal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // 로그인 상태 확인
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => { if (user) fetchAll(); }, [user]);
+
+  const admin = user ? isAdmin(user.email) : false;
 
   const fetchAll = async () => {
     setLoading(true);
@@ -264,90 +452,42 @@ export default function App() {
     setLoading(false);
   };
 
-  useEffect(()=>{fetchAll();},[]);
+  const handleLogout = async () => {
+    if (!window.confirm("로그아웃 하시겠습니까?")) return;
+    await supabase.auth.signOut();
+  };
 
   const closeModal = () => setModal(null);
   const todayBirthdays = getTodayBirthdays([...members,...newMembers]);
 
-  const saveMember = async (m) => {
-    setSaving(true);
-    await supabase.from("members").insert([{name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,sam_id:m.samId||null,military:m.military||false}]);
-    await fetchAll(); setSaving(false); closeModal();
-  };
-  const updateMember = async (id,m) => {
-    setSaving(true);
-    await supabase.from("members").update({name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,sam_id:m.samId||null,military:m.military||false}).eq("id",id);
-    await fetchAll(); setSaving(false); closeModal();
-  };
-  const deleteMember = async (id) => {
-    if(!window.confirm("정말 삭제하시겠습니까?")) return;
-    setSaving(true); await supabase.from("members").delete().eq("id",id); await fetchAll(); setSaving(false);
-  };
-  const saveSam = async (name) => {
-    setSaving(true); await supabase.from("sams").insert([{name}]); await fetchAll(); setSaving(false); closeModal();
-  };
-  const deleteSam = async (id) => {
-    if(!window.confirm("샘을 삭제하시겠습니까?")) return;
-    setSaving(true); await supabase.from("sams").delete().eq("id",id); await fetchAll(); setSaving(false);
-  };
-  const toggleAttendance = async (memberId, date) => {
-    const ex = attendanceList.find(a=>a.member_id===memberId&&a.date===date);
-    setSaving(true);
-    if(ex){ await supabase.from("attendance").update({status:!ex.status}).eq("id",ex.id); }
-    else { await supabase.from("attendance").insert([{member_id:memberId,date,status:true}]); }
-    const {data} = await supabase.from("attendance").select("*");
-    if(data) setAttendanceList(data); setSaving(false);
-  };
-  const setAllAttendance = async (memberIds, date, status) => {
-    setSaving(true);
-    for(const memberId of memberIds){
-      const ex = attendanceList.find(a=>a.member_id===memberId&&a.date===date);
-      if(ex){ await supabase.from("attendance").update({status}).eq("id",ex.id); }
-      else { await supabase.from("attendance").insert([{member_id:memberId,date,status}]); }
-    }
-    const {data} = await supabase.from("attendance").select("*");
-    if(data) setAttendanceList(data); setSaving(false);
-  };
-  const toggleSamAttendance = async (memberId, samId, date) => {
-    const ex = samAttendanceList.find(a=>a.member_id===memberId&&a.sam_id===samId&&a.date===date);
-    setSaving(true);
-    if(ex){ await supabase.from("sam_attendance").update({status:!ex.status}).eq("id",ex.id); }
-    else { await supabase.from("sam_attendance").insert([{member_id:memberId,sam_id:samId,date,status:true}]); }
-    const {data} = await supabase.from("sam_attendance").select("*");
-    if(data) setSamAttendanceList(data); setSaving(false);
-  };
-  const saveNewMember = async (m) => {
-    setSaving(true);
-    await supabase.from("new_members").insert([{name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,week1:false,week2:false,week3:false,week4:false}]);
-    await fetchAll(); setSaving(false); closeModal();
-  };
-  const updateNewMember = async (id,m) => {
-    setSaving(true);
-    await supabase.from("new_members").update({name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday}).eq("id",id);
-    await fetchAll(); setSaving(false); closeModal();
-  };
-  const deleteNewMember = async (id) => {
-    if(!window.confirm("정말 삭제하시겠습니까?")) return;
-    setSaving(true); await supabase.from("new_members").delete().eq("id",id); await fetchAll(); setSaving(false);
-  };
-  const toggleEdu = async (id, weekIdx) => {
-    const member = newMembers.find(m=>m.id===id); if(!member) return;
-    const key = `week${weekIdx+1}`;
-    setSaving(true);
-    await supabase.from("new_members").update({[key]:!member[key]}).eq("id",id);
-    const {data} = await supabase.from("new_members").select("*").order("created_at");
-    if(data) setNewMembers(data); setSaving(false);
-  };
-  const assignNewMemberToSam = async (newMember, samId) => {
-    setSaving(true);
-    await supabase.from("members").insert([{
-      name:newMember.name, gender:newMember.gender, phone:newMember.phone,
-      birth_year:newMember.birth_year, birthday:newMember.birthday,
-      sam_id:samId||null, military:false
-    }]);
-    await supabase.from("new_members").delete().eq("id", newMember.id);
-    await fetchAll(); setSaving(false); closeModal();
-  };
+  const saveMember = async (m) => { setSaving(true); await supabase.from("members").insert([{name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,sam_id:m.samId||null,military:m.military||false}]); await fetchAll(); setSaving(false); closeModal(); };
+  const updateMember = async (id,m) => { setSaving(true); await supabase.from("members").update({name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,sam_id:m.samId||null,military:m.military||false}).eq("id",id); await fetchAll(); setSaving(false); closeModal(); };
+  const deleteMember = async (id) => { if(!window.confirm("정말 삭제하시겠습니까?")) return; setSaving(true); await supabase.from("members").delete().eq("id",id); await fetchAll(); setSaving(false); };
+  const saveSam = async (name) => { setSaving(true); await supabase.from("sams").insert([{name}]); await fetchAll(); setSaving(false); closeModal(); };
+  const deleteSam = async (id) => { if(!window.confirm("샘을 삭제하시겠습니까?")) return; setSaving(true); await supabase.from("sams").delete().eq("id",id); await fetchAll(); setSaving(false); };
+  const toggleAttendance = async (memberId, date) => { const ex=attendanceList.find(a=>a.member_id===memberId&&a.date===date); setSaving(true); if(ex){await supabase.from("attendance").update({status:!ex.status}).eq("id",ex.id);}else{await supabase.from("attendance").insert([{member_id:memberId,date,status:true}]);} const {data}=await supabase.from("attendance").select("*"); if(data)setAttendanceList(data); setSaving(false); };
+  const setAllAttendance = async (memberIds,date,status) => { setSaving(true); for(const memberId of memberIds){const ex=attendanceList.find(a=>a.member_id===memberId&&a.date===date); if(ex){await supabase.from("attendance").update({status}).eq("id",ex.id);}else{await supabase.from("attendance").insert([{member_id:memberId,date,status}]);}} const {data}=await supabase.from("attendance").select("*"); if(data)setAttendanceList(data); setSaving(false); };
+  const toggleSamAttendance = async (memberId,samId,date) => { const ex=samAttendanceList.find(a=>a.member_id===memberId&&a.sam_id===samId&&a.date===date); setSaving(true); if(ex){await supabase.from("sam_attendance").update({status:!ex.status}).eq("id",ex.id);}else{await supabase.from("sam_attendance").insert([{member_id:memberId,sam_id:samId,date,status:true}]);} const {data}=await supabase.from("sam_attendance").select("*"); if(data)setSamAttendanceList(data); setSaving(false); };
+  const saveNewMember = async (m) => { setSaving(true); await supabase.from("new_members").insert([{name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,week1:false,week2:false,week3:false,week4:false}]); await fetchAll(); setSaving(false); closeModal(); };
+  const updateNewMember = async (id,m) => { setSaving(true); await supabase.from("new_members").update({name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday}).eq("id",id); await fetchAll(); setSaving(false); closeModal(); };
+  const deleteNewMember = async (id) => { if(!window.confirm("정말 삭제하시겠습니까?")) return; setSaving(true); await supabase.from("new_members").delete().eq("id",id); await fetchAll(); setSaving(false); };
+  const toggleEdu = async (id,weekIdx) => { const member=newMembers.find(m=>m.id===id); if(!member)return; const key=`week${weekIdx+1}`; setSaving(true); await supabase.from("new_members").update({[key]:!member[key]}).eq("id",id); const {data}=await supabase.from("new_members").select("*").order("created_at"); if(data)setNewMembers(data); setSaving(false); };
+  const assignNewMemberToSam = async (newMember,samId) => { setSaving(true); await supabase.from("members").insert([{name:newMember.name,gender:newMember.gender,phone:newMember.phone,birth_year:newMember.birth_year,birthday:newMember.birthday,sam_id:samId||null,military:false}]); await supabase.from("new_members").delete().eq("id",newMember.id); await fetchAll(); setSaving(false); closeModal(); };
+
+  // 로그인 로딩 중
+  if (authLoading) {
+    return (
+      <>
+        <style>{css}</style>
+        <div className="loading-overlay"><div className="spinner"/><div className="loading-text">로딩 중...</div></div>
+      </>
+    );
+  }
+
+  // 로그인 안 된 경우
+  if (!user) return <LoginPage onLogin={setUser} />;
+
+  const userId = user.email.replace("@hiyouth.com", "");
 
   const navItems = [
     {id:"home",label:"홈",icon:"home"},
@@ -366,10 +506,10 @@ export default function App() {
 
   const pages = {
     home:<HomePage members={members} newMembers={newMembers} sams={sams} attendanceList={attendanceList} setActiveNav={setActiveNav} todayBirthdays={todayBirthdays} />,
-    members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} />,
-    attendance:<AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} />,
-    sam:<SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} />,
-    newmembers:<NewMembersPage newMembers={newMembers} sams={sams} setModal={setModal} onDelete={deleteNewMember} onToggleEdu={toggleEdu} onAssign={(nm)=>setModal({type:"assignSam",newMember:nm})} />,
+    members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} admin={admin} />,
+    attendance:<AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} />,
+    sam:<SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} />,
+    newmembers:<NewMembersPage newMembers={newMembers} sams={sams} setModal={setModal} onDelete={deleteNewMember} onToggleEdu={toggleEdu} onAssign={(nm)=>setModal({type:"assignSam",newMember:nm})} admin={admin} />,
   };
 
   return (
@@ -390,9 +530,17 @@ export default function App() {
               </div>
             )}
             <button className="btn-icon" style={{background:"transparent"}} onClick={fetchAll}><Icon name="refresh" size={16} color="#94A3B8"/></button>
-            {activeNav==="members" && <button className="btn-icon" onClick={()=>setModal({type:"addMember"})}><Icon name="plus" size={16}/></button>}
-            {activeNav==="newmembers" && <button className="btn-icon" onClick={()=>setModal({type:"addNewMember"})}><Icon name="plus" size={16}/></button>}
-            {activeNav==="sam" && <button className="btn-icon" onClick={()=>setModal({type:"addSam"})}><Icon name="plus" size={16}/></button>}
+            {/* 관리자만 + 버튼 표시 */}
+            {admin && activeNav==="members" && <button className="btn-icon" onClick={()=>setModal({type:"addMember"})}><Icon name="plus" size={16}/></button>}
+            {admin && activeNav==="newmembers" && <button className="btn-icon" onClick={()=>setModal({type:"addNewMember"})}><Icon name="plus" size={16}/></button>}
+            {admin && activeNav==="sam" && <button className="btn-icon" onClick={()=>setModal({type:"addSam"})}><Icon name="plus" size={16}/></button>}
+            {/* 내 계정 메뉴 */}
+            <button className="btn-icon" style={{background:"transparent"}} onClick={()=>setModal({type:"myAccount"})}
+              title={userId}>
+              <div style={{width:28,height:28,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:admin?"#1D4ED8":"#166534"}}>
+                {userId.charAt(0).toUpperCase()}
+              </div>
+            </button>
           </div>
         </div>
         <div className="page-content">{pages[activeNav]}</div>
@@ -403,14 +551,49 @@ export default function App() {
             </button>
           ))}
         </div>
-        {modal?.type==="addMember" && <MemberFormModal sams={sams} onSave={saveMember} onClose={closeModal}/>}
-        {modal?.type==="editMember" && <MemberFormModal sams={sams} initial={modal.member} onSave={m=>updateMember(modal.member.id,m)} onClose={closeModal}/>}
-        {modal?.type==="addSam" && <AddSamModal onSave={saveSam} onClose={closeModal}/>}
-        {modal?.type==="addNewMember" && <NewMemberFormModal onSave={saveNewMember} onClose={closeModal}/>}
-        {modal?.type==="editNewMember" && <NewMemberFormModal initial={modal.member} onSave={m=>updateNewMember(modal.member.id,m)} onClose={closeModal}/>}
-        {modal?.type==="assignSam" && <AssignSamModal sams={sams} newMember={modal.newMember} onAssign={assignNewMemberToSam} onClose={closeModal}/>}
+        {/* 모달들 */}
+        {admin && modal?.type==="addMember" && <MemberFormModal sams={sams} onSave={saveMember} onClose={closeModal}/>}
+        {admin && modal?.type==="editMember" && <MemberFormModal sams={sams} initial={modal.member} onSave={m=>updateMember(modal.member.id,m)} onClose={closeModal}/>}
+        {admin && modal?.type==="addSam" && <AddSamModal onSave={saveSam} onClose={closeModal}/>}
+        {admin && modal?.type==="addNewMember" && <NewMemberFormModal onSave={saveNewMember} onClose={closeModal}/>}
+        {admin && modal?.type==="editNewMember" && <NewMemberFormModal initial={modal.member} onSave={m=>updateNewMember(modal.member.id,m)} onClose={closeModal}/>}
+        {admin && modal?.type==="assignSam" && <AssignSamModal sams={sams} newMember={modal.newMember} onAssign={assignNewMemberToSam} onClose={closeModal}/>}
+        {modal?.type==="myAccount" && (
+          <MyAccountModal userId={userId} admin={admin} onChangePw={()=>setModal({type:"changePw"})} onLogout={handleLogout} onClose={closeModal}/>
+        )}
+        {modal?.type==="changePw" && <ChangePasswordModal onClose={closeModal}/>}
       </div>
     </>
+  );
+}
+
+// ==================== 내 계정 모달 ====================
+function MyAccountModal({ userId, admin, onChangePw, onLogout, onClose }) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
+        <div className="modal-handle"/>
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <div style={{width:64,height:64,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,fontWeight:700,color:admin?"#1D4ED8":"#166534",margin:"0 auto 10px"}}>
+            {userId.charAt(0).toUpperCase()}
+          </div>
+          <div style={{fontSize:18,fontWeight:700,color:"#1E293B"}}>{userId}</div>
+          <div style={{marginTop:6}}>
+            <span className={`badge ${admin?"badge-blue":"badge-viewer"}`}>
+              {admin?"👑 관리자":"👀 조회 전용"}
+            </span>
+          </div>
+        </div>
+        {admin && (
+          <button className="btn btn-secondary" style={{width:"100%",marginBottom:8,justifyContent:"center",gap:8}} onClick={onChangePw}>
+            <Icon name="key" size={16}/>비밀번호 변경
+          </button>
+        )}
+        <button className="btn" style={{width:"100%",background:"#FEF2F2",color:"#EF4444",padding:"11px",fontSize:14,justifyContent:"center",gap:8}} onClick={()=>{onClose();onLogout();}}>
+          <Icon name="logout" size={16} color="#EF4444"/>로그아웃
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -422,40 +605,15 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
   const thisMonthBirthdays=getThisMonthBirthdays(allPeople);
   const now=new Date(); const mm=String(now.getMonth()+1).padStart(2,"0");
   const militaryCount=members.filter(m=>m.military).length;
-  const alerts=members.filter(m=>!m.military).map(m=>{
-    const w=getAbsentWeeks(m.id,attendanceList);
-    return(w!==null&&w>=4)?{member:m,weeks:w}:null;
-  }).filter(Boolean).sort((a,b)=>b.weeks-a.weeks);
-
+  const alerts=members.filter(m=>!m.military).map(m=>{const w=getAbsentWeeks(m.id,attendanceList);return(w!==null&&w>=4)?{member:m,weeks:w}:null;}).filter(Boolean).sort((a,b)=>b.weeks-a.weeks);
   return(
     <div>
       <div className="home-banner">
         <div className="home-banner-title">청년부 예배 & 샘모임</div>
         <div className="home-banner-sub">{new Date().toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"})}</div>
       </div>
-      {todayBirthdays.length>0&&(
-        <div className="birthday-banner">
-          <div className="birthday-banner-title">🎂 오늘의 생일자</div>
-          {todayBirthdays.map(m=>(
-            <div key={m.id} className="birthday-person">
-              <div className="birthday-avatar">{m.name.charAt(0)}</div>
-              <div>
-                <div className="birthday-name">🎉 {m.name}</div>
-                <div className="birthday-detail">{m.gender==="male"?"남":"여"}{m.birth_year&&` · ${m.birth_year}년생`}{m.phone&&` · ${m.phone}`}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {militaryCount>0&&(
-        <div className="military-banner">
-          <Icon name="shield" size={22} color="white"/>
-          <div>
-            <div className="military-banner-text">🪖 군복무 중 {militaryCount}명</div>
-            <div className="military-banner-sub">결석 카운트에서 제외됩니다</div>
-          </div>
-        </div>
-      )}
+      {todayBirthdays.length>0&&(<div className="birthday-banner"><div className="birthday-banner-title">🎂 오늘의 생일자</div>{todayBirthdays.map(m=>(<div key={m.id} className="birthday-person"><div className="birthday-avatar">{m.name.charAt(0)}</div><div><div className="birthday-name">🎉 {m.name}</div><div className="birthday-detail">{m.gender==="male"?"남":"여"}{m.birth_year&&` · ${m.birth_year}년생`}{m.phone&&` · ${m.phone}`}</div></div></div>))}</div>)}
+      {militaryCount>0&&(<div className="military-banner"><Icon name="shield" size={22} color="white"/><div><div className="military-banner-text">🪖 군복무 중 {militaryCount}명</div><div className="military-banner-sub">결석 카운트에서 제외됩니다</div></div></div>)}
       <div className="stats-grid">
         <div className="stat-card"><div className="stat-number">{members.length}</div><div className="stat-label">전체 청년</div></div>
         <div className="stat-card"><div className="stat-number" style={{color:"#10B981"}}>{presentToday}</div><div className="stat-label">오늘 출석</div></div>
@@ -468,57 +626,21 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
         <button className="quick-action" onClick={()=>setActiveNav("members")}><div className="quick-action-icon" style={{background:"#FDF2F8"}}><Icon name="users" size={20} color="#DB2777"/></div><div className="quick-action-label">청년 명단</div></button>
         <button className="quick-action" onClick={()=>setActiveNav("newmembers")}><div className="quick-action-icon" style={{background:"#FFFBEB"}}><Icon name="newuser" size={20} color="#D97706"/></div><div className="quick-action-label">새가족 관리</div></button>
       </div>
-      {thisMonthBirthdays.length>0&&(
-        <>
-          <div className="section-header"><div className="section-title">🎂 {parseInt(mm)}월 생일자</div><span className="badge badge-yellow">{thisMonthBirthdays.length}명</span></div>
-          {thisMonthBirthdays.map(m=>(
-            <div key={m.id} className={`month-birthday-item ${m.isToday?"today":""}`}>
-              <div className={`birthday-date-badge ${m.isToday?"today":""}`}><span className="bday-month">{mm}월</span><span className="bday-day">{m.dayNum}</span></div>
-              <div className={`member-avatar ${m.gender}`} style={{width:34,height:34,fontSize:13}}>{m.name.charAt(0)}</div>
-              <div style={{flex:1}}>
-                <div style={{fontSize:14,fontWeight:600,color:"#1E293B"}}>{m.name} {m.isToday&&"🎉"}</div>
-                <div style={{fontSize:12,color:"#94A3B8"}}>{m.gender==="male"?"남":"여"}{m.birth_year&&` · ${m.birth_year}년생`}{m.isToday&&<span style={{color:"#F97316",fontWeight:600}}> · 오늘!</span>}{m.isPast&&!m.isToday&&<span style={{color:"#CBD5E1"}}> · 지남</span>}</div>
-              </div>
-              {m.phone&&<a href={`tel:${m.phone}`} style={{flexShrink:0,color:"#2563EB"}}><Icon name="phone" size={18}/></a>}
-            </div>
-          ))}
-          <div style={{marginBottom:16}}/>
-        </>
-      )}
-      {alerts.length>0&&(
-        <>
-          <div className="section-header"><div className="section-title">⚠️ 장기 결석 알림</div><span className="badge badge-red">{alerts.length}명</span></div>
-          {alerts.map(({member,weeks})=>(
-            <div key={member.id} className={`alert-item ${weeks>=8?"weekly":"warn"}`}>
-              <div style={{marginTop:1}}><Icon name="bell" size={16} color={weeks>=8?"#EF4444":"#F59E0B"}/></div>
-              <div className="alert-text">
-                <div className="alert-title">{member.name}</div>
-                <div className="alert-sub">{weeks>=8?`🔴 ${weeks}주째 결석 — 매주 확인 필요`:`🟡 ${weeks}주째 결석 — 연락 필요`}{member.phone&&<> · <a href={`tel:${member.phone}`} className="phone-link">{member.phone}</a></>}</div>
-              </div>
-            </div>
-          ))}
-        </>
-      )}
+      {thisMonthBirthdays.length>0&&(<><div className="section-header"><div className="section-title">🎂 {parseInt(mm)}월 생일자</div><span className="badge badge-yellow">{thisMonthBirthdays.length}명</span></div>{thisMonthBirthdays.map(m=>(<div key={m.id} className={`month-birthday-item ${m.isToday?"today":""}`}><div className={`birthday-date-badge ${m.isToday?"today":""}`}><span className="bday-month">{mm}월</span><span className="bday-day">{m.dayNum}</span></div><div className={`member-avatar ${m.gender}`} style={{width:34,height:34,fontSize:13}}>{m.name.charAt(0)}</div><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:"#1E293B"}}>{m.name} {m.isToday&&"🎉"}</div><div style={{fontSize:12,color:"#94A3B8"}}>{m.gender==="male"?"남":"여"}{m.birth_year&&` · ${m.birth_year}년생`}{m.isToday&&<span style={{color:"#F97316",fontWeight:600}}> · 오늘!</span>}{m.isPast&&!m.isToday&&<span style={{color:"#CBD5E1"}}> · 지남</span>}</div></div>{m.phone&&<a href={`tel:${m.phone}`} style={{flexShrink:0,color:"#2563EB"}}><Icon name="phone" size={18}/></a>}</div>))}<div style={{marginBottom:16}}/></>)}
+      {alerts.length>0&&(<><div className="section-header"><div className="section-title">⚠️ 장기 결석 알림</div><span className="badge badge-red">{alerts.length}명</span></div>{alerts.map(({member,weeks})=>(<div key={member.id} className={`alert-item ${weeks>=8?"weekly":"warn"}`}><div style={{marginTop:1}}><Icon name="bell" size={16} color={weeks>=8?"#EF4444":"#F59E0B"}/></div><div className="alert-text"><div className="alert-title">{member.name}</div><div className="alert-sub">{weeks>=8?`🔴 ${weeks}주째 결석 — 매주 확인 필요`:`🟡 ${weeks}주째 결석 — 연락 필요`}{member.phone&&<> · <a href={`tel:${member.phone}`} className="phone-link">{member.phone}</a></>}</div></div></div>))}</>)}
     </div>
   );
 }
 
 // ==================== MEMBERS PAGE ====================
-function MembersPage({members,sams,setModal,onDelete}){
+function MembersPage({members,sams,setModal,onDelete,admin}){
   const [search,setSearch]=useState("");
   const [filterSam,setFilterSam]=useState("all");
   const [showMilitary,setShowMilitary]=useState(false);
-
   const sorted=sortByName(members);
-  const filtered=sorted.filter(m=>{
-    const matchSearch=(m.name.includes(search)||(m.phone||"").includes(search));
-    const matchSam=(filterSam==="all"||m.sam_id===filterSam);
-    if(showMilitary) return matchSearch && m.military;
-    return matchSearch && matchSam && !m.military;
-  });
+  const filtered=sorted.filter(m=>{const ms=(m.name.includes(search)||(m.phone||"").includes(search));const ss=(filterSam==="all"||m.sam_id===filterSam);if(showMilitary)return ms&&m.military;return ms&&ss&&!m.military;});
   const militaryList=sortByName(members.filter(m=>m.military));
   const getSamName=samId=>sams.find(s=>s.id===samId)?.name||"";
-
   return(
     <div>
       <div className="search-bar"><span className="search-icon"><Icon name="users" size={16}/></span><input placeholder="이름 또는 전화번호 검색..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
@@ -526,35 +648,22 @@ function MembersPage({members,sams,setModal,onDelete}){
         <button className={`tab-item ${!showMilitary?"active":""}`} onClick={()=>setShowMilitary(false)}>일반 청년 ({members.filter(m=>!m.military).length}명)</button>
         <button className={`tab-item ${showMilitary?"active":""}`} onClick={()=>setShowMilitary(true)}>🪖 군복무 ({militaryList.length}명)</button>
       </div>
-      {!showMilitary&&(
-        <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>
-          <button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam("all")}>전체</button>
-          {sams.map(s=><button key={s.id} className={`btn btn-sm ${filterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam(s.id)}>{s.name}샘</button>)}
-        </div>
-      )}
-      {filtered.length===0?(
-        <div className="empty-state"><div className="empty-state-icon">{showMilitary?"🪖":"👥"}</div><div className="empty-state-text">{showMilitary?"군복무 청년이 없습니다":"청년이 없습니다"}</div></div>
-      ):(
+      {!showMilitary&&(<div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}><button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam("all")}>전체</button>{sams.map(s=><button key={s.id} className={`btn btn-sm ${filterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam(s.id)}>{s.name}샘</button>)}</div>)}
+      {filtered.length===0?(<div className="empty-state"><div className="empty-state-icon">{showMilitary?"🪖":"👥"}</div><div className="empty-state-text">{showMilitary?"군복무 청년이 없습니다":"청년이 없습니다"}</div></div>):(
         filtered.map(m=>(
           <div key={m.id} className={`member-item ${m.military?"military-item":""}`}>
             <div className={`member-avatar ${m.military?"military-av":m.gender}`}>{m.military?"🪖":m.name.charAt(0)}</div>
             <div className="member-info">
               <div className={`member-name ${m.military?"military-name":""}`}>{m.name}</div>
               <div className="member-meta">
-                {m.military
-                  ? <span className="badge badge-military">🪖 군복무 중</span>
-                  : <span className={`badge ${m.gender==="male"?"badge-blue":"badge-pink"}`}>{m.gender==="male"?"남":"여"}</span>
-                }
+                {m.military?<span className="badge badge-military">🪖 군복무 중</span>:<span className={`badge ${m.gender==="male"?"badge-blue":"badge-pink"}`}>{m.gender==="male"?"남":"여"}</span>}
                 {!m.military&&getSamName(m.sam_id)&&<span className="badge badge-green" style={{marginLeft:4}}>{getSamName(m.sam_id)}샘</span>}
                 {m.birth_year&&<span style={{marginLeft:4}}>· {m.birth_year}년생</span>}
                 {m.birthday&&<span style={{marginLeft:4}}>· 🎂{m.birthday}</span>}
               </div>
               {m.phone&&<div style={{marginTop:3,display:"flex",alignItems:"center",gap:4}}><Icon name="phone" size={11} color="#94A3B8"/><a href={`tel:${m.phone}`} className="phone-link">{m.phone}</a></div>}
             </div>
-            <div className="member-actions">
-              <button className="btn-icon" onClick={()=>setModal({type:"editMember",member:m})}><Icon name="edit" size={14}/></button>
-              <button className="btn-icon danger" onClick={()=>onDelete(m.id)}><Icon name="trash" size={14}/></button>
-            </div>
+            {admin&&(<div className="member-actions"><button className="btn-icon" onClick={()=>setModal({type:"editMember",member:m})}><Icon name="edit" size={14}/></button><button className="btn-icon danger" onClick={()=>onDelete(m.id)}><Icon name="trash" size={14}/></button></div>)}
           </div>
         ))
       )}
@@ -563,19 +672,16 @@ function MembersPage({members,sams,setModal,onDelete}){
 }
 
 // ==================== ATTENDANCE PAGE ====================
-function AttendancePage({members,sams,attendanceList,onToggle,onSetAll}){
+function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin}){
   const [selectedDate,setSelectedDate]=useState(today());
   const [tab,setTab]=useState("check");
   const [filterSam,setFilterSam]=useState("all");
-
-  // 일반 청년만 (군복무 제외) 가나다순
   const activeMembers=sortByName(members.filter(m=>!m.military));
   const filteredMembers=filterSam==="all"?activeMembers:activeMembers.filter(m=>m.sam_id===filterSam);
   const isPresent=memberId=>!!attendanceList.find(a=>a.member_id===memberId&&a.date===selectedDate&&a.status);
   const presentCount=filteredMembers.filter(m=>isPresent(m.id)).length;
   const allDates=[...new Set(attendanceList.map(a=>a.date))].sort().reverse().slice(0,5);
   const getSamName=samId=>sams.find(s=>s.id===samId)?.name||"";
-
   return(
     <div>
       <div className="tab-bar">
@@ -592,19 +698,14 @@ function AttendancePage({members,sams,attendanceList,onToggle,onSetAll}){
             <button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam("all")}>전체</button>
             {sams.map(s=><button key={s.id} className={`btn btn-sm ${filterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam(s.id)}>{s.name}샘</button>)}
           </div>
-          <div style={{marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <span style={{fontSize:13,color:"#64748B"}}>{formatDate(selectedDate)} ({getDayLabel(selectedDate)})</span>
-            <div style={{display:"flex",gap:8}}>
-              <button className="btn btn-secondary btn-sm" onClick={()=>onSetAll(filteredMembers.map(m=>m.id),selectedDate,true)}>전체 출석</button>
-              <button className="btn btn-danger btn-sm" onClick={()=>onSetAll(filteredMembers.map(m=>m.id),selectedDate,false)}>전체 결석</button>
-            </div>
-          </div>
+          {admin&&(<div style={{marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,color:"#64748B"}}>{formatDate(selectedDate)} ({getDayLabel(selectedDate)})</span><div style={{display:"flex",gap:8}}><button className="btn btn-secondary btn-sm" onClick={()=>onSetAll(filteredMembers.map(m=>m.id),selectedDate,true)}>전체 출석</button><button className="btn btn-danger btn-sm" onClick={()=>onSetAll(filteredMembers.map(m=>m.id),selectedDate,false)}>전체 결석</button></div></div>)}
+          {!admin&&(<div style={{marginBottom:8}}><span style={{fontSize:13,color:"#64748B"}}>{formatDate(selectedDate)} ({getDayLabel(selectedDate)})</span></div>)}
           {filteredMembers.length===0?(<div className="empty-state"><div className="empty-state-icon">📋</div><div className="empty-state-text">등록된 청년이 없습니다</div></div>):(
             filteredMembers.map(m=>{
               const present=isPresent(m.id);
               const absentWeeks=getAbsentWeeks(m.id,attendanceList);
               return(
-                <div key={m.id} className="member-item" style={{cursor:"pointer"}} onClick={()=>onToggle(m.id,selectedDate)}>
+                <div key={m.id} className="member-item" style={{cursor:admin?"pointer":"default"}} onClick={()=>admin&&onToggle(m.id,selectedDate)}>
                   <div className={`member-avatar ${m.gender}`}>{m.name.charAt(0)}</div>
                   <div className="member-info">
                     <div className="member-name">{m.name}</div>
@@ -613,7 +714,9 @@ function AttendancePage({members,sams,attendanceList,onToggle,onSetAll}){
                       {absentWeeks!==null&&absentWeeks>=4&&!present&&<span className={`badge ${absentWeeks>=8?"badge-red":"badge-yellow"}`}>{absentWeeks}주 결석</span>}
                     </div>
                   </div>
-                  <button className={`attendance-check-btn ${present?"checked":""}`} onClick={e=>{e.stopPropagation();onToggle(m.id,selectedDate);}}>
+                  <button className={`attendance-check-btn ${present?"checked":""}`}
+                    style={{cursor:admin?"pointer":"default"}}
+                    onClick={e=>{e.stopPropagation();admin&&onToggle(m.id,selectedDate);}}>
                     {present&&<Icon name="check" size={14}/>}
                   </button>
                 </div>
@@ -625,12 +728,7 @@ function AttendancePage({members,sams,attendanceList,onToggle,onSetAll}){
         <>
           <div style={{fontSize:13,color:"#64748B",marginBottom:12}}>최근 5주 출석 현황 (군복무 제외)</div>
           {allDates.length===0?(<div className="empty-state"><div className="empty-state-icon">📊</div><div className="empty-state-text">출석 기록이 없습니다</div></div>):(
-            <div style={{overflowX:"auto"}}>
-              <table className="summary-table">
-                <thead><tr><th>이름</th>{allDates.map(d=><th key={d}>{formatDate(d).slice(5)}<br/><span style={{fontWeight:400}}>({getDayLabel(d)})</span></th>)}</tr></thead>
-                <tbody>{sortByName(members.filter(m=>!m.military)).map(m=><tr key={m.id}><td>{m.name}</td>{allDates.map(d=>{const rec=attendanceList.find(a=>a.member_id===m.id&&a.date===d);return<td key={d}>{rec?.status?<span className="dot-present">✓</span>:<span className="dot-absent"/>}</td>;})}</tr>)}</tbody>
-              </table>
-            </div>
+            <div style={{overflowX:"auto"}}><table className="summary-table"><thead><tr><th>이름</th>{allDates.map(d=><th key={d}>{formatDate(d).slice(5)}<br/><span style={{fontWeight:400}}>({getDayLabel(d)})</span></th>)}</tr></thead><tbody>{sortByName(members.filter(m=>!m.military)).map(m=><tr key={m.id}><td>{m.name}</td>{allDates.map(d=>{const rec=attendanceList.find(a=>a.member_id===m.id&&a.date===d);return<td key={d}>{rec?.status?<span className="dot-present">✓</span>:<span className="dot-absent"/>}</td>;})}</tr>)}</tbody></table></div>
           )}
         </>
       )}
@@ -639,43 +737,28 @@ function AttendancePage({members,sams,attendanceList,onToggle,onSetAll}){
 }
 
 // ==================== SAM ATTENDANCE PAGE ====================
-function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam}){
+function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,admin}){
   const [selectedDate,setSelectedDate]=useState(today());
   const [selectedSam,setSelectedSam]=useState(null);
   const [tab,setTab]=useState("check");
   useEffect(()=>{if(sams.length>0&&!selectedSam)setSelectedSam(sams[0].id);},[sams]);
-
-  // 해당 샘에 배정된 전체 멤버 (군복무 포함)
   const allSamMembers=members.filter(m=>m.sam_id===selectedSam);
-  // 일반 청년 (군복무 제외) - 가나다순
   const activeMembers=sortByName(allSamMembers.filter(m=>!m.military));
-  // 군복무 청년 (샘 배정된 경우만) - 가나다순, 맨 뒤에 표시
   const militaryMembers=sortByName(allSamMembers.filter(m=>m.military));
-
   const isPresent=memberId=>!!samAttendanceList.find(a=>a.member_id===memberId&&a.sam_id===selectedSam&&a.date===selectedDate&&a.status);
   const presentCount=activeMembers.filter(m=>isPresent(m.id)).length;
   const allDates=[...new Set(samAttendanceList.filter(a=>a.sam_id===selectedSam).map(a=>a.date))].sort().reverse().slice(0,5);
-
   return(
     <div>
-      {sams.length===0?(<div className="empty-state"><div className="empty-state-icon">🌱</div><div className="empty-state-text">샘 그룹이 없습니다</div><div className="empty-state-sub">상단 + 버튼으로 샘을 추가하세요</div></div>):(
+      {sams.length===0?(<div className="empty-state"><div className="empty-state-icon">🌱</div><div className="empty-state-text">샘 그룹이 없습니다</div></div>):(
         <>
-          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>
-            {sams.map(s=><button key={s.id} className={`btn btn-sm ${selectedSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setSelectedSam(s.id)}>{s.name}샘</button>)}
-          </div>
+          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>{sams.map(s=><button key={s.id} className={`btn btn-sm ${selectedSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setSelectedSam(s.id)}>{s.name}샘</button>)}</div>
           {selectedSam&&(
             <>
               <div className="sam-card">
                 <div className="sam-icon"><Icon name="group" size={20} color="white"/></div>
-                <div className="sam-info">
-                  <div className="sam-name">{sams.find(s=>s.id===selectedSam)?.name}샘</div>
-                  {/* 구성원 수: 일반 청년만 카운트, 군복무는 별도 표시 */}
-                  <div className="sam-count">
-                    구성원 {activeMembers.length}명
-                    {militaryMembers.length>0&&<span style={{marginLeft:6,color:"#6B7280"}}>· 군복무 {militaryMembers.length}명</span>}
-                  </div>
-                </div>
-                <button className="btn-icon danger" onClick={()=>onDeleteSam(selectedSam)}><Icon name="trash" size={14}/></button>
+                <div className="sam-info"><div className="sam-name">{sams.find(s=>s.id===selectedSam)?.name}샘</div><div className="sam-count">구성원 {activeMembers.length}명{militaryMembers.length>0&&<span style={{marginLeft:6,color:"#6B7280"}}>· 군복무 {militaryMembers.length}명</span>}</div></div>
+                {admin&&<button className="btn-icon danger" onClick={()=>onDeleteSam(selectedSam)}><Icon name="trash" size={14}/></button>}
               </div>
               <div className="tab-bar">
                 <button className={`tab-item ${tab==="check"?"active":""}`} onClick={()=>setTab("check")}>출석 체크</button>
@@ -685,58 +768,23 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam}
                 <>
                   <div className="date-row">
                     <input type="date" className="date-input-styled" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)}/>
-                    <div style={{textAlign:"right",flexShrink:0}}>
-                      <div style={{fontSize:18,fontWeight:700,color:"#10B981"}}>{presentCount}</div>
-                      <div style={{fontSize:11,color:"#94A3B8"}}>/ {activeMembers.length}명</div>
-                    </div>
+                    <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:18,fontWeight:700,color:"#10B981"}}>{presentCount}</div><div style={{fontSize:11,color:"#94A3B8"}}>/ {activeMembers.length}명</div></div>
                   </div>
-                  {allSamMembers.length===0?(
-                    <div className="empty-state"><div className="empty-state-icon">👤</div><div className="empty-state-text">배정된 청년이 없습니다</div><div className="empty-state-sub">청년 명단에서 샘을 배정해주세요</div></div>
-                  ):(
+                  {allSamMembers.length===0?(<div className="empty-state"><div className="empty-state-icon">👤</div><div className="empty-state-text">배정된 청년이 없습니다</div></div>):(
                     <>
-                      {/* 일반 청년 목록 */}
                       {activeMembers.map(m=>{
                         const present=isPresent(m.id);
-                        const absentWeeks=getAbsentWeeks(m.id,samAttendanceList.filter(a=>a.sam_id===selectedSam));
                         return(
-                          <div key={m.id} className="member-item" style={{cursor:"pointer"}} onClick={()=>onToggle(m.id,selectedSam,selectedDate)}>
+                          <div key={m.id} className="member-item" style={{cursor:admin?"pointer":"default"}} onClick={()=>admin&&onToggle(m.id,selectedSam,selectedDate)}>
                             <div className={`member-avatar ${m.gender}`}>{m.name.charAt(0)}</div>
-                            <div className="member-info">
-                              <div className="member-name">{m.name}</div>
-                              <div className="member-meta">{m.gender==="male"?"남":"여"}{m.birth_year&&` · ${m.birth_year}년생`}{m.phone&&<> · <a href={`tel:${m.phone}`} className="phone-link" onClick={e=>e.stopPropagation()}>{m.phone}</a></>}</div>
-                            </div>
-                            <button className={`attendance-check-btn ${present?"checked":""}`} onClick={e=>{e.stopPropagation();onToggle(m.id,selectedSam,selectedDate);}}>
+                            <div className="member-info"><div className="member-name">{m.name}</div><div className="member-meta">{m.gender==="male"?"남":"여"}{m.birth_year&&` · ${m.birth_year}년생`}{m.phone&&<> · <a href={`tel:${m.phone}`} className="phone-link" onClick={e=>e.stopPropagation()}>{m.phone}</a></>}</div></div>
+                            <button className={`attendance-check-btn ${present?"checked":""}`} style={{cursor:admin?"pointer":"default"}} onClick={e=>{e.stopPropagation();admin&&onToggle(m.id,selectedSam,selectedDate);}}>
                               {present&&<Icon name="check" size={14}/>}
                             </button>
                           </div>
                         );
                       })}
-
-                      {/* 군복무 청년 구분선 + 목록 (샘 배정된 경우) */}
-                      {militaryMembers.length>0&&(
-                        <>
-                          <div className="military-divider">
-                            <div className="military-divider-line"/>
-                            <div className="military-divider-text">🪖 군복무 중</div>
-                            <div className="military-divider-line"/>
-                          </div>
-                          {militaryMembers.map(m=>(
-                            <div key={m.id} className="member-item military-item">
-                              <div className="member-avatar military-av">🪖</div>
-                              <div className="member-info">
-                                <div className="member-name military-name">{m.name}</div>
-                                <div className="member-meta">
-                                  <span className="badge badge-military">군복무 중</span>
-                                  {m.birth_year&&<span style={{marginLeft:4}}>· {m.birth_year}년생</span>}
-                                  {m.phone&&<> · <a href={`tel:${m.phone}`} className="phone-link">{m.phone}</a></>}
-                                </div>
-                              </div>
-                              {/* 체크 불가 — 군복무 표시만 */}
-                              <div className="attendance-check-btn military-skip">🪖</div>
-                            </div>
-                          ))}
-                        </>
-                      )}
+                      {militaryMembers.length>0&&(<><div className="military-divider"><div className="military-divider-line"/><div className="military-divider-text">🪖 군복무 중</div><div className="military-divider-line"/></div>{militaryMembers.map(m=>(<div key={m.id} className="member-item military-item"><div className="member-avatar military-av">🪖</div><div className="member-info"><div className="member-name military-name">{m.name}</div><div className="member-meta"><span className="badge badge-military">군복무 중</span>{m.birth_year&&<span style={{marginLeft:4}}>· {m.birth_year}년생</span>}{m.phone&&<> · <a href={`tel:${m.phone}`} className="phone-link">{m.phone}</a></>}</div></div><div className="attendance-check-btn military-skip">🪖</div></div>))}</>)}
                     </>
                   )}
                 </>
@@ -744,24 +792,7 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam}
                 <>
                   <div style={{fontSize:13,color:"#64748B",marginBottom:12}}>최근 5회 출석 현황 (군복무 제외)</div>
                   {allDates.length===0?(<div className="empty-state"><div className="empty-state-icon">📊</div><div className="empty-state-text">출석 기록이 없습니다</div></div>):(
-                    <div style={{overflowX:"auto"}}>
-                      <table className="summary-table">
-                        <thead><tr><th>이름</th>{allDates.map(d=><th key={d}>{formatDate(d).slice(5)}</th>)}</tr></thead>
-                        <tbody>
-                          {activeMembers.map(m=>(
-                            <tr key={m.id}><td>{m.name}</td>
-                              {allDates.map(d=>{const rec=samAttendanceList.find(a=>a.member_id===m.id&&a.sam_id===selectedSam&&a.date===d);return<td key={d}>{rec?.status?<span className="dot-present">✓</span>:<span className="dot-absent"/>}</td>;})}
-                            </tr>
-                          ))}
-                          {militaryMembers.length>0&&militaryMembers.map(m=>(
-                            <tr key={m.id} style={{opacity:0.5}}>
-                              <td><span style={{fontSize:11}}>🪖</span> {m.name}</td>
-                              {allDates.map(d=><td key={d}><span className="dot-military">🪖</span></td>)}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                    <div style={{overflowX:"auto"}}><table className="summary-table"><thead><tr><th>이름</th>{allDates.map(d=><th key={d}>{formatDate(d).slice(5)}</th>)}</tr></thead><tbody>{activeMembers.map(m=>(<tr key={m.id}><td>{m.name}</td>{allDates.map(d=>{const rec=samAttendanceList.find(a=>a.member_id===m.id&&a.sam_id===selectedSam&&a.date===d);return<td key={d}>{rec?.status?<span className="dot-present">✓</span>:<span className="dot-absent"/>}</td>;})}</tr>))}{militaryMembers.length>0&&militaryMembers.map(m=>(<tr key={m.id} style={{opacity:0.5}}><td><span style={{fontSize:11}}>🪖</span> {m.name}</td>{allDates.map(d=><td key={d}><span className="dot-military">🪖</span></td>)}</tr>))}</tbody></table></div>
                   )}
                 </>
               )}
@@ -774,13 +805,13 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam}
 }
 
 // ==================== NEW MEMBERS PAGE ====================
-function NewMembersPage({newMembers,sams,setModal,onDelete,onToggleEdu,onAssign}){
+function NewMembersPage({newMembers,sams,setModal,onDelete,onToggleEdu,onAssign,admin}){
   const [search,setSearch]=useState("");
   const filtered=sortByName(newMembers).filter(m=>m.name.includes(search));
   return(
     <div>
       <div className="search-bar"><span className="search-icon"><Icon name="users" size={16}/></span><input placeholder="이름으로 검색..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
-      {filtered.length===0?(<div className="empty-state"><div className="empty-state-icon">🌟</div><div className="empty-state-text">새가족이 없습니다</div><div className="empty-state-sub">우측 상단 + 버튼으로 등록하세요</div></div>):(
+      {filtered.length===0?(<div className="empty-state"><div className="empty-state-icon">🌟</div><div className="empty-state-text">새가족이 없습니다</div>{admin&&<div className="empty-state-sub">우측 상단 + 버튼으로 등록하세요</div>}</div>):(
         filtered.map(m=>{
           const eduDone=[m.week1,m.week2,m.week3,m.week4].filter(Boolean).length;
           const allDone=eduDone===4;
@@ -790,29 +821,22 @@ function NewMembersPage({newMembers,sams,setModal,onDelete,onToggleEdu,onAssign}
                 <div className={`member-avatar ${m.gender}`} style={{width:38,height:38,fontSize:14}}>{m.name.charAt(0)}</div>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:15,color:"#1E293B"}}>{m.name}</div>
-                  <div style={{fontSize:12,color:"#94A3B8",marginTop:1}}>
-                    <span className={`badge ${m.gender==="male"?"badge-blue":"badge-pink"}`} style={{marginRight:4}}>{m.gender==="male"?"남":"여"}</span>
-                    {m.birth_year&&`${m.birth_year}년생`}{m.birthday&&` · 🎂${m.birthday}`}
-                  </div>
+                  <div style={{fontSize:12,color:"#94A3B8",marginTop:1}}><span className={`badge ${m.gender==="male"?"badge-blue":"badge-pink"}`} style={{marginRight:4}}>{m.gender==="male"?"남":"여"}</span>{m.birth_year&&`${m.birth_year}년생`}{m.birthday&&` · 🎂${m.birthday}`}</div>
                   {m.phone&&<div style={{fontSize:12,marginTop:3,display:"flex",alignItems:"center",gap:4}}><Icon name="phone" size={11} color="#94A3B8"/><a href={`tel:${m.phone}`} className="phone-link">{m.phone}</a></div>}
                 </div>
-                <div style={{display:"flex",gap:6}}>
-                  <button className="btn-icon" onClick={()=>setModal({type:"editNewMember",member:m})}><Icon name="edit" size={14}/></button>
-                  <button className="btn-icon danger" onClick={()=>onDelete(m.id)}><Icon name="trash" size={14}/></button>
-                </div>
+                {admin&&(<div style={{display:"flex",gap:6}}><button className="btn-icon" onClick={()=>setModal({type:"editNewMember",member:m})}><Icon name="edit" size={14}/></button><button className="btn-icon danger" onClick={()=>onDelete(m.id)}><Icon name="trash" size={14}/></button></div>)}
               </div>
               <div style={{fontSize:12,fontWeight:600,color:"#64748B",marginBottom:6}}>새가족 교육 ({eduDone}/4주 완료)<div className="progress-bar-wrap" style={{marginTop:4}}><div className="progress-bar-fill" style={{width:`${(eduDone/4)*100}%`}}/></div></div>
               <div className="edu-weeks">
                 {["1주차","2주차","3주차","4주차"].map((label,i)=>{
                   const done=m[`week${i+1}`];
-                  return<button key={i} className={`week-check ${done?"done":""}`} onClick={()=>onToggleEdu(m.id,i)}>{done?"✓":""}<br/><span style={{fontSize:11}}>{label}</span></button>;
+                  return<button key={i} className={`week-check ${done?"done":""}`}
+                    onClick={()=>admin&&onToggleEdu(m.id,i)}
+                    style={{cursor:admin?"pointer":"default"}}>
+                    {done?"✓":""}<br/><span style={{fontSize:11}}>{label}</span></button>;
                 })}
               </div>
-              {allDone&&(
-                <button className="assign-btn" onClick={()=>onAssign(m)}>
-                  <Icon name="assign" size={16} color="white"/>🎉 4주 완료! 샘 배정하기
-                </button>
-              )}
+              {admin&&allDone&&(<button className="assign-btn" onClick={()=>onAssign(m)}><Icon name="assign" size={16} color="white"/>🎉 4주 완료! 샘 배정하기</button>)}
             </div>
           );
         })
@@ -832,43 +856,26 @@ function MemberFormModal({sams,initial,onSave,onClose}){
   const [military,setMilitary]=useState(initial?.military||false);
   const submit=()=>{if(!name.trim()){alert("이름을 입력해주세요");return;}onSave({name:name.trim(),gender,phone:phone.trim(),birthYear,birthday,samId,military});};
   return(
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
-        <div className="modal-handle"/>
-        <div className="modal-title">{initial?"청년 정보 수정":"청년 등록"}</div>
-        <div className="form-group"><label className="form-label">이름 <span style={{color:"#EF4444"}}>*</span></label><input className="form-input" placeholder="이름 입력" value={name} onChange={e=>setName(e.target.value)}/></div>
-        <GenderToggle gender={gender} setGender={setGender}/>
-        <div className="form-group"><label className="form-label">전화번호 <span className="optional">(선택)</span></label><div className="input-with-icon"><span className="input-icon"><Icon name="phone" size={15}/></span><input className="form-input" type="tel" placeholder="010-0000-0000" value={phone} onChange={e=>setPhone(e.target.value)}/></div></div>
-        <div className="form-row">
-          <div className="form-group"><label className="form-label">출생년도 <span className="optional">(선택)</span></label><input className="form-input" placeholder="예) 1998" type="number" value={birthYear} onChange={e=>setBirthYear(e.target.value)}/></div>
-          <div className="form-group"><label className="form-label">생일 <span className="optional">(선택)</span></label><input className="form-input" placeholder="MM/DD" value={birthday} onChange={e=>setBirthday(e.target.value)}/></div>
-        </div>
-        <div className="form-group"><label className="form-label">샘 배정 <span className="optional">(선택)</span></label><select className="form-select" value={samId} onChange={e=>setSamId(e.target.value)}><option value="">샘 선택</option>{sams.map(s=><option key={s.id} value={s.id}>{s.name}샘</option>)}</select></div>
-        <div className={`military-toggle ${military?"active":""}`} onClick={()=>setMilitary(!military)}>
-          <div className="military-toggle-label"><Icon name="shield" size={18} color={military?"#4B5563":"#94A3B8"}/><span style={{fontSize:14,fontWeight:500,color:military?"#374151":"#94A3B8"}}>🪖 군복무 중</span></div>
-          <div className={`toggle-switch ${military?"on":""}`}><div className="toggle-knob"/></div>
-        </div>
-        <button className="btn btn-primary" onClick={submit}><Icon name="check" size={16} color="white"/>{initial?"수정 완료":"등록하기"}</button>
+    <div className="modal-overlay" onClick={onClose}><div className="modal-sheet" onClick={e=>e.stopPropagation()}>
+      <div className="modal-handle"/><div className="modal-title">{initial?"청년 정보 수정":"청년 등록"}</div>
+      <div className="form-group"><label className="form-label">이름 <span style={{color:"#EF4444"}}>*</span></label><input className="form-input" placeholder="이름 입력" value={name} onChange={e=>setName(e.target.value)}/></div>
+      <GenderToggle gender={gender} setGender={setGender}/>
+      <div className="form-group"><label className="form-label">전화번호 <span className="optional">(선택)</span></label><div className="input-with-icon"><span className="input-icon"><Icon name="phone" size={15}/></span><input className="form-input" type="tel" placeholder="010-0000-0000" value={phone} onChange={e=>setPhone(e.target.value)}/></div></div>
+      <div className="form-row">
+        <div className="form-group"><label className="form-label">출생년도 <span className="optional">(선택)</span></label><input className="form-input" placeholder="예) 1998" type="number" value={birthYear} onChange={e=>setBirthYear(e.target.value)}/></div>
+        <div className="form-group"><label className="form-label">생일 <span className="optional">(선택)</span></label><input className="form-input" placeholder="MM/DD" value={birthday} onChange={e=>setBirthday(e.target.value)}/></div>
       </div>
-    </div>
+      <div className="form-group"><label className="form-label">샘 배정 <span className="optional">(선택)</span></label><select className="form-select" value={samId} onChange={e=>setSamId(e.target.value)}><option value="">샘 선택</option>{sams.map(s=><option key={s.id} value={s.id}>{s.name}샘</option>)}</select></div>
+      <div className={`military-toggle ${military?"active":""}`} onClick={()=>setMilitary(!military)}><div className="military-toggle-label"><Icon name="shield" size={18} color={military?"#4B5563":"#94A3B8"}/><span style={{fontSize:14,fontWeight:500,color:military?"#374151":"#94A3B8"}}>🪖 군복무 중</span></div><div className={`toggle-switch ${military?"on":""}`}><div className="toggle-knob"/></div></div>
+      <button className="btn btn-primary" onClick={submit}><Icon name="check" size={16} color="white"/>{initial?"수정 완료":"등록하기"}</button>
+    </div></div>
   );
 }
-
 function AddSamModal({onSave,onClose}){
   const [name,setName]=useState("");
   const submit=()=>{if(!name.trim()){alert("샘 이름을 입력해주세요");return;}onSave(name.trim());};
-  return(
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
-        <div className="modal-handle"/>
-        <div className="modal-title">새 샘 추가</div>
-        <div className="form-group"><label className="form-label">샘 이름</label><input className="form-input" placeholder="예) 한나, 다윗, 요셉..." value={name} onChange={e=>setName(e.target.value)}/></div>
-        <button className="btn btn-primary" onClick={submit}><Icon name="plus" size={16} color="white"/>샘 추가하기</button>
-      </div>
-    </div>
-  );
+  return(<div className="modal-overlay" onClick={onClose}><div className="modal-sheet" onClick={e=>e.stopPropagation()}><div className="modal-handle"/><div className="modal-title">새 샘 추가</div><div className="form-group"><label className="form-label">샘 이름</label><input className="form-input" placeholder="예) 한나, 다윗, 요셉..." value={name} onChange={e=>setName(e.target.value)}/></div><button className="btn btn-primary" onClick={submit}><Icon name="plus" size={16} color="white"/>샘 추가하기</button></div></div>);
 }
-
 function NewMemberFormModal({initial,onSave,onClose}){
   const [name,setName]=useState(initial?.name||"");
   const [gender,setGender]=useState(initial?.gender||"male");
@@ -876,49 +883,9 @@ function NewMemberFormModal({initial,onSave,onClose}){
   const [birthYear,setBirthYear]=useState(initial?.birth_year||"");
   const [birthday,setBirthday]=useState(initial?.birthday||"");
   const submit=()=>{if(!name.trim()){alert("이름을 입력해주세요");return;}onSave({name:name.trim(),gender,phone:phone.trim(),birthYear,birthday});};
-  return(
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
-        <div className="modal-handle"/>
-        <div className="modal-title">{initial?"새가족 정보 수정":"새가족 등록"}</div>
-        <div className="form-group"><label className="form-label">이름 <span style={{color:"#EF4444"}}>*</span></label><input className="form-input" placeholder="이름 입력" value={name} onChange={e=>setName(e.target.value)}/></div>
-        <GenderToggle gender={gender} setGender={setGender}/>
-        <div className="form-group"><label className="form-label">전화번호 <span className="optional">(선택)</span></label><div className="input-with-icon"><span className="input-icon"><Icon name="phone" size={15}/></span><input className="form-input" type="tel" placeholder="010-0000-0000" value={phone} onChange={e=>setPhone(e.target.value)}/></div></div>
-        <div className="form-row">
-          <div className="form-group"><label className="form-label">출생년도 <span className="optional">(선택)</span></label><input className="form-input" placeholder="예) 1998" type="number" value={birthYear} onChange={e=>setBirthYear(e.target.value)}/></div>
-          <div className="form-group"><label className="form-label">생일 <span className="optional">(선택)</span></label><input className="form-input" placeholder="MM/DD" value={birthday} onChange={e=>setBirthday(e.target.value)}/></div>
-        </div>
-        <div className="info-hint">💡 새가족 교육 4주 이수 체크는 등록 후 명단에서 직접 체크할 수 있습니다</div>
-        <button className="btn btn-primary" onClick={submit}><Icon name="check" size={16} color="white"/>{initial?"수정 완료":"등록하기"}</button>
-      </div>
-    </div>
-  );
+  return(<div className="modal-overlay" onClick={onClose}><div className="modal-sheet" onClick={e=>e.stopPropagation()}><div className="modal-handle"/><div className="modal-title">{initial?"새가족 정보 수정":"새가족 등록"}</div><div className="form-group"><label className="form-label">이름 <span style={{color:"#EF4444"}}>*</span></label><input className="form-input" placeholder="이름 입력" value={name} onChange={e=>setName(e.target.value)}/></div><GenderToggle gender={gender} setGender={setGender}/><div className="form-group"><label className="form-label">전화번호 <span className="optional">(선택)</span></label><div className="input-with-icon"><span className="input-icon"><Icon name="phone" size={15}/></span><input className="form-input" type="tel" placeholder="010-0000-0000" value={phone} onChange={e=>setPhone(e.target.value)}/></div></div><div className="form-row"><div className="form-group"><label className="form-label">출생년도 <span className="optional">(선택)</span></label><input className="form-input" placeholder="예) 1998" type="number" value={birthYear} onChange={e=>setBirthYear(e.target.value)}/></div><div className="form-group"><label className="form-label">생일 <span className="optional">(선택)</span></label><input className="form-input" placeholder="MM/DD" value={birthday} onChange={e=>setBirthday(e.target.value)}/></div></div><div className="info-hint">💡 새가족 교육 4주 이수 체크는 등록 후 명단에서 직접 체크할 수 있습니다</div><button className="btn btn-primary" onClick={submit}><Icon name="check" size={16} color="white"/>{initial?"수정 완료":"등록하기"}</button></div></div>);
 }
-
 function AssignSamModal({sams,newMember,onAssign,onClose}){
   const [samId,setSamId]=useState("");
-  return(
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
-        <div className="modal-handle"/>
-        <div className="modal-title">🎉 샘 배정</div>
-        <div style={{background:"#ECFDF5",border:"1px solid #A7F3D0",borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:13,color:"#065F46"}}>
-          <strong>{newMember.name}</strong> 님이 4주 교육을 모두 마쳤습니다!<br/>샘을 배정하면 청년 명단으로 이동됩니다.
-        </div>
-        <div className="form-group">
-          <label className="form-label">배정할 샘 선택</label>
-          <select className="form-select" value={samId} onChange={e=>setSamId(e.target.value)}>
-            <option value="">샘을 선택하세요</option>
-            {sams.map(s=><option key={s.id} value={s.id}>{s.name}샘</option>)}
-          </select>
-        </div>
-        <button className="assign-btn" style={{marginTop:0}} onClick={()=>{if(!samId){alert("샘을 선택해주세요");return;}onAssign(newMember,samId);}}>
-          <Icon name="assign" size={16} color="white"/>샘 배정 완료
-        </button>
-        <button className="btn btn-secondary" style={{width:"100%",marginTop:8}} onClick={()=>onAssign(newMember,"")}>
-          샘 미배정으로 이동
-        </button>
-      </div>
-    </div>
-  );
+  return(<div className="modal-overlay" onClick={onClose}><div className="modal-sheet" onClick={e=>e.stopPropagation()}><div className="modal-handle"/><div className="modal-title">🎉 샘 배정</div><div style={{background:"#ECFDF5",border:"1px solid #A7F3D0",borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:13,color:"#065F46"}}><strong>{newMember.name}</strong> 님이 4주 교육을 모두 마쳤습니다!<br/>샘을 배정하면 청년 명단으로 이동됩니다.</div><div className="form-group"><label className="form-label">배정할 샘 선택</label><select className="form-select" value={samId} onChange={e=>setSamId(e.target.value)}><option value="">샘을 선택하세요</option>{sams.map(s=><option key={s.id} value={s.id}>{s.name}샘</option>)}</select></div><button className="assign-btn" style={{marginTop:0}} onClick={()=>{if(!samId){alert("샘을 선택해주세요");return;}onAssign(newMember,samId);}}><Icon name="assign" size={16} color="white"/>샘 배정 완료</button><button className="btn btn-secondary" style={{width:"100%",marginTop:8}} onClick={()=>onAssign(newMember,"")}>샘 미배정으로 이동</button></div></div>);
 }
