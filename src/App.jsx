@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabaseClient";
 
+// ==================== ICONS ====================
 const Icon = ({ name, size = 20, color = "currentColor" }) => {
   const icons = {
     home: <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />,
@@ -18,6 +19,8 @@ const Icon = ({ name, size = 20, color = "currentColor" }) => {
     phone: <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />,
     cake: (<><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" /><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1" /><path d="M2 21h20" /><path d="M7 8v2" /><path d="M12 8v2" /><path d="M17 8v2" /><path d="M7 4h.01" /><path d="M12 4h.01" /><path d="M17 4h.01" /></>),
     refresh: (<><polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></>),
+    shield: (<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></>),
+    assign: (<><circle cx="12" cy="8" r="4" /><path d="M20 21a8 8 0 1 0-16 0" /><line x1="18" y1="11" x2="18" y2="17" /><line x1="15" y1="14" x2="21" y2="14" /></>),
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -26,17 +29,38 @@ const Icon = ({ name, size = 20, color = "currentColor" }) => {
   );
 };
 
+// ==================== UTILS ====================
 const today = () => new Date().toISOString().split("T")[0];
 const formatDate = (d) => { if (!d) return ""; const dt = new Date(d + "T00:00:00"); return `${dt.getFullYear()}.${String(dt.getMonth()+1).padStart(2,"0")}.${String(dt.getDate()).padStart(2,"0")}`; };
 const getDayLabel = (d) => { const days=["일","월","화","수","목","금","토"]; return days[new Date(d+"T00:00:00").getDay()]; };
-const getAbsentWeeks = (memberId, list) => { const recs=list.filter(a=>a.member_id===memberId&&a.status===true).sort((a,b)=>b.date.localeCompare(a.date)); if(!recs.length) return null; return Math.floor((new Date()-new Date(recs[0].date+"T00:00:00"))/(7*24*60*60*1000)); };
-const getTodayBirthdays = (members) => { const now=new Date(); const md=`${String(now.getMonth()+1).padStart(2,"0")}/${String(now.getDate()).padStart(2,"0")}`; return members.filter(m=>m.birthday&&m.birthday.trim()===md); };
-const getThisMonthBirthdays = (members) => { const now=new Date(); const mm=String(now.getMonth()+1).padStart(2,"0"); const dd=now.getDate(); return members.filter(m=>m.birthday&&m.birthday.startsWith(mm+"/")).map(m=>({...m,dayNum:parseInt(m.birthday.split("/")[1]),isPast:parseInt(m.birthday.split("/")[1])<dd,isToday:parseInt(m.birthday.split("/")[1])===dd})).sort((a,b)=>a.dayNum-b.dayNum); };
 
+// 가나다순 정렬
+const sortByName = (arr) => [...arr].sort((a, b) => a.name.localeCompare(b.name, "ko"));
+
+// 군복무 제외한 결석 주수 계산
+const getAbsentWeeks = (memberId, list) => {
+  const recs = list.filter(a => a.member_id === memberId && a.status === true).sort((a,b) => b.date.localeCompare(a.date));
+  if (!recs.length) return null;
+  return Math.floor((new Date() - new Date(recs[0].date + "T00:00:00")) / (7*24*60*60*1000));
+};
+
+const getTodayBirthdays = (members) => {
+  const now = new Date();
+  const md = `${String(now.getMonth()+1).padStart(2,"0")}/${String(now.getDate()).padStart(2,"0")}`;
+  return members.filter(m => m.birthday && m.birthday.trim() === md);
+};
+const getThisMonthBirthdays = (members) => {
+  const now = new Date(); const mm = String(now.getMonth()+1).padStart(2,"0"); const dd = now.getDate();
+  return members.filter(m => m.birthday && m.birthday.startsWith(mm+"/"))
+    .map(m => ({...m, dayNum: parseInt(m.birthday.split("/")[1]), isPast: parseInt(m.birthday.split("/")[1])<dd, isToday: parseInt(m.birthday.split("/")[1])===dd}))
+    .sort((a,b) => a.dayNum - b.dayNum);
+};
+
+// ==================== STYLES ====================
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap');
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  :root{--primary:#2563EB;--primary-light:#EFF6FF;--primary-dark:#1D4ED8;--danger:#EF4444;--danger-light:#FEF2F2;--success:#10B981;--success-light:#ECFDF5;--warning:#F59E0B;--warning-light:#FFFBEB;--gray-50:#F8FAFC;--gray-100:#F1F5F9;--gray-200:#E2E8F0;--gray-300:#CBD5E1;--gray-400:#94A3B8;--gray-500:#64748B;--gray-600:#475569;--gray-700:#334155;--gray-800:#1E293B;--gray-900:#0F172A;--white:#FFFFFF;--radius:12px;--radius-lg:16px;--shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.06);--shadow-md:0 4px 6px rgba(0,0,0,0.07),0 2px 4px rgba(0,0,0,0.06);}
+  :root{--primary:#2563EB;--primary-light:#EFF6FF;--primary-dark:#1D4ED8;--danger:#EF4444;--danger-light:#FEF2F2;--success:#10B981;--success-light:#ECFDF5;--warning:#F59E0B;--warning-light:#FFFBEB;--military:#6B7280;--military-light:#F3F4F6;--gray-50:#F8FAFC;--gray-100:#F1F5F9;--gray-200:#E2E8F0;--gray-300:#CBD5E1;--gray-400:#94A3B8;--gray-500:#64748B;--gray-600:#475569;--gray-700:#334155;--gray-800:#1E293B;--gray-900:#0F172A;--white:#FFFFFF;--radius:12px;--radius-lg:16px;--shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.06);--shadow-md:0 4px 6px rgba(0,0,0,0.07),0 2px 4px rgba(0,0,0,0.06);}
   html,body,#root{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--gray-50);color:var(--gray-800);-webkit-font-smoothing:antialiased;}
   .app-wrapper{max-width:430px;margin:0 auto;min-height:100vh;background:var(--white);display:flex;flex-direction:column;overflow:hidden;}
   .app-header{background:var(--white);padding:16px 20px 12px;border-bottom:1px solid var(--gray-100);position:sticky;top:0;z-index:50;}
@@ -61,6 +85,7 @@ const css = `
   .btn-icon:hover{background:#dbeafe;}
   .btn-icon.danger{background:var(--danger-light);color:var(--danger);}
   .btn-icon.danger:hover{background:#fee2e2;}
+  .btn-icon.military{background:var(--military-light);color:var(--military);}
   .form-group{margin-bottom:16px;}
   .form-label{font-size:13px;font-weight:500;color:var(--gray-600);margin-bottom:6px;display:block;}
   .form-label .optional{font-size:11px;color:var(--gray-400);font-weight:400;margin-left:4px;}
@@ -79,11 +104,15 @@ const css = `
   .gender-btn.female.active{border-color:#EC4899;background:#FDF2F8;color:#DB2777;}
   .member-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--gray-200);border-radius:var(--radius);margin-bottom:8px;background:var(--white);transition:all 0.15s;}
   .member-item:hover{border-color:var(--primary);background:var(--primary-light);}
+  .member-item.military-item{background:var(--military-light);border-color:var(--gray-300);}
+  .member-item.military-item:hover{border-color:var(--military);background:#E5E7EB;}
   .member-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;}
   .member-avatar.male{background:#DBEAFE;color:#1D4ED8;}
   .member-avatar.female{background:#FCE7F3;color:#9D174D;}
+  .member-avatar.military-av{background:#D1D5DB;color:#4B5563;}
   .member-info{flex:1;min-width:0;}
   .member-name{font-size:15px;font-weight:600;color:var(--gray-800);}
+  .member-name.military-name{color:var(--gray-500);}
   .member-meta{font-size:12px;color:var(--gray-400);margin-top:2px;}
   .member-actions{display:flex;gap:6px;flex-shrink:0;}
   .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
@@ -92,8 +121,11 @@ const css = `
   .badge-red{background:var(--danger-light);color:var(--danger);}
   .badge-yellow{background:var(--warning-light);color:#D97706;}
   .badge-pink{background:#FDF2F8;color:#DB2777;}
+  .badge-military{background:#D1D5DB;color:#374151;}
+  .badge-olive{background:#ECFCCB;color:#3F6212;}
   .attendance-check-btn{width:36px;height:36px;border-radius:50%;border:2px solid var(--gray-200);background:var(--white);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;flex-shrink:0;}
   .attendance-check-btn.checked{background:var(--success);border-color:var(--success);color:var(--white);}
+  .attendance-check-btn.military-skip{background:var(--military-light);border-color:var(--gray-300);cursor:default;}
   .date-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
   .date-input-styled{flex:1;padding:10px 14px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-size:14px;font-family:'Noto Sans KR',sans-serif;color:var(--gray-800);background:var(--white);outline:none;}
   .date-input-styled:focus{border-color:var(--primary);}
@@ -144,6 +176,7 @@ const css = `
   .summary-table td:first-child{text-align:left;font-weight:500;}
   .dot-present{width:20px;height:20px;background:var(--success);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:700;}
   .dot-absent{width:20px;height:20px;background:var(--gray-200);border-radius:50%;display:inline-block;}
+  .dot-military{width:20px;height:20px;background:var(--gray-300);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;}
   .tab-bar{display:flex;background:var(--gray-100);border-radius:10px;padding:3px;margin-bottom:16px;}
   .tab-item{flex:1;padding:8px;border-radius:8px;border:none;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:500;color:var(--gray-500);background:transparent;cursor:pointer;transition:all 0.15s;text-align:center;}
   .tab-item.active{background:var(--white);color:var(--primary);font-weight:600;box-shadow:var(--shadow);}
@@ -167,10 +200,22 @@ const css = `
   .phone-link{color:var(--primary);text-decoration:none;font-size:12px;}
   .phone-link:hover{text-decoration:underline;}
   .info-hint{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#1D4ED8;}
+  .military-banner{background:linear-gradient(135deg,#4B5563 0%,#6B7280 100%);border-radius:var(--radius-lg);padding:14px 16px;color:white;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+  .military-banner-text{font-size:13px;font-weight:600;}
+  .military-banner-sub{font-size:11px;opacity:0.8;margin-top:2px;}
+  .assign-btn{background:linear-gradient(135deg,#059669,#10B981);color:white;border:none;border-radius:var(--radius);padding:10px 14px;font-size:13px;font-weight:600;font-family:'Noto Sans KR',sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s;width:100%;justify-content:center;margin-top:10px;}
+  .assign-btn:hover{opacity:0.9;}
   .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:12px;}
   .spinner{width:36px;height:36px;border:3px solid var(--gray-200);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
   .loading-text{font-size:14px;color:var(--gray-500);}
+  .military-toggle{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1.5px solid var(--gray-200);border-radius:var(--radius);margin-bottom:16px;cursor:pointer;transition:all 0.15s;}
+  .military-toggle.active{border-color:#6B7280;background:#F3F4F6;}
+  .military-toggle-label{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;color:var(--gray-700);}
+  .toggle-switch{width:44px;height:24px;background:var(--gray-200);border-radius:999px;position:relative;transition:background 0.2s;}
+  .toggle-switch.on{background:#6B7280;}
+  .toggle-knob{width:20px;height:20px;background:white;border-radius:50%;position:absolute;top:2px;left:2px;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+  .toggle-switch.on .toggle-knob{transform:translateX(20px);}
 `;
 
 function GenderToggle({ gender, setGender }) {
@@ -189,6 +234,7 @@ function GenderToggle({ gender, setGender }) {
   );
 }
 
+// ==================== MAIN APP ====================
 export default function App() {
   const [members, setMembers] = useState([]);
   const [newMembers, setNewMembers] = useState([]);
@@ -222,22 +268,35 @@ export default function App() {
   const closeModal = () => setModal(null);
   const todayBirthdays = getTodayBirthdays([...members,...newMembers]);
 
-  const saveMember = async (m) => { setSaving(true); await supabase.from("members").insert([{name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,sam_id:m.samId||null}]); await fetchAll(); setSaving(false); closeModal(); };
-  const updateMember = async (id,m) => { setSaving(true); await supabase.from("members").update({name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,sam_id:m.samId||null}).eq("id",id); await fetchAll(); setSaving(false); closeModal(); };
-  const deleteMember = async (id) => { if(!window.confirm("정말 삭제하시겠습니까?")) return; setSaving(true); await supabase.from("members").delete().eq("id",id); await fetchAll(); setSaving(false); };
-  const saveSam = async (name) => { setSaving(true); await supabase.from("sams").insert([{name}]); await fetchAll(); setSaving(false); closeModal(); };
-  const deleteSam = async (id) => { if(!window.confirm("샘을 삭제하시겠습니까?")) return; setSaving(true); await supabase.from("sams").delete().eq("id",id); await fetchAll(); setSaving(false); };
-
+  const saveMember = async (m) => {
+    setSaving(true);
+    await supabase.from("members").insert([{name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,sam_id:m.samId||null,military:m.military||false}]);
+    await fetchAll(); setSaving(false); closeModal();
+  };
+  const updateMember = async (id,m) => {
+    setSaving(true);
+    await supabase.from("members").update({name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,sam_id:m.samId||null,military:m.military||false}).eq("id",id);
+    await fetchAll(); setSaving(false); closeModal();
+  };
+  const deleteMember = async (id) => {
+    if(!window.confirm("정말 삭제하시겠습니까?")) return;
+    setSaving(true); await supabase.from("members").delete().eq("id",id); await fetchAll(); setSaving(false);
+  };
+  const saveSam = async (name) => {
+    setSaving(true); await supabase.from("sams").insert([{name}]); await fetchAll(); setSaving(false); closeModal();
+  };
+  const deleteSam = async (id) => {
+    if(!window.confirm("샘을 삭제하시겠습니까?")) return;
+    setSaving(true); await supabase.from("sams").delete().eq("id",id); await fetchAll(); setSaving(false);
+  };
   const toggleAttendance = async (memberId, date) => {
     const ex = attendanceList.find(a=>a.member_id===memberId&&a.date===date);
     setSaving(true);
     if(ex){ await supabase.from("attendance").update({status:!ex.status}).eq("id",ex.id); }
     else { await supabase.from("attendance").insert([{member_id:memberId,date,status:true}]); }
     const {data} = await supabase.from("attendance").select("*");
-    if(data) setAttendanceList(data);
-    setSaving(false);
+    if(data) setAttendanceList(data); setSaving(false);
   };
-
   const setAllAttendance = async (memberIds, date, status) => {
     setSaving(true);
     for(const memberId of memberIds){
@@ -246,31 +305,48 @@ export default function App() {
       else { await supabase.from("attendance").insert([{member_id:memberId,date,status}]); }
     }
     const {data} = await supabase.from("attendance").select("*");
-    if(data) setAttendanceList(data);
-    setSaving(false);
+    if(data) setAttendanceList(data); setSaving(false);
   };
-
   const toggleSamAttendance = async (memberId, samId, date) => {
     const ex = samAttendanceList.find(a=>a.member_id===memberId&&a.sam_id===samId&&a.date===date);
     setSaving(true);
     if(ex){ await supabase.from("sam_attendance").update({status:!ex.status}).eq("id",ex.id); }
     else { await supabase.from("sam_attendance").insert([{member_id:memberId,sam_id:samId,date,status:true}]); }
     const {data} = await supabase.from("sam_attendance").select("*");
-    if(data) setSamAttendanceList(data);
-    setSaving(false);
+    if(data) setSamAttendanceList(data); setSaving(false);
   };
-
-  const saveNewMember = async (m) => { setSaving(true); await supabase.from("new_members").insert([{name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,week1:false,week2:false,week3:false,week4:false}]); await fetchAll(); setSaving(false); closeModal(); };
-  const updateNewMember = async (id,m) => { setSaving(true); await supabase.from("new_members").update({name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday}).eq("id",id); await fetchAll(); setSaving(false); closeModal(); };
-  const deleteNewMember = async (id) => { if(!window.confirm("정말 삭제하시겠습니까?")) return; setSaving(true); await supabase.from("new_members").delete().eq("id",id); await fetchAll(); setSaving(false); };
+  const saveNewMember = async (m) => {
+    setSaving(true);
+    await supabase.from("new_members").insert([{name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,week1:false,week2:false,week3:false,week4:false}]);
+    await fetchAll(); setSaving(false); closeModal();
+  };
+  const updateNewMember = async (id,m) => {
+    setSaving(true);
+    await supabase.from("new_members").update({name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday}).eq("id",id);
+    await fetchAll(); setSaving(false); closeModal();
+  };
+  const deleteNewMember = async (id) => {
+    if(!window.confirm("정말 삭제하시겠습니까?")) return;
+    setSaving(true); await supabase.from("new_members").delete().eq("id",id); await fetchAll(); setSaving(false);
+  };
   const toggleEdu = async (id, weekIdx) => {
     const member = newMembers.find(m=>m.id===id); if(!member) return;
     const key = `week${weekIdx+1}`;
     setSaving(true);
     await supabase.from("new_members").update({[key]:!member[key]}).eq("id",id);
     const {data} = await supabase.from("new_members").select("*").order("created_at");
-    if(data) setNewMembers(data);
-    setSaving(false);
+    if(data) setNewMembers(data); setSaving(false);
+  };
+  // 새가족 → 청년 명단으로 샘 배정하며 이동
+  const assignNewMemberToSam = async (newMember, samId) => {
+    setSaving(true);
+    await supabase.from("members").insert([{
+      name:newMember.name, gender:newMember.gender, phone:newMember.phone,
+      birth_year:newMember.birth_year, birthday:newMember.birthday,
+      sam_id:samId||null, military:false
+    }]);
+    await supabase.from("new_members").delete().eq("id", newMember.id);
+    await fetchAll(); setSaving(false); closeModal();
   };
 
   const navItems = [
@@ -281,8 +357,8 @@ export default function App() {
     {id:"newmembers",label:"새가족",icon:"newuser"},
   ];
   const pageTitles = {
-    home:{title:"학익교회 청년부 예배현황",sub:"오늘도 주님을 예배합니다 🙏"},
-    members:{title:"청년 명단",sub:`전체 ${members.length}명`},
+    home:{title:"청년부 출석부",sub:"오늘도 함께해요 🙏"},
+    members:{title:"청년 명단",sub:`전체 ${members.length}명 · 군복무 ${members.filter(m=>m.military).length}명`},
     attendance:{title:"예배 출석",sub:"주일예배 출석 체크"},
     sam:{title:"샘 모임",sub:"소그룹 출석 체크"},
     newmembers:{title:"새가족",sub:`등록 ${newMembers.length}명`},
@@ -293,7 +369,7 @@ export default function App() {
     members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} />,
     attendance:<AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} />,
     sam:<SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} />,
-    newmembers:<NewMembersPage newMembers={newMembers} setModal={setModal} onDelete={deleteNewMember} onToggleEdu={toggleEdu} />,
+    newmembers:<NewMembersPage newMembers={newMembers} sams={sams} setModal={setModal} onDelete={deleteNewMember} onToggleEdu={toggleEdu} onAssign={(nm)=>setModal({type:"assignSam",newMember:nm})} />,
   };
 
   return (
@@ -332,22 +408,30 @@ export default function App() {
         {modal?.type==="addSam" && <AddSamModal onSave={saveSam} onClose={closeModal}/>}
         {modal?.type==="addNewMember" && <NewMemberFormModal onSave={saveNewMember} onClose={closeModal}/>}
         {modal?.type==="editNewMember" && <NewMemberFormModal initial={modal.member} onSave={m=>updateNewMember(modal.member.id,m)} onClose={closeModal}/>}
+        {modal?.type==="assignSam" && <AssignSamModal sams={sams} newMember={modal.newMember} onAssign={assignNewMemberToSam} onClose={closeModal}/>}
       </div>
     </>
   );
 }
 
+// ==================== HOME PAGE ====================
 function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirthdays}){
   const todayStr=today();
   const presentToday=attendanceList.filter(a=>a.date===todayStr&&a.status).length;
   const allPeople=[...members,...newMembers];
   const thisMonthBirthdays=getThisMonthBirthdays(allPeople);
   const now=new Date(); const mm=String(now.getMonth()+1).padStart(2,"0");
-  const alerts=members.map(m=>{const w=getAbsentWeeks(m.id,attendanceList);return(w!==null&&w>=4)?{member:m,weeks:w}:null;}).filter(Boolean).sort((a,b)=>b.weeks-a.weeks);
+  const militaryCount = members.filter(m=>m.military).length;
+  // 군복무 제외 결석 알림
+  const alerts=members.filter(m=>!m.military).map(m=>{
+    const w=getAbsentWeeks(m.id,attendanceList);
+    return(w!==null&&w>=4)?{member:m,weeks:w}:null;
+  }).filter(Boolean).sort((a,b)=>b.weeks-a.weeks);
+
   return(
     <div>
       <div className="home-banner">
-        <div className="home-banner-title">청년부 예배 & 샘모임</div>
+        <div className="home-banner-title">청년부 출석 관리</div>
         <div className="home-banner-sub">{new Date().toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"})}</div>
       </div>
       {todayBirthdays.length>0&&(
@@ -362,6 +446,15 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
               </div>
             </div>
           ))}
+        </div>
+      )}
+      {militaryCount>0&&(
+        <div className="military-banner">
+          <Icon name="shield" size={22} color="white"/>
+          <div>
+            <div className="military-banner-text">🪖 군복무 중 {militaryCount}명</div>
+            <div className="military-banner-sub">결석 카운트에서 제외됩니다</div>
+          </div>
         </div>
       )}
       <div className="stats-grid">
@@ -411,27 +504,54 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
   );
 }
 
+// ==================== MEMBERS PAGE ====================
 function MembersPage({members,sams,setModal,onDelete}){
   const [search,setSearch]=useState("");
   const [filterSam,setFilterSam]=useState("all");
-  const filtered=members.filter(m=>(m.name.includes(search)||(m.phone||"").includes(search))&&(filterSam==="all"||m.sam_id===filterSam));
+  const [showMilitary,setShowMilitary]=useState(false);
+
+  // 가나다 정렬
+  const sorted = sortByName(members);
+  const filtered = sorted.filter(m=>{
+    const matchSearch=(m.name.includes(search)||(m.phone||"").includes(search));
+    const matchSam=(filterSam==="all"||m.sam_id===filterSam);
+    if(showMilitary) return matchSearch && m.military;
+    return matchSearch && matchSam && !m.military;
+  });
+  const militaryList = sortByName(members.filter(m=>m.military));
   const getSamName=samId=>sams.find(s=>s.id===samId)?.name||"";
+
   return(
     <div>
       <div className="search-bar"><span className="search-icon"><Icon name="users" size={16}/></span><input placeholder="이름 또는 전화번호 검색..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
-      <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>
-        <button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam("all")}>전체</button>
-        {sams.map(s=><button key={s.id} className={`btn btn-sm ${filterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam(s.id)}>{s.name}샘</button>)}
+
+      {/* 군복무 명단 탭 */}
+      <div className="tab-bar" style={{marginBottom:12}}>
+        <button className={`tab-item ${!showMilitary?"active":""}`} onClick={()=>setShowMilitary(false)}>일반 청년 ({members.filter(m=>!m.military).length}명)</button>
+        <button className={`tab-item ${showMilitary?"active":""}`} onClick={()=>setShowMilitary(true)}>🪖 군복무 ({militaryList.length}명)</button>
       </div>
-      {filtered.length===0?(<div className="empty-state"><div className="empty-state-icon">👥</div><div className="empty-state-text">청년이 없습니다</div><div className="empty-state-sub">우측 상단 + 버튼으로 등록하세요</div></div>):(
+
+      {!showMilitary&&(
+        <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>
+          <button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam("all")}>전체</button>
+          {sams.map(s=><button key={s.id} className={`btn btn-sm ${filterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam(s.id)}>{s.name}샘</button>)}
+        </div>
+      )}
+
+      {filtered.length===0?(
+        <div className="empty-state"><div className="empty-state-icon">{showMilitary?"🪖":"👥"}</div><div className="empty-state-text">{showMilitary?"군복무 청년이 없습니다":"청년이 없습니다"}</div></div>
+      ):(
         filtered.map(m=>(
-          <div key={m.id} className="member-item">
-            <div className={`member-avatar ${m.gender}`}>{m.name.charAt(0)}</div>
+          <div key={m.id} className={`member-item ${m.military?"military-item":""}`}>
+            <div className={`member-avatar ${m.military?"military-av":m.gender}`}>{m.military?"🪖":m.name.charAt(0)}</div>
             <div className="member-info">
-              <div className="member-name">{m.name}</div>
+              <div className={`member-name ${m.military?"military-name":""}`}>{m.name}</div>
               <div className="member-meta">
-                <span className={`badge ${m.gender==="male"?"badge-blue":"badge-pink"}`} style={{marginRight:4}}>{m.gender==="male"?"남":"여"}</span>
-                {getSamName(m.sam_id)&&<span className="badge badge-green">{getSamName(m.sam_id)}샘</span>}
+                {m.military
+                  ? <span className="badge badge-military">🪖 군복무 중</span>
+                  : <span className={`badge ${m.gender==="male"?"badge-blue":"badge-pink"}`}>{m.gender==="male"?"남":"여"}</span>
+                }
+                {!m.military&&getSamName(m.sam_id)&&<span className="badge badge-green" style={{marginLeft:4}}>{getSamName(m.sam_id)}샘</span>}
                 {m.birth_year&&<span style={{marginLeft:4}}>· {m.birth_year}년생</span>}
                 {m.birthday&&<span style={{marginLeft:4}}>· 🎂{m.birthday}</span>}
               </div>
@@ -448,15 +568,20 @@ function MembersPage({members,sams,setModal,onDelete}){
   );
 }
 
+// ==================== ATTENDANCE PAGE ====================
 function AttendancePage({members,sams,attendanceList,onToggle,onSetAll}){
   const [selectedDate,setSelectedDate]=useState(today());
   const [tab,setTab]=useState("check");
   const [filterSam,setFilterSam]=useState("all");
-  const filteredMembers=filterSam==="all"?members:members.filter(m=>m.sam_id===filterSam);
+
+  // 가나다 정렬 + 군복무 제외
+  const activeMembers = sortByName(members.filter(m=>!m.military));
+  const filteredMembers=filterSam==="all"?activeMembers:activeMembers.filter(m=>m.sam_id===filterSam);
   const isPresent=memberId=>!!attendanceList.find(a=>a.member_id===memberId&&a.date===selectedDate&&a.status);
   const presentCount=filteredMembers.filter(m=>isPresent(m.id)).length;
   const allDates=[...new Set(attendanceList.map(a=>a.date))].sort().reverse().slice(0,5);
   const getSamName=samId=>sams.find(s=>s.id===samId)?.name||"";
+
   return(
     <div>
       <div className="tab-bar">
@@ -504,12 +629,12 @@ function AttendancePage({members,sams,attendanceList,onToggle,onSetAll}){
         </>
       ):(
         <>
-          <div style={{fontSize:13,color:"#64748B",marginBottom:12}}>최근 5주 출석 현황</div>
+          <div style={{fontSize:13,color:"#64748B",marginBottom:12}}>최근 5주 출석 현황 (군복무 제외)</div>
           {allDates.length===0?(<div className="empty-state"><div className="empty-state-icon">📊</div><div className="empty-state-text">출석 기록이 없습니다</div></div>):(
             <div style={{overflowX:"auto"}}>
               <table className="summary-table">
                 <thead><tr><th>이름</th>{allDates.map(d=><th key={d}>{formatDate(d).slice(5)}<br/><span style={{fontWeight:400}}>({getDayLabel(d)})</span></th>)}</tr></thead>
-                <tbody>{members.map(m=><tr key={m.id}><td>{m.name}</td>{allDates.map(d=>{const rec=attendanceList.find(a=>a.member_id===m.id&&a.date===d);return<td key={d}>{rec?.status?<span className="dot-present">✓</span>:<span className="dot-absent"/>}</td>;})}</tr>)}</tbody>
+                <tbody>{sortByName(members.filter(m=>!m.military)).map(m=><tr key={m.id}><td>{m.name}</td>{allDates.map(d=>{const rec=attendanceList.find(a=>a.member_id===m.id&&a.date===d);return<td key={d}>{rec?.status?<span className="dot-present">✓</span>:<span className="dot-absent"/>}</td>;})}</tr>)}</tbody>
               </table>
             </div>
           )}
@@ -519,15 +644,18 @@ function AttendancePage({members,sams,attendanceList,onToggle,onSetAll}){
   );
 }
 
+// ==================== SAM ATTENDANCE PAGE ====================
 function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam}){
   const [selectedDate,setSelectedDate]=useState(today());
   const [selectedSam,setSelectedSam]=useState(null);
   const [tab,setTab]=useState("check");
   useEffect(()=>{if(sams.length>0&&!selectedSam)setSelectedSam(sams[0].id);},[sams]);
-  const samMembers=members.filter(m=>m.sam_id===selectedSam);
+  // 가나다 정렬 + 군복무 제외
+  const samMembers=sortByName(members.filter(m=>m.sam_id===selectedSam&&!m.military));
   const isPresent=memberId=>!!samAttendanceList.find(a=>a.member_id===memberId&&a.sam_id===selectedSam&&a.date===selectedDate&&a.status);
   const presentCount=samMembers.filter(m=>isPresent(m.id)).length;
   const allDates=[...new Set(samAttendanceList.filter(a=>a.sam_id===selectedSam).map(a=>a.date))].sort().reverse().slice(0,5);
+
   return(
     <div>
       {sams.length===0?(<div className="empty-state"><div className="empty-state-icon">🌱</div><div className="empty-state-text">샘 그룹이 없습니다</div><div className="empty-state-sub">상단 + 버튼으로 샘을 추가하세요</div></div>):(
@@ -591,15 +719,18 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam}
   );
 }
 
-function NewMembersPage({newMembers,setModal,onDelete,onToggleEdu}){
+// ==================== NEW MEMBERS PAGE ====================
+function NewMembersPage({newMembers,sams,setModal,onDelete,onToggleEdu,onAssign}){
   const [search,setSearch]=useState("");
-  const filtered=newMembers.filter(m=>m.name.includes(search));
+  const filtered=sortByName(newMembers).filter(m=>m.name.includes(search));
+
   return(
     <div>
       <div className="search-bar"><span className="search-icon"><Icon name="users" size={16}/></span><input placeholder="이름으로 검색..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       {filtered.length===0?(<div className="empty-state"><div className="empty-state-icon">🌟</div><div className="empty-state-text">새가족이 없습니다</div><div className="empty-state-sub">우측 상단 + 버튼으로 등록하세요</div></div>):(
         filtered.map(m=>{
           const eduDone=[m.week1,m.week2,m.week3,m.week4].filter(Boolean).length;
+          const allDone = eduDone===4;
           return(
             <div key={m.id} className="card" style={{padding:"14px 14px 12px"}}>
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
@@ -624,6 +755,12 @@ function NewMembersPage({newMembers,setModal,onDelete,onToggleEdu}){
                   return<button key={i} className={`week-check ${done?"done":""}`} onClick={()=>onToggleEdu(m.id,i)}>{done?"✓":""}<br/><span style={{fontSize:11}}>{label}</span></button>;
                 })}
               </div>
+              {allDone&&(
+                <button className="assign-btn" onClick={()=>onAssign(m)}>
+                  <Icon name="assign" size={16} color="white"/>
+                  🎉 4주 완료! 샘 배정하기
+                </button>
+              )}
             </div>
           );
         })
@@ -632,6 +769,7 @@ function NewMembersPage({newMembers,setModal,onDelete,onToggleEdu}){
   );
 }
 
+// ==================== MODALS ====================
 function MemberFormModal({sams,initial,onSave,onClose}){
   const [name,setName]=useState(initial?.name||"");
   const [gender,setGender]=useState(initial?.gender||"male");
@@ -639,7 +777,8 @@ function MemberFormModal({sams,initial,onSave,onClose}){
   const [birthYear,setBirthYear]=useState(initial?.birth_year||"");
   const [birthday,setBirthday]=useState(initial?.birthday||"");
   const [samId,setSamId]=useState(initial?.sam_id||"");
-  const submit=()=>{if(!name.trim()){alert("이름을 입력해주세요");return;}onSave({name:name.trim(),gender,phone:phone.trim(),birthYear,birthday,samId});};
+  const [military,setMilitary]=useState(initial?.military||false);
+  const submit=()=>{if(!name.trim()){alert("이름을 입력해주세요");return;}onSave({name:name.trim(),gender,phone:phone.trim(),birthYear,birthday,samId,military});};
   return(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
@@ -650,9 +789,17 @@ function MemberFormModal({sams,initial,onSave,onClose}){
         <div className="form-group"><label className="form-label">전화번호 <span className="optional">(선택)</span></label><div className="input-with-icon"><span className="input-icon"><Icon name="phone" size={15}/></span><input className="form-input" type="tel" placeholder="010-0000-0000" value={phone} onChange={e=>setPhone(e.target.value)}/></div></div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">출생년도 <span className="optional">(선택)</span></label><input className="form-input" placeholder="예) 1998" type="number" value={birthYear} onChange={e=>setBirthYear(e.target.value)}/></div>
-          <div className="form-group"><label className="form-label">생일 <span className="optional">(선택)</span></label><input className="form-input" placeholder="MM/DD 예)03/15" value={birthday} onChange={e=>setBirthday(e.target.value)}/></div>
+          <div className="form-group"><label className="form-label">생일 <span className="optional">(선택)</span></label><input className="form-input" placeholder="MM/DD" value={birthday} onChange={e=>setBirthday(e.target.value)}/></div>
         </div>
         <div className="form-group"><label className="form-label">샘 배정 <span className="optional">(선택)</span></label><select className="form-select" value={samId} onChange={e=>setSamId(e.target.value)}><option value="">샘 선택</option>{sams.map(s=><option key={s.id} value={s.id}>{s.name}샘</option>)}</select></div>
+        {/* 군복무 토글 */}
+        <div className={`military-toggle ${military?"active":""}`} onClick={()=>setMilitary(!military)}>
+          <div className="military-toggle-label">
+            <Icon name="shield" size={18} color={military?"#4B5563":"#94A3B8"}/>
+            <span style={{fontSize:14,fontWeight:500,color:military?"#374151":"#94A3B8"}}>🪖 군복무 중</span>
+          </div>
+          <div className={`toggle-switch ${military?"on":""}`}><div className="toggle-knob"/></div>
+        </div>
         <button className="btn btn-primary" onClick={submit}><Icon name="check" size={16} color="white"/>{initial?"수정 완료":"등록하기"}</button>
       </div>
     </div>
@@ -691,10 +838,39 @@ function NewMemberFormModal({initial,onSave,onClose}){
         <div className="form-group"><label className="form-label">전화번호 <span className="optional">(선택)</span></label><div className="input-with-icon"><span className="input-icon"><Icon name="phone" size={15}/></span><input className="form-input" type="tel" placeholder="010-0000-0000" value={phone} onChange={e=>setPhone(e.target.value)}/></div></div>
         <div className="form-row">
           <div className="form-group"><label className="form-label">출생년도 <span className="optional">(선택)</span></label><input className="form-input" placeholder="예) 1998" type="number" value={birthYear} onChange={e=>setBirthYear(e.target.value)}/></div>
-          <div className="form-group"><label className="form-label">생일 <span className="optional">(선택)</span></label><input className="form-input" placeholder="MM/DD 예)03/15" value={birthday} onChange={e=>setBirthday(e.target.value)}/></div>
+          <div className="form-group"><label className="form-label">생일 <span className="optional">(선택)</span></label><input className="form-input" placeholder="MM/DD" value={birthday} onChange={e=>setBirthday(e.target.value)}/></div>
         </div>
         <div className="info-hint">💡 새가족 교육 4주 이수 체크는 등록 후 명단에서 직접 체크할 수 있습니다</div>
         <button className="btn btn-primary" onClick={submit}><Icon name="check" size={16} color="white"/>{initial?"수정 완료":"등록하기"}</button>
+      </div>
+    </div>
+  );
+}
+
+// 새가족 → 샘 배정 모달
+function AssignSamModal({sams, newMember, onAssign, onClose}){
+  const [samId, setSamId] = useState("");
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
+        <div className="modal-handle"/>
+        <div className="modal-title">🎉 샘 배정</div>
+        <div style={{background:"#ECFDF5",border:"1px solid #A7F3D0",borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:13,color:"#065F46"}}>
+          <strong>{newMember.name}</strong> 님이 4주 교육을 모두 마쳤습니다!<br/>샘을 배정하면 청년 명단으로 이동됩니다.
+        </div>
+        <div className="form-group">
+          <label className="form-label">배정할 샘 선택</label>
+          <select className="form-select" value={samId} onChange={e=>setSamId(e.target.value)}>
+            <option value="">샘을 선택하세요</option>
+            {sams.map(s=><option key={s.id} value={s.id}>{s.name}샘</option>)}
+          </select>
+        </div>
+        <button className="assign-btn" style={{marginTop:0}} onClick={()=>{if(!samId){alert("샘을 선택해주세요");return;}onAssign(newMember,samId);}}>
+          <Icon name="assign" size={16} color="white"/>샘 배정 완료
+        </button>
+        <button className="btn btn-secondary" style={{width:"100%",marginTop:8}} onClick={()=>onAssign(newMember,"")}>
+          샘 미배정으로 이동
+        </button>
       </div>
     </div>
   );
