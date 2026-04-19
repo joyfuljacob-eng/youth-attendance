@@ -288,7 +288,7 @@ function LoginPage({ onLogin }) {
         <div className="login-logo">
           <div className="login-logo-icon">✝</div>
           <div className="login-title">학익교회 청년부</div>
-          <div className="login-sub">출석 관리 시스템</div>
+          <div className="login-sub">예배 & 샘모임 관리 시스템</div>
         </div>
         {error && <div className="login-error">{error}</div>}
         <div className="form-group">
