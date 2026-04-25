@@ -630,20 +630,41 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
       {sams.length>0&&(
         <>
           <div className="section-header"><div className="section-title">🌱 샘별 인원 현황</div></div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:16}}>
             {sams.map(s=>{
               const total=members.filter(m=>m.sam_id===s.id).length;
               const active=members.filter(m=>m.sam_id===s.id&&!m.military).length;
               const mil=members.filter(m=>m.sam_id===s.id&&m.military).length;
               return(
-                <div key={s.id} style={{background:"var(--primary-light)",border:"1px solid #BFDBFE",borderRadius:"var(--radius)",padding:"12px 14px"}}>
-                  <div style={{fontSize:13,fontWeight:700,color:"var(--primary)",marginBottom:4}}>{s.name}샘</div>
-                  <div style={{fontSize:22,fontWeight:800,color:"var(--gray-900)",fontFamily:"'Montserrat',sans-serif",lineHeight:1}}>{total}<span style={{fontSize:13,fontWeight:500,color:"var(--gray-500)",marginLeft:2}}>명</span></div>
-                  {mil>0&&<div style={{fontSize:11,color:"#6B7280",marginTop:3}}>일반 {active}명 · 🪖 {mil}명</div>}
-                  {mil===0&&<div style={{fontSize:11,color:"var(--gray-400)",marginTop:3}}>전원 재적 중</div>}
+                <div key={s.id} style={{background:"var(--primary-light)",border:"1px solid #BFDBFE",borderRadius:"var(--radius)",padding:"8px 10px"}}>
+                  <div style={{fontSize:11,fontWeight:700,color:"var(--primary)",marginBottom:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{s.name}샘</div>
+                  <div style={{display:"flex",alignItems:"baseline",gap:2}}>
+                    <span style={{fontSize:20,fontWeight:800,color:"var(--gray-900)",fontFamily:"'Montserrat',sans-serif",lineHeight:1}}>{total}</span>
+                    <span style={{fontSize:11,color:"var(--gray-500)"}}>명</span>
+                  </div>
+                  {mil>0&&<div style={{fontSize:10,color:"#6B7280",marginTop:2}}>일반 {active} · 🪖{mil}</div>}
+                  {mil===0&&<div style={{fontSize:10,color:"var(--gray-400)",marginTop:2}}>전원 재적</div>}
                 </div>
               );
             })}
+            {/* 샘 미지정 카드 */}
+            {(()=>{
+              const unassigned=members.filter(m=>!m.sam_id);
+              const unassignedActive=unassigned.filter(m=>!m.military).length;
+              const unassignedMil=unassigned.filter(m=>m.military).length;
+              if(unassigned.length===0) return null;
+              return(
+                <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:"var(--radius)",padding:"8px 10px"}}>
+                  <div style={{fontSize:11,fontWeight:700,color:"#C2410C",marginBottom:2}}>미지정</div>
+                  <div style={{display:"flex",alignItems:"baseline",gap:2}}>
+                    <span style={{fontSize:20,fontWeight:800,color:"var(--gray-900)",fontFamily:"'Montserrat',sans-serif",lineHeight:1}}>{unassigned.length}</span>
+                    <span style={{fontSize:11,color:"var(--gray-500)"}}>명</span>
+                  </div>
+                  {unassignedMil>0&&<div style={{fontSize:10,color:"#6B7280",marginTop:2}}>일반 {unassignedActive} · 🪖{unassignedMil}</div>}
+                  {unassignedMil===0&&<div style={{fontSize:10,color:"#F97316",marginTop:2}}>샘 배정 필요</div>}
+                </div>
+              );
+            })()}
           </div>
         </>
       )}
@@ -664,6 +685,7 @@ function MembersPage({members,sams,setModal,onDelete,admin}){
     const ms=(m.name.includes(search)||(m.phone||"").includes(search));
     if(showMilitary) return ms && m.military;
     if(filterSam==="all") return ms && !m.military;
+    if(filterSam==="unassigned") return ms && !m.sam_id; // 미지정 (군복무 포함)
     // 특정 샘 선택 시 → 일반 청년 + 해당 샘 군복무자 모두 포함
     return ms && m.sam_id===filterSam;
   });
@@ -673,6 +695,7 @@ function MembersPage({members,sams,setModal,onDelete,admin}){
   const getSamCount=samId=>members.filter(m=>m.sam_id===samId).length;
   const getSamActiveCount=samId=>members.filter(m=>m.sam_id===samId&&!m.military).length;
   const getSamMilitaryCount=samId=>members.filter(m=>m.sam_id===samId&&m.military).length;
+  const unassignedCount=members.filter(m=>!m.sam_id).length;
   return(
     <div>
       <div className="search-bar"><span className="search-icon"><Icon name="users" size={16}/></span><input placeholder="이름 또는 전화번호 검색..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
@@ -694,9 +717,17 @@ function MembersPage({members,sams,setModal,onDelete,admin}){
               </button>
             );
           })}
+          {/* 미지정 필터 버튼 */}
+          {unassignedCount>0&&(
+            <button className={`btn btn-sm ${filterSam==="unassigned"?"btn-primary":"btn-secondary"}`}
+              style={{whiteSpace:"nowrap",padding:"6px 14px",background:filterSam==="unassigned"?"#EA580C":"",borderColor:filterSam!=="unassigned"?"#FED7AA":"",color:filterSam==="unassigned"?"white":"#C2410C"}}
+              onClick={()=>setFilterSam("unassigned")}>
+              ⚠️ 미지정 ({unassignedCount}명)
+            </button>
+          )}
         </div>
       )}
-      {filtered.length===0?(<div className="empty-state"><div className="empty-state-icon">{showMilitary?"🪖":"👥"}</div><div className="empty-state-text">{showMilitary?"군복무 청년이 없습니다":"청년이 없습니다"}</div></div>):(
+      {filtered.length===0?(<div className="empty-state"><div className="empty-state-icon">{showMilitary?"🪖":filterSam==="unassigned"?"⚠️":"👥"}</div><div className="empty-state-text">{showMilitary?"군복무 청년이 없습니다":filterSam==="unassigned"?"샘 미지정 청년이 없습니다":"청년이 없습니다"}</div></div>):(
         <>
           {/* 일반 청년 먼저 */}
           {filtered.filter(m=>!m.military).map(m=>(
@@ -715,8 +746,8 @@ function MembersPage({members,sams,setModal,onDelete,admin}){
               {admin&&(<div className="member-actions"><button className="btn-icon" onClick={()=>setModal({type:"editMember",member:m})}><Icon name="edit" size={14}/></button><button className="btn-icon danger" onClick={()=>onDelete(m.id)}><Icon name="trash" size={14}/></button></div>)}
             </div>
           ))}
-          {/* 특정 샘 선택 시 군복무자 맨 아래 구분선과 함께 표시 */}
-          {filterSam!=="all" && filtered.filter(m=>m.military).length>0 && (
+          {/* 특정 샘 선택 또는 미지정 선택 시 군복무자 맨 아래 구분선과 함께 표시 */}
+          {(filterSam!=="all") && filtered.filter(m=>m.military).length>0 && (
             <>
               <div className="military-divider">
                 <div className="military-divider-line"/>
