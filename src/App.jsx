@@ -65,16 +65,16 @@ const css = `
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   :root{--primary:#2563EB;--primary-light:#EFF6FF;--primary-dark:#1D4ED8;--danger:#EF4444;--danger-light:#FEF2F2;--success:#10B981;--success-light:#ECFDF5;--warning:#F59E0B;--warning-light:#FFFBEB;--military:#6B7280;--military-light:#F3F4F6;--gray-50:#F8FAFC;--gray-100:#F1F5F9;--gray-200:#E2E8F0;--gray-300:#CBD5E1;--gray-400:#94A3B8;--gray-500:#64748B;--gray-600:#475569;--gray-700:#334155;--gray-800:#1E293B;--gray-900:#0F172A;--white:#FFFFFF;--radius:12px;--radius-lg:16px;--shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.06);--shadow-md:0 4px 6px rgba(0,0,0,0.07),0 2px 4px rgba(0,0,0,0.06);}
   html,body,#root{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--gray-50);color:var(--gray-800);-webkit-font-smoothing:antialiased;}
-  .app-wrapper{max-width:430px;margin:0 auto;min-height:100vh;background:var(--white);display:flex;flex-direction:column;overflow:hidden;}
-  .app-header{background:var(--white);padding:16px 20px 12px;border-bottom:1px solid var(--gray-100);position:sticky;top:0;z-index:50;}
+  .app-wrapper{max-width:430px;margin:0 auto;height:100vh;background:var(--white);display:flex;flex-direction:column;overflow:hidden;position:relative;}
+  .app-header{background:var(--white);padding:16px 20px 12px;border-bottom:1px solid var(--gray-100);position:sticky;top:0;z-index:50;flex-shrink:0;}
   .header-top{display:flex;align-items:center;gap:10px;}
   .header-title-block{flex:1;}
   .header-title{font-family:'Montserrat',sans-serif;font-size:18px;font-weight:700;color:var(--gray-900);letter-spacing:-0.3px;}
   .header-sub{font-size:12px;color:var(--gray-400);margin-top:1px;}
-  .bottom-nav{background:var(--white);border-top:1px solid var(--gray-100);display:flex;padding:8px 0 max(8px,env(safe-area-inset-bottom));position:sticky;bottom:0;z-index:50;}
+  .bottom-nav{background:var(--white);border-top:1px solid var(--gray-100);display:flex;padding:8px 0 max(8px,env(safe-area-inset-bottom));flex-shrink:0;z-index:50;}
   .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;cursor:pointer;background:none;border:none;color:var(--gray-400);font-size:10px;font-family:'Noto Sans KR',sans-serif;transition:color 0.15s;}
   .nav-item.active{color:var(--primary);}
-  .page-content{flex:1;overflow-y:auto;padding:16px;padding-bottom:24px;}
+  .page-content{flex:1;overflow-y:auto;padding:16px;padding-bottom:24px;-webkit-overflow-scrolling:touch;}
   .card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);}
   .btn{border:none;border-radius:var(--radius);font-family:'Noto Sans KR',sans-serif;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;white-space:nowrap;}
   .btn-primary{background:var(--primary);color:var(--white);padding:12px 20px;font-size:14px;width:100%;}
@@ -288,7 +288,7 @@ function LoginPage({ onLogin }) {
         <div className="login-logo">
           <div className="login-logo-icon">✝</div>
           <div className="login-title">학익교회 청년부</div>
-          <div className="login-sub">예배 & 샘모임 관리 시스템</div>
+          <div className="login-sub">출석 관리 시스템</div>
         </div>
         {error && <div className="login-error">{error}</div>}
         <div className="form-group">
@@ -626,6 +626,27 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
         <button className="quick-action" onClick={()=>setActiveNav("members")}><div className="quick-action-icon" style={{background:"#FDF2F8"}}><Icon name="users" size={20} color="#DB2777"/></div><div className="quick-action-label">청년 명단</div></button>
         <button className="quick-action" onClick={()=>setActiveNav("newmembers")}><div className="quick-action-icon" style={{background:"#FFFBEB"}}><Icon name="newuser" size={20} color="#D97706"/></div><div className="quick-action-label">새가족 관리</div></button>
       </div>
+      {/* 샘별 인원수 */}
+      {sams.length>0&&(
+        <>
+          <div className="section-header"><div className="section-title">🌱 샘별 인원 현황</div></div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
+            {sams.map(s=>{
+              const total=members.filter(m=>m.sam_id===s.id).length;
+              const active=members.filter(m=>m.sam_id===s.id&&!m.military).length;
+              const mil=members.filter(m=>m.sam_id===s.id&&m.military).length;
+              return(
+                <div key={s.id} style={{background:"var(--primary-light)",border:"1px solid #BFDBFE",borderRadius:"var(--radius)",padding:"12px 14px"}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"var(--primary)",marginBottom:4}}>{s.name}샘</div>
+                  <div style={{fontSize:22,fontWeight:800,color:"var(--gray-900)",fontFamily:"'Montserrat',sans-serif",lineHeight:1}}>{total}<span style={{fontSize:13,fontWeight:500,color:"var(--gray-500)",marginLeft:2}}>명</span></div>
+                  {mil>0&&<div style={{fontSize:11,color:"#6B7280",marginTop:3}}>일반 {active}명 · 🪖 {mil}명</div>}
+                  {mil===0&&<div style={{fontSize:11,color:"var(--gray-400)",marginTop:3}}>전원 재적 중</div>}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
       {thisMonthBirthdays.length>0&&(<><div className="section-header"><div className="section-title">🎂 {parseInt(mm)}월 생일자</div><span className="badge badge-yellow">{thisMonthBirthdays.length}명</span></div>{thisMonthBirthdays.map(m=>(<div key={m.id} className={`month-birthday-item ${m.isToday?"today":""}`}><div className={`birthday-date-badge ${m.isToday?"today":""}`}><span className="bday-month">{mm}월</span><span className="bday-day">{m.dayNum}</span></div><div className={`member-avatar ${m.gender}`} style={{width:34,height:34,fontSize:13}}>{m.name.charAt(0)}</div><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:"#1E293B"}}>{m.name} {m.isToday&&"🎉"}</div><div style={{fontSize:12,color:"#94A3B8"}}>{m.gender==="male"?"남":"여"}{m.birth_year&&` · ${m.birth_year}년생`}{m.isToday&&<span style={{color:"#F97316",fontWeight:600}}> · 오늘!</span>}{m.isPast&&!m.isToday&&<span style={{color:"#CBD5E1"}}> · 지남</span>}</div></div>{m.phone&&<a href={`tel:${m.phone}`} style={{flexShrink:0,color:"#2563EB"}}><Icon name="phone" size={18}/></a>}</div>))}<div style={{marginBottom:16}}/></>)}
       {alerts.length>0&&(<><div className="section-header"><div className="section-title">⚠️ 장기 결석 알림</div><span className="badge badge-red">{alerts.length}명</span></div>{alerts.map(({member,weeks})=>(<div key={member.id} className={`alert-item ${weeks>=8?"weekly":"warn"}`}><div style={{marginTop:1}}><Icon name="bell" size={16} color={weeks>=8?"#EF4444":"#F59E0B"}/></div><div className="alert-text"><div className="alert-title">{member.name}</div><div className="alert-sub">{weeks>=8?`🔴 ${weeks}주째 결석 — 매주 확인 필요`:`🟡 ${weeks}주째 결석 — 연락 필요`}{member.phone&&<> · <a href={`tel:${member.phone}`} className="phone-link">{member.phone}</a></>}</div></div></div>))}</>)}
     </div>
@@ -638,9 +659,20 @@ function MembersPage({members,sams,setModal,onDelete,admin}){
   const [filterSam,setFilterSam]=useState("all");
   const [showMilitary,setShowMilitary]=useState(false);
   const sorted=sortByName(members);
-  const filtered=sorted.filter(m=>{const ms=(m.name.includes(search)||(m.phone||"").includes(search));const ss=(filterSam==="all"||m.sam_id===filterSam);if(showMilitary)return ms&&m.military;return ms&&ss&&!m.military;});
+  // 일반 탭: 샘 선택 시 해당 샘의 군복무자도 포함
+  const filtered=sorted.filter(m=>{
+    const ms=(m.name.includes(search)||(m.phone||"").includes(search));
+    if(showMilitary) return ms && m.military;
+    if(filterSam==="all") return ms && !m.military;
+    // 특정 샘 선택 시 → 일반 청년 + 해당 샘 군복무자 모두 포함
+    return ms && m.sam_id===filterSam;
+  });
   const militaryList=sortByName(members.filter(m=>m.military));
   const getSamName=samId=>sams.find(s=>s.id===samId)?.name||"";
+  // 샘별 인원수 계산 (일반+군복무 합산)
+  const getSamCount=samId=>members.filter(m=>m.sam_id===samId).length;
+  const getSamActiveCount=samId=>members.filter(m=>m.sam_id===samId&&!m.military).length;
+  const getSamMilitaryCount=samId=>members.filter(m=>m.sam_id===samId&&m.military).length;
   return(
     <div>
       <div className="search-bar"><span className="search-icon"><Icon name="users" size={16}/></span><input placeholder="이름 또는 전화번호 검색..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
@@ -648,24 +680,84 @@ function MembersPage({members,sams,setModal,onDelete,admin}){
         <button className={`tab-item ${!showMilitary?"active":""}`} onClick={()=>setShowMilitary(false)}>일반 청년 ({members.filter(m=>!m.military).length}명)</button>
         <button className={`tab-item ${showMilitary?"active":""}`} onClick={()=>setShowMilitary(true)}>🪖 군복무 ({militaryList.length}명)</button>
       </div>
-      {!showMilitary&&(<div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}><button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam("all")}>전체</button>{sams.map(s=><button key={s.id} className={`btn btn-sm ${filterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam(s.id)}>{s.name}샘</button>)}</div>)}
+      {!showMilitary&&(
+        <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>
+          <button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam("all")}>
+            전체 ({members.filter(m=>!m.military).length}명)
+          </button>
+          {sams.map(s=>{
+            const total=getSamCount(s.id);
+            const mil=getSamMilitaryCount(s.id);
+            return(
+              <button key={s.id} className={`btn btn-sm ${filterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam(s.id)}>
+                {s.name}샘 ({total}명{mil>0?` 🪖${mil}`:""})
+              </button>
+            );
+          })}
+        </div>
+      )}
       {filtered.length===0?(<div className="empty-state"><div className="empty-state-icon">{showMilitary?"🪖":"👥"}</div><div className="empty-state-text">{showMilitary?"군복무 청년이 없습니다":"청년이 없습니다"}</div></div>):(
-        filtered.map(m=>(
-          <div key={m.id} className={`member-item ${m.military?"military-item":""}`}>
-            <div className={`member-avatar ${m.military?"military-av":m.gender}`}>{m.military?"🪖":m.name.charAt(0)}</div>
-            <div className="member-info">
-              <div className={`member-name ${m.military?"military-name":""}`}>{m.name}</div>
-              <div className="member-meta">
-                {m.military?<span className="badge badge-military">🪖 군복무 중</span>:<span className={`badge ${m.gender==="male"?"badge-blue":"badge-pink"}`}>{m.gender==="male"?"남":"여"}</span>}
-                {!m.military&&getSamName(m.sam_id)&&<span className="badge badge-green" style={{marginLeft:4}}>{getSamName(m.sam_id)}샘</span>}
-                {m.birth_year&&<span style={{marginLeft:4}}>· {m.birth_year}년생</span>}
-                {m.birthday&&<span style={{marginLeft:4}}>· 🎂{m.birthday}</span>}
+        <>
+          {/* 일반 청년 먼저 */}
+          {filtered.filter(m=>!m.military).map(m=>(
+            <div key={m.id} className="member-item">
+              <div className={`member-avatar ${m.gender}`}>{m.name.charAt(0)}</div>
+              <div className="member-info">
+                <div className="member-name">{m.name}</div>
+                <div className="member-meta">
+                  <span className={`badge ${m.gender==="male"?"badge-blue":"badge-pink"}`}>{m.gender==="male"?"남":"여"}</span>
+                  {getSamName(m.sam_id)&&<span className="badge badge-green" style={{marginLeft:4}}>{getSamName(m.sam_id)}샘</span>}
+                  {m.birth_year&&<span style={{marginLeft:4}}>· {m.birth_year}년생</span>}
+                  {m.birthday&&<span style={{marginLeft:4}}>· 🎂{m.birthday}</span>}
+                </div>
+                {m.phone&&<div style={{marginTop:3,display:"flex",alignItems:"center",gap:4}}><Icon name="phone" size={11} color="#94A3B8"/><a href={`tel:${m.phone}`} className="phone-link">{m.phone}</a></div>}
               </div>
-              {m.phone&&<div style={{marginTop:3,display:"flex",alignItems:"center",gap:4}}><Icon name="phone" size={11} color="#94A3B8"/><a href={`tel:${m.phone}`} className="phone-link">{m.phone}</a></div>}
+              {admin&&(<div className="member-actions"><button className="btn-icon" onClick={()=>setModal({type:"editMember",member:m})}><Icon name="edit" size={14}/></button><button className="btn-icon danger" onClick={()=>onDelete(m.id)}><Icon name="trash" size={14}/></button></div>)}
             </div>
-            {admin&&(<div className="member-actions"><button className="btn-icon" onClick={()=>setModal({type:"editMember",member:m})}><Icon name="edit" size={14}/></button><button className="btn-icon danger" onClick={()=>onDelete(m.id)}><Icon name="trash" size={14}/></button></div>)}
-          </div>
-        ))
+          ))}
+          {/* 특정 샘 선택 시 군복무자 맨 아래 구분선과 함께 표시 */}
+          {filterSam!=="all" && filtered.filter(m=>m.military).length>0 && (
+            <>
+              <div className="military-divider">
+                <div className="military-divider-line"/>
+                <div className="military-divider-text">🪖 군복무 중</div>
+                <div className="military-divider-line"/>
+              </div>
+              {filtered.filter(m=>m.military).map(m=>(
+                <div key={m.id} className="member-item military-item">
+                  <div className="member-avatar military-av">🪖</div>
+                  <div className="member-info">
+                    <div className="member-name military-name">{m.name}</div>
+                    <div className="member-meta">
+                      <span className="badge badge-military">🪖 군복무 중</span>
+                      {m.birth_year&&<span style={{marginLeft:4}}>· {m.birth_year}년생</span>}
+                      {m.birthday&&<span style={{marginLeft:4}}>· 🎂{m.birthday}</span>}
+                    </div>
+                    {m.phone&&<div style={{marginTop:3,display:"flex",alignItems:"center",gap:4}}><Icon name="phone" size={11} color="#94A3B8"/><a href={`tel:${m.phone}`} className="phone-link">{m.phone}</a></div>}
+                  </div>
+                  {admin&&(<div className="member-actions"><button className="btn-icon" onClick={()=>setModal({type:"editMember",member:m})}><Icon name="edit" size={14}/></button><button className="btn-icon danger" onClick={()=>onDelete(m.id)}><Icon name="trash" size={14}/></button></div>)}
+                </div>
+              ))}
+            </>
+          )}
+          {/* 군복무 탭에서는 군복무자만 표시 */}
+          {showMilitary && filtered.map(m=>(
+            <div key={m.id} className="member-item military-item">
+              <div className="member-avatar military-av">🪖</div>
+              <div className="member-info">
+                <div className="member-name military-name">{m.name}</div>
+                <div className="member-meta">
+                  <span className="badge badge-military">🪖 군복무 중</span>
+                  {getSamName(m.sam_id)&&<span className="badge badge-green" style={{marginLeft:4}}>{getSamName(m.sam_id)}샘</span>}
+                  {m.birth_year&&<span style={{marginLeft:4}}>· {m.birth_year}년생</span>}
+                  {m.birthday&&<span style={{marginLeft:4}}>· 🎂{m.birthday}</span>}
+                </div>
+                {m.phone&&<div style={{marginTop:3,display:"flex",alignItems:"center",gap:4}}><Icon name="phone" size={11} color="#94A3B8"/><a href={`tel:${m.phone}`} className="phone-link">{m.phone}</a></div>}
+              </div>
+              {admin&&(<div className="member-actions"><button className="btn-icon" onClick={()=>setModal({type:"editMember",member:m})}><Icon name="edit" size={14}/></button><button className="btn-icon danger" onClick={()=>onDelete(m.id)}><Icon name="trash" size={14}/></button></div>)}
+            </div>
+          ))}
+        </>
       )}
     </div>
   );
