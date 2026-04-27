@@ -1098,6 +1098,7 @@ function MemberDetailPage({ member, sams, userEmail, onClose }) {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingNote, setEditingNote] = useState(null); // 수정할 노트
 
   const viewAll = canViewAllNotes(userEmail);
   const viewOwn = canViewOwnNotes(userEmail);
@@ -1117,6 +1118,16 @@ function MemberDetailPage({ member, sams, userEmail, onClose }) {
   };
 
   useEffect(() => { fetchNotes(); }, [member.id]);
+
+  // 삭제
+  const deleteNote = async (noteId) => {
+    if (!window.confirm("이 심방 기록을 삭제하시겠습니까?")) return;
+    await supabase.from("pastoral_notes").delete().eq("id", noteId);
+    await fetchNotes();
+  };
+
+  // 본인 기록 또는 전체열람자 여부
+  const canEditNote = (note) => viewAll || note.author_email === userEmail;
 
   const methodLabel = (m) => {
     if (m === "face") return { label: "대면", cls: "face" };
@@ -1140,7 +1151,7 @@ function MemberDetailPage({ member, sams, userEmail, onClose }) {
       <div className="detail-content">
         {/* 청년 프로필 카드 */}
         <div className="member-profile-card">
-          <div className={`member-profile-avatar`}>
+          <div className="member-profile-avatar">
             {member.military ? "🪖" : member.name.charAt(0)}
           </div>
           <div>
@@ -1180,11 +1191,27 @@ function MemberDetailPage({ member, sams, userEmail, onClose }) {
         ) : (
           notes.map(note => {
             const { label, cls } = methodLabel(note.method);
+            const editable = canEditNote(note);
             return (
               <div key={note.id} className="note-card">
                 <div className="note-card-header">
                   <div className="note-date">📅 {formatDate(note.date)}</div>
-                  {label && <span className={`note-method ${cls}`}>{label}</span>}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {label && <span className={`note-method ${cls}`}>{label}</span>}
+                    {/* 수정/삭제 버튼 — 본인 기록 또는 전체열람자만 표시 */}
+                    {editable && (
+                      <>
+                        <button className="btn-icon" style={{ width: 28, height: 28 }}
+                          onClick={() => { setEditingNote(note); setShowForm(true); }}>
+                          <Icon name="edit" size={13} />
+                        </button>
+                        <button className="btn-icon danger" style={{ width: 28, height: 28 }}
+                          onClick={() => deleteNote(note.id)}>
+                          <Icon name="trash" size={13} />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
                 {note.content && (
                   <div className="note-section">
@@ -1209,43 +1236,57 @@ function MemberDetailPage({ member, sams, userEmail, onClose }) {
 
       {/* 작성 버튼 (권한 있는 사람만) */}
       {canWrite && !showForm && (
-        <button className="fab" onClick={() => setShowForm(true)}>
+        <button className="fab" onClick={() => { setEditingNote(null); setShowForm(true); }}>
           <Icon name="plus" size={22} color="white" />
         </button>
       )}
 
-      {/* 심방 기록 작성 모달 */}
+      {/* 심방 기록 작성/수정 모달 */}
       {showForm && (
         <PastoralNoteForm
           memberId={member.id}
           userEmail={userEmail}
-          onSave={async () => { await fetchNotes(); setShowForm(false); }}
-          onClose={() => setShowForm(false)}
+          initial={editingNote}
+          onSave={async () => { await fetchNotes(); setShowForm(false); setEditingNote(null); }}
+          onClose={() => { setShowForm(false); setEditingNote(null); }}
         />
       )}
     </div>
   );
 }
 
-// ==================== 심방 기록 작성 폼 ====================
-function PastoralNoteForm({ memberId, userEmail, onSave, onClose }) {
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [method, setMethod] = useState("face");
-  const [content, setContent] = useState("");
-  const [prayer, setPrayer] = useState("");
+// ==================== 심방 기록 작성/수정 폼 ====================
+function PastoralNoteForm({ memberId, userEmail, initial, onSave, onClose }) {
+  const [date, setDate] = useState(initial?.date || new Date().toISOString().split("T")[0]);
+  const [method, setMethod] = useState(initial?.method || "face");
+  const [content, setContent] = useState(initial?.content || "");
+  const [prayer, setPrayer] = useState(initial?.prayer || "");
   const [saving, setSaving] = useState(false);
+
+  const isEdit = !!initial;
 
   const submit = async () => {
     if (!content.trim() && !prayer.trim()) { alert("내용 또는 기도제목을 입력해주세요"); return; }
     setSaving(true);
-    await supabase.from("pastoral_notes").insert([{
-      member_id: memberId,
-      date,
-      method,
-      content: content.trim(),
-      prayer: prayer.trim(),
-      author_email: userEmail,
-    }]);
+    if (isEdit) {
+      // 수정
+      await supabase.from("pastoral_notes").update({
+        date,
+        method,
+        content: content.trim(),
+        prayer: prayer.trim(),
+      }).eq("id", initial.id);
+    } else {
+      // 신규 작성
+      await supabase.from("pastoral_notes").insert([{
+        member_id: memberId,
+        date,
+        method,
+        content: content.trim(),
+        prayer: prayer.trim(),
+        author_email: userEmail,
+      }]);
+    }
     setSaving(false);
     onSave();
   };
@@ -1260,7 +1301,7 @@ function PastoralNoteForm({ memberId, userEmail, onSave, onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-sheet" onClick={e => e.stopPropagation()}>
         <div className="modal-handle" />
-        <div className="modal-title">📝 심방 기록 작성</div>
+        <div className="modal-title">{isEdit ? "📝 심방 기록 수정" : "📝 심방 기록 작성"}</div>
 
         <div className="form-group">
           <label className="form-label">날짜</label>
@@ -1302,7 +1343,7 @@ function PastoralNoteForm({ memberId, userEmail, onSave, onClose }) {
 
         <button className="btn btn-primary" onClick={submit} disabled={saving}>
           <Icon name="check" size={16} color="white" />
-          {saving ? "저장 중..." : "기록 저장"}
+          {saving ? "저장 중..." : isEdit ? "수정 완료" : "기록 저장"}
         </button>
       </div>
     </div>
