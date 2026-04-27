@@ -106,11 +106,11 @@ const css = `
   .gender-btn{flex:1;padding:10px;border:1.5px solid var(--gray-200);border-radius:var(--radius);background:var(--white);cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:700;color:var(--gray-500);display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;}
   .gender-btn.male.active{border-color:#3B82F6;background:#EFF6FF;color:#2563EB;}
   .gender-btn.female.active{border-color:#EC4899;background:#FDF2F8;color:#DB2777;}
-  .member-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--gray-200);border-radius:var(--radius);margin-bottom:8px;background:var(--white);transition:all 0.15s;}
+  .member-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--gray-200);border-radius:var(--radius);margin-bottom:6px;background:var(--white);transition:all 0.15s;}
   .member-item:hover{border-color:var(--primary);background:var(--primary-light);}
   .member-item.military-item{background:var(--military-light);border-color:var(--gray-300);}
   .member-item.military-item:hover{border-color:var(--military);background:#E5E7EB;}
-  .member-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;}
+  .member-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;}
   .member-avatar.male{background:#DBEAFE;color:#1D4ED8;}
   .member-avatar.female{background:#FCE7F3;color:#9D174D;}
   .member-avatar.military-av{background:#D1D5DB;color:#4B5563;}
@@ -613,7 +613,7 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
         <div className="home-banner-sub">{new Date().toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"})}</div>
       </div>
       {todayBirthdays.length>0&&(<div className="birthday-banner"><div className="birthday-banner-title">🎂 오늘의 생일자</div>{todayBirthdays.map(m=>(<div key={m.id} className="birthday-person"><div className="birthday-avatar">{m.name.charAt(0)}</div><div><div className="birthday-name">🎉 {m.name}</div><div className="birthday-detail">{m.gender==="male"?"남":"여"}{m.birth_year&&` · ${m.birth_year}년생`}{m.phone&&` · ${m.phone}`}</div></div></div>))}</div>)}
-      {militaryCount>0&&(<div className="military-banner"><Icon name="shield" size={22} color="white"/><div><div className="military-banner-text">🪖 군복무 중 {militaryCount}명</div><div className="military-banner-sub">결석 카운트에서 제외됩니다</div></div></div>)}
+      {militaryCount>0&&(<div className="military-banner"><Icon name="shield" size={22} color="white"/><div><div className="military-banner-text">🪖 군복무 중 {militaryCount}명</div><div className="military-banner-sub">예배 & 샘모임 카운트에서 제외됩니다</div></div></div>)}
       <div className="stats-grid">
         <div className="stat-card"><div className="stat-number">{members.length}</div><div className="stat-label">전체 청년</div></div>
         <div className="stat-card"><div className="stat-number" style={{color:"#10B981"}}>{presentToday}</div><div className="stat-label">오늘 출석</div></div>
@@ -900,14 +900,37 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,
                         return(
                           <div key={m.id} className="member-item" style={{cursor:admin?"pointer":"default"}} onClick={()=>admin&&onToggle(m.id,selectedSam,selectedDate)}>
                             <div className={`member-avatar ${m.gender}`}>{m.name.charAt(0)}</div>
-                            <div className="member-info"><div className="member-name">{m.name}</div><div className="member-meta">{m.gender==="male"?"남":"여"}{m.birth_year&&` · ${m.birth_year}년생`}{m.phone&&<> · <a href={`tel:${m.phone}`} className="phone-link" onClick={e=>e.stopPropagation()}>{m.phone}</a></>}</div></div>
+                            <div className="member-info">
+                              <div className="member-name">{m.name}</div>
+                              <div className="member-meta">
+                                <span className={`badge ${m.gender==="male"?"badge-blue":"badge-pink"}`} style={{marginRight:4}}>{m.gender==="male"?"남":"여"}</span>
+                                <span className="badge badge-green">{sams.find(s=>s.id===selectedSam)?.name}샘</span>
+                              </div>
+                            </div>
                             <button className={`attendance-check-btn ${present?"checked":""}`} style={{cursor:admin?"pointer":"default"}} onClick={e=>{e.stopPropagation();admin&&onToggle(m.id,selectedSam,selectedDate);}}>
                               {present&&<Icon name="check" size={14}/>}
                             </button>
                           </div>
                         );
                       })}
-                      {militaryMembers.length>0&&(<><div className="military-divider"><div className="military-divider-line"/><div className="military-divider-text">🪖 군복무 중</div><div className="military-divider-line"/></div>{militaryMembers.map(m=>(<div key={m.id} className="member-item military-item"><div className="member-avatar military-av">🪖</div><div className="member-info"><div className="member-name military-name">{m.name}</div><div className="member-meta"><span className="badge badge-military">군복무 중</span>{m.birth_year&&<span style={{marginLeft:4}}>· {m.birth_year}년생</span>}{m.phone&&<> · <a href={`tel:${m.phone}`} className="phone-link">{m.phone}</a></>}</div></div><div className="attendance-check-btn military-skip">🪖</div></div>))}</>)}
+                      {militaryMembers.length>0&&(
+                        <>
+                          <div className="military-divider"><div className="military-divider-line"/><div className="military-divider-text">🪖 군복무 중</div><div className="military-divider-line"/></div>
+                          {militaryMembers.map(m=>(
+                            <div key={m.id} className="member-item military-item">
+                              <div className="member-avatar military-av">🪖</div>
+                              <div className="member-info">
+                                <div className="member-name military-name">{m.name}</div>
+                                <div className="member-meta">
+                                  <span className="badge badge-military" style={{marginRight:4}}>군복무 중</span>
+                                  <span className="badge badge-green">{sams.find(s=>s.id===selectedSam)?.name}샘</span>
+                                </div>
+                              </div>
+                              <div className="attendance-check-btn military-skip">🪖</div>
+                            </div>
+                          ))}
+                        </>
+                      )}
                     </>
                   )}
                 </>
