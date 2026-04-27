@@ -903,7 +903,6 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,
                             <div className="member-info">
                               <div className="member-name">{m.name}</div>
                               <div className="member-meta">
-                                <span className={`badge ${m.gender==="male"?"badge-blue":"badge-pink"}`} style={{marginRight:4}}>{m.gender==="male"?"남":"여"}</span>
                                 <span className="badge badge-green">{sams.find(s=>s.id===selectedSam)?.name}샘</span>
                               </div>
                             </div>
@@ -922,7 +921,6 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,
                               <div className="member-info">
                                 <div className="member-name military-name">{m.name}</div>
                                 <div className="member-meta">
-                                  <span className="badge badge-military" style={{marginRight:4}}>군복무 중</span>
                                   <span className="badge badge-green">{sams.find(s=>s.id===selectedSam)?.name}샘</span>
                                 </div>
                               </div>
