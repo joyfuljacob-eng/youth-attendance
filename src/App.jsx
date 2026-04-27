@@ -462,6 +462,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null); // 상세 페이지용
+  const [noteCountMap, setNoteCountMap] = useState({}); // 청년별 심방 기록 건수
+  const [recentNotes, setRecentNotes] = useState([]); // 홈 최근 심방 기록
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -493,6 +495,22 @@ export default function App() {
     if(s.data) setSams(s.data);
     if(a.data) setAttendanceList(a.data);
     if(sa.data) setSamAttendanceList(sa.data);
+
+    // 심방 기록 건수 및 최근 기록 fetch
+    const { data: notesData } = await supabase
+      .from("pastoral_notes")
+      .select("id, member_id, date, author_email")
+      .order("date", { ascending: false });
+    if(notesData) {
+      // 청년별 건수 맵
+      const countMap = {};
+      notesData.forEach(n => {
+        countMap[n.member_id] = (countMap[n.member_id] || 0) + 1;
+      });
+      setNoteCountMap(countMap);
+      // 최근 5건 (홈 화면용)
+      setRecentNotes(notesData.slice(0, 5));
+    }
     setLoading(false);
   };
 
@@ -549,8 +567,8 @@ export default function App() {
   };
 
   const pages = {
-    home:<HomePage members={members} newMembers={newMembers} sams={sams} attendanceList={attendanceList} setActiveNav={setActiveNav} todayBirthdays={todayBirthdays} />,
-    members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} />,
+    home:<HomePage members={members} newMembers={newMembers} sams={sams} attendanceList={attendanceList} setActiveNav={setActiveNav} todayBirthdays={todayBirthdays} userEmail={user?.email} recentNotes={recentNotes} onSelectMember={setSelectedMember} />,
+    members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} noteCountMap={noteCountMap} />,
     attendance:<AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} />,
     sam:<SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} />,
     newmembers:<NewMembersPage newMembers={newMembers} sams={sams} setModal={setModal} onDelete={deleteNewMember} onToggleEdu={toggleEdu} onAssign={(nm)=>setModal({type:"assignSam",newMember:nm})} admin={admin} />,
@@ -651,7 +669,7 @@ function MyAccountModal({ userId, admin, onChangePw, onLogout, onClose }) {
 }
 
 // ==================== HOME PAGE ====================
-function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirthdays}){
+function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirthdays,userEmail,recentNotes,onSelectMember}){
   const todayStr=today();
   const presentToday=attendanceList.filter(a=>a.date===todayStr&&a.status).length;
   const allPeople=[...members,...newMembers];
@@ -659,6 +677,11 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
   const now=new Date(); const mm=String(now.getMonth()+1).padStart(2,"0");
   const militaryCount=members.filter(m=>m.military).length;
   const alerts=members.filter(m=>!m.military).map(m=>{const w=getAbsentWeeks(m.id,attendanceList);return(w!==null&&w>=4)?{member:m,weeks:w}:null;}).filter(Boolean).sort((a,b)=>b.weeks-a.weeks);
+
+  // 심방 권한 있는 사람만 최근 심방 카드 표시
+  const showNotes = canWriteNotes(userEmail) || canViewAllNotes(userEmail);
+  const authorLabel = (email) => email?.replace("@hiyouth.com","") || "";
+
   return(
     <div>
       <div className="home-banner">
@@ -723,12 +746,55 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
       )}
       {thisMonthBirthdays.length>0&&(<><div className="section-header"><div className="section-title">🎂 {parseInt(mm)}월 생일자</div><span className="badge badge-yellow">{thisMonthBirthdays.length}명</span></div>{thisMonthBirthdays.map(m=>(<div key={m.id} className={`month-birthday-item ${m.isToday?"today":""}`}><div className={`birthday-date-badge ${m.isToday?"today":""}`}><span className="bday-month">{mm}월</span><span className="bday-day">{m.dayNum}</span></div><div className={`member-avatar ${m.gender}`} style={{width:34,height:34,fontSize:13}}>{m.name.charAt(0)}</div><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:"#1E293B"}}>{m.name} {m.isToday&&"🎉"}</div><div style={{fontSize:12,color:"#94A3B8"}}>{m.gender==="male"?"남":"여"}{m.birth_year&&` · ${m.birth_year}년생`}{m.isToday&&<span style={{color:"#F97316",fontWeight:600}}> · 오늘!</span>}{m.isPast&&!m.isToday&&<span style={{color:"#CBD5E1"}}> · 지남</span>}</div></div>{m.phone&&<a href={`tel:${m.phone}`} style={{flexShrink:0,color:"#2563EB"}}><Icon name="phone" size={18}/></a>}</div>))}<div style={{marginBottom:16}}/></>)}
       {alerts.length>0&&(<><div className="section-header"><div className="section-title">⚠️ 장기 결석 알림</div><span className="badge badge-red">{alerts.length}명</span></div>{alerts.map(({member,weeks})=>(<div key={member.id} className={`alert-item ${weeks>=8?"weekly":"warn"}`}><div style={{marginTop:1}}><Icon name="bell" size={16} color={weeks>=8?"#EF4444":"#F59E0B"}/></div><div className="alert-text"><div className="alert-title">{member.name}</div><div className="alert-sub">{weeks>=8?`🔴 ${weeks}주째 결석 — 매주 확인 필요`:`🟡 ${weeks}주째 결석 — 연락 필요`}{member.phone&&<> · <a href={`tel:${member.phone}`} className="phone-link">{member.phone}</a></>}</div></div></div>))}</>)}
+
+      {/* 최근 심방 기록 — 심방 권한 있는 사람만 표시 */}
+      {showNotes && recentNotes.length > 0 && (
+        <>
+          <div className="section-header">
+            <div className="section-title">📝 최근 심방 기록</div>
+            <button className="btn btn-secondary btn-sm" onClick={()=>setActiveNav("members")}>
+              청년 명단 →
+            </button>
+          </div>
+          <div style={{background:"var(--white)",border:"1px solid var(--gray-200)",borderRadius:"var(--radius-lg)",overflow:"hidden",marginBottom:16,boxShadow:"var(--shadow)"}}>
+            {recentNotes.map((note, idx) => {
+              const member = members.find(m => m.id === note.member_id);
+              if (!member) return null;
+              return (
+                <div key={note.id}
+                  onClick={() => onSelectMember(member)}
+                  style={{
+                    display:"flex", alignItems:"center", gap:10,
+                    padding:"11px 14px",
+                    borderBottom: idx < recentNotes.length-1 ? "1px solid var(--gray-100)" : "none",
+                    cursor:"pointer",
+                    transition:"background 0.15s",
+                  }}
+                  onMouseEnter={e=>e.currentTarget.style.background="#F8FAFC"}
+                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                >
+                  <div className={`member-avatar ${member.gender}`} style={{width:34,height:34,fontSize:13,flexShrink:0}}>
+                    {member.military ? "🪖" : member.name.charAt(0)}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:14,fontWeight:600,color:"var(--gray-800)"}}>{member.name}</div>
+                    <div style={{fontSize:12,color:"var(--gray-400)",marginTop:1}}>
+                      {formatDate(note.date)} · 👤 {authorLabel(note.author_email)}
+                    </div>
+                  </div>
+                  <div style={{color:"var(--gray-300)",flexShrink:0,fontSize:16}}>›</div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
 // ==================== MEMBERS PAGE ====================
-function MembersPage({members,sams,setModal,onDelete,admin,userEmail,onSelectMember}){
+function MembersPage({members,sams,setModal,onDelete,admin,userEmail,onSelectMember,noteCountMap}){
   const [search,setSearch]=useState("");
   const [filterSam,setFilterSam]=useState("all");
   const [showMilitary,setShowMilitary]=useState(false);
@@ -793,6 +859,16 @@ function MembersPage({members,sams,setModal,onDelete,admin,userEmail,onSelectMem
                 <div className="member-name" style={{display:"flex",alignItems:"center",gap:6}}>
                   {m.name}
                   {noteAccess&&<span style={{fontSize:10,color:"var(--gray-400)"}}>📝</span>}
+                  {/* 심방 기록 건수 뱃지 */}
+                  {noteCountMap[m.id]>0 && (
+                    <span style={{
+                      background:"#EDE9FE", color:"#7C3AED",
+                      borderRadius:20, padding:"1px 7px",
+                      fontSize:11, fontWeight:700,
+                    }}>
+                      📝 {noteCountMap[m.id]}건
+                    </span>
+                  )}
                 </div>
                 <div className="member-meta">
                   <span className={`badge ${m.gender==="male"?"badge-blue":"badge-pink"}`}>{m.gender==="male"?"남":"여"}</span>
