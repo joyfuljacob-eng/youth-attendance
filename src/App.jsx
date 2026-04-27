@@ -26,6 +26,9 @@ const Icon = ({ name, size = 20, color = "currentColor" }) => {
     eye: (<><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>),
     eyeoff: (<><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></>),
     key: (<><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></>),
+    note: (<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></>),
+    pray: (<><path d="M12 2L8 7H4l3 3-1 5 6-3 6 3-1-5 3-3h-4z" /></>),
+    back: (<polyline points="15 18 9 12 15 6" />),
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -58,6 +61,22 @@ const getThisMonthBirthdays = (members) => {
 
 // 관리자 여부 판단 (youth 계정은 조회자)
 const isAdmin = (email) => email && !email.startsWith("youth@");
+
+// 심방 기록 권한
+// 전체열람: leader0, leader1 (목사님)
+// 본인것만: leader3~7 (샘장)
+// 접근불가: leader2 (회장), youth
+const canViewAllNotes = (email) => {
+  if (!email) return false;
+  const id = email.replace("@hiyouth.com", "");
+  return id === "leader0" || id === "leader1";
+};
+const canViewOwnNotes = (email) => {
+  if (!email) return false;
+  const id = email.replace("@hiyouth.com", "");
+  return ["leader3","leader4","leader5","leader6","leader7"].includes(id);
+};
+const canWriteNotes = (email) => canViewAllNotes(email) || canViewOwnNotes(email);
 
 // ==================== STYLES ====================
 const css = `
@@ -223,6 +242,30 @@ const css = `
   .toggle-switch.on{background:#6B7280;}
   .toggle-knob{width:20px;height:20px;background:white;border-radius:50%;position:absolute;top:2px;left:2px;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
   .toggle-switch.on .toggle-knob{transform:translateX(20px);}
+  /* 심방 기록 */
+  .detail-page{position:fixed;inset:0;background:var(--white);z-index:100;display:flex;flex-direction:column;max-width:430px;margin:0 auto;}
+  .detail-header{background:var(--white);padding:14px 16px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  .detail-header-title{font-size:16px;font-weight:700;color:var(--gray-900);flex:1;}
+  .detail-content{flex:1;overflow-y:auto;padding:16px;padding-bottom:80px;}
+  .member-profile-card{background:linear-gradient(135deg,#1D4ED8,#3B82F6);border-radius:var(--radius-lg);padding:18px;color:white;margin-bottom:16px;display:flex;align-items:center;gap:14px;}
+  .member-profile-avatar{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex-shrink:0;}
+  .member-profile-name{font-size:20px;font-weight:800;margin-bottom:4px;}
+  .member-profile-meta{font-size:12px;opacity:0.85;}
+  .note-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:14px;margin-bottom:10px;box-shadow:var(--shadow);}
+  .note-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .note-date{font-size:13px;font-weight:700;color:var(--gray-800);}
+  .note-method{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;}
+  .note-method.face{background:#DBEAFE;color:#1D4ED8;}
+  .note-method.phone{background:#DCFCE7;color:#166534;}
+  .note-method.chat{background:#FEF9C3;color:#854D0E;}
+  .note-section{margin-bottom:8px;}
+  .note-section-label{font-size:11px;font-weight:600;color:var(--gray-400);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.3px;}
+  .note-section-text{font-size:13px;color:var(--gray-700);line-height:1.6;white-space:pre-wrap;}
+  .note-author{font-size:11px;color:var(--gray-400);margin-top:8px;text-align:right;}
+  .note-prayer{background:#FDF2F8;border-left:3px solid #EC4899;border-radius:0 8px 8px 0;padding:8px 10px;margin-top:6px;}
+  .note-prayer-text{font-size:13px;color:#9D174D;line-height:1.6;white-space:pre-wrap;}
+  .fab{position:fixed;bottom:max(80px,calc(env(safe-area-inset-bottom)+80px));right:calc(50% - 215px + 16px);width:52px;height:52px;background:var(--primary);border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,0.4);z-index:101;transition:transform 0.15s;}
+  .fab:hover{transform:scale(1.05);}
   /* 로그인 화면 */
   .login-wrapper{min-height:100vh;background:linear-gradient(135deg,#1D4ED8 0%,#2563EB 60%,#3B82F6 100%);display:flex;align-items:center;justify-content:center;padding:20px;}
   .login-box{background:white;border-radius:24px;padding:32px 28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.15);}
@@ -418,6 +461,7 @@ export default function App() {
   const [modal, setModal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null); // 상세 페이지용
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -506,7 +550,7 @@ export default function App() {
 
   const pages = {
     home:<HomePage members={members} newMembers={newMembers} sams={sams} attendanceList={attendanceList} setActiveNav={setActiveNav} todayBirthdays={todayBirthdays} />,
-    members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} admin={admin} />,
+    members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} />,
     attendance:<AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} />,
     sam:<SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} />,
     newmembers:<NewMembersPage newMembers={newMembers} sams={sams} setModal={setModal} onDelete={deleteNewMember} onToggleEdu={toggleEdu} onAssign={(nm)=>setModal({type:"assignSam",newMember:nm})} admin={admin} />,
@@ -563,6 +607,15 @@ export default function App() {
         )}
         {modal?.type==="changePw" && <ChangePasswordModal onClose={closeModal}/>}
       </div>
+      {/* 청년 상세 페이지 (심방 기록) */}
+      {selectedMember && (
+        <MemberDetailPage
+          member={selectedMember}
+          sams={sams}
+          userEmail={user?.email}
+          onClose={()=>setSelectedMember(null)}
+        />
+      )}
     </>
   );
 }
@@ -675,7 +728,7 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
 }
 
 // ==================== MEMBERS PAGE ====================
-function MembersPage({members,sams,setModal,onDelete,admin}){
+function MembersPage({members,sams,setModal,onDelete,admin,userEmail,onSelectMember}){
   const [search,setSearch]=useState("");
   const [filterSam,setFilterSam]=useState("all");
   const [showMilitary,setShowMilitary]=useState(false);
@@ -730,22 +783,28 @@ function MembersPage({members,sams,setModal,onDelete,admin}){
       {filtered.length===0?(<div className="empty-state"><div className="empty-state-icon">{showMilitary?"🪖":filterSam==="unassigned"?"⚠️":"👥"}</div><div className="empty-state-text">{showMilitary?"군복무 청년이 없습니다":filterSam==="unassigned"?"샘 미지정 청년이 없습니다":"청년이 없습니다"}</div></div>):(
         <>
           {/* 일반 청년 먼저 */}
-          {filtered.filter(m=>!m.military).map(m=>(
-            <div key={m.id} className="member-item">
+          {filtered.filter(m=>!m.military).map(m=>{
+            const noteAccess = canWriteNotes(userEmail);
+            return(
+            <div key={m.id} className="member-item" style={{cursor:noteAccess?"pointer":"default"}}
+              onClick={()=>noteAccess&&onSelectMember(m)}>
               <div className={`member-avatar ${m.gender}`}>{m.name.charAt(0)}</div>
               <div className="member-info">
-                <div className="member-name">{m.name}</div>
+                <div className="member-name" style={{display:"flex",alignItems:"center",gap:6}}>
+                  {m.name}
+                  {noteAccess&&<span style={{fontSize:10,color:"var(--gray-400)"}}>📝</span>}
+                </div>
                 <div className="member-meta">
                   <span className={`badge ${m.gender==="male"?"badge-blue":"badge-pink"}`}>{m.gender==="male"?"남":"여"}</span>
                   {getSamName(m.sam_id)&&<span className="badge badge-green" style={{marginLeft:4}}>{getSamName(m.sam_id)}샘</span>}
                   {m.birth_year&&<span style={{marginLeft:4}}>· {m.birth_year}년생</span>}
                   {m.birthday&&<span style={{marginLeft:4}}>· 🎂{m.birthday}</span>}
                 </div>
-                {m.phone&&<div style={{marginTop:3,display:"flex",alignItems:"center",gap:4}}><Icon name="phone" size={11} color="#94A3B8"/><a href={`tel:${m.phone}`} className="phone-link">{m.phone}</a></div>}
+                {m.phone&&<div style={{marginTop:3,display:"flex",alignItems:"center",gap:4}}><Icon name="phone" size={11} color="#94A3B8"/><a href={`tel:${m.phone}`} className="phone-link" onClick={e=>e.stopPropagation()}>{m.phone}</a></div>}
               </div>
-              {admin&&(<div className="member-actions"><button className="btn-icon" onClick={()=>setModal({type:"editMember",member:m})}><Icon name="edit" size={14}/></button><button className="btn-icon danger" onClick={()=>onDelete(m.id)}><Icon name="trash" size={14}/></button></div>)}
+              {admin&&(<div className="member-actions"><button className="btn-icon" onClick={e=>{e.stopPropagation();setModal({type:"editMember",member:m});}}><Icon name="edit" size={14}/></button><button className="btn-icon danger" onClick={e=>{e.stopPropagation();onDelete(m.id);}}><Icon name="trash" size={14}/></button></div>)}
             </div>
-          ))}
+          );})}
           {/* 특정 샘 선택 또는 미지정 선택 시 군복무자 맨 아래 구분선과 함께 표시 */}
           {(filterSam!=="all") && filtered.filter(m=>m.military).length>0 && (
             <>
@@ -1032,4 +1091,220 @@ function NewMemberFormModal({initial,onSave,onClose}){
 function AssignSamModal({sams,newMember,onAssign,onClose}){
   const [samId,setSamId]=useState("");
   return(<div className="modal-overlay" onClick={onClose}><div className="modal-sheet" onClick={e=>e.stopPropagation()}><div className="modal-handle"/><div className="modal-title">🎉 샘 배정</div><div style={{background:"#ECFDF5",border:"1px solid #A7F3D0",borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:13,color:"#065F46"}}><strong>{newMember.name}</strong> 님이 4주 교육을 모두 마쳤습니다!<br/>샘을 배정하면 청년 명단으로 이동됩니다.</div><div className="form-group"><label className="form-label">배정할 샘 선택</label><select className="form-select" value={samId} onChange={e=>setSamId(e.target.value)}><option value="">샘을 선택하세요</option>{sams.map(s=><option key={s.id} value={s.id}>{s.name}샘</option>)}</select></div><button className="assign-btn" style={{marginTop:0}} onClick={()=>{if(!samId){alert("샘을 선택해주세요");return;}onAssign(newMember,samId);}}><Icon name="assign" size={16} color="white"/>샘 배정 완료</button><button className="btn btn-secondary" style={{width:"100%",marginTop:8}} onClick={()=>onAssign(newMember,"")}>샘 미배정으로 이동</button></div></div>);
+}
+
+// ==================== 청년 상세 페이지 (심방 기록) ====================
+function MemberDetailPage({ member, sams, userEmail, onClose }) {
+  const [notes, setNotes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+
+  const viewAll = canViewAllNotes(userEmail);
+  const viewOwn = canViewOwnNotes(userEmail);
+  const canWrite = canWriteNotes(userEmail);
+
+  const getSamName = (samId) => sams.find(s => s.id === samId)?.name || "";
+
+  const fetchNotes = async () => {
+    setLoading(true);
+    let query = supabase.from("pastoral_notes").select("*").eq("member_id", member.id).order("date", { ascending: false });
+    if (viewOwn && !viewAll) {
+      query = query.eq("author_email", userEmail);
+    }
+    const { data } = await query;
+    if (data) setNotes(data);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchNotes(); }, [member.id]);
+
+  const methodLabel = (m) => {
+    if (m === "face") return { label: "대면", cls: "face" };
+    if (m === "phone") return { label: "전화", cls: "phone" };
+    if (m === "chat") return { label: "카톡", cls: "chat" };
+    return { label: m || "", cls: "face" };
+  };
+
+  const authorLabel = (email) => email?.replace("@hiyouth.com", "") || "";
+
+  return (
+    <div className="detail-page">
+      {/* 헤더 */}
+      <div className="detail-header">
+        <button className="btn-icon" style={{ background: "var(--gray-100)", color: "var(--gray-600)" }} onClick={onClose}>
+          <Icon name="back" size={18} />
+        </button>
+        <div className="detail-header-title">심방 기록</div>
+      </div>
+
+      <div className="detail-content">
+        {/* 청년 프로필 카드 */}
+        <div className="member-profile-card">
+          <div className={`member-profile-avatar`}>
+            {member.military ? "🪖" : member.name.charAt(0)}
+          </div>
+          <div>
+            <div className="member-profile-name">{member.name}</div>
+            <div className="member-profile-meta">
+              {member.gender === "male" ? "남" : "여"}
+              {member.birth_year && ` · ${member.birth_year}년생`}
+              {getSamName(member.sam_id) && ` · ${getSamName(member.sam_id)}샘`}
+              {member.military && " · 🪖 군복무 중"}
+            </div>
+            {member.phone && (
+              <div style={{ fontSize: 12, marginTop: 4, opacity: 0.9 }}>
+                📱 {member.phone}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 권한 안내 */}
+        {viewOwn && !viewAll && (
+          <div className="info-hint" style={{ marginBottom: 12 }}>
+            📝 본인이 작성한 심방 기록만 볼 수 있습니다
+          </div>
+        )}
+
+        {/* 심방 기록 목록 */}
+        {loading ? (
+          <div style={{ textAlign: "center", padding: 40, color: "var(--gray-400)" }}>
+            <div className="spinner" style={{ margin: "0 auto 12px" }} />
+          </div>
+        ) : notes.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">📋</div>
+            <div className="empty-state-text">심방 기록이 없습니다</div>
+            {canWrite && <div className="empty-state-sub">아래 + 버튼으로 기록을 추가하세요</div>}
+          </div>
+        ) : (
+          notes.map(note => {
+            const { label, cls } = methodLabel(note.method);
+            return (
+              <div key={note.id} className="note-card">
+                <div className="note-card-header">
+                  <div className="note-date">📅 {formatDate(note.date)}</div>
+                  {label && <span className={`note-method ${cls}`}>{label}</span>}
+                </div>
+                {note.content && (
+                  <div className="note-section">
+                    <div className="note-section-label">내용</div>
+                    <div className="note-section-text">{note.content}</div>
+                  </div>
+                )}
+                {note.prayer && (
+                  <div className="note-section">
+                    <div className="note-section-label">🙏 기도제목</div>
+                    <div className="note-prayer">
+                      <div className="note-prayer-text">{note.prayer}</div>
+                    </div>
+                  </div>
+                )}
+                <div className="note-author">작성: {authorLabel(note.author_email)}</div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* 작성 버튼 (권한 있는 사람만) */}
+      {canWrite && !showForm && (
+        <button className="fab" onClick={() => setShowForm(true)}>
+          <Icon name="plus" size={22} color="white" />
+        </button>
+      )}
+
+      {/* 심방 기록 작성 모달 */}
+      {showForm && (
+        <PastoralNoteForm
+          memberId={member.id}
+          userEmail={userEmail}
+          onSave={async () => { await fetchNotes(); setShowForm(false); }}
+          onClose={() => setShowForm(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ==================== 심방 기록 작성 폼 ====================
+function PastoralNoteForm({ memberId, userEmail, onSave, onClose }) {
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [method, setMethod] = useState("face");
+  const [content, setContent] = useState("");
+  const [prayer, setPrayer] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const submit = async () => {
+    if (!content.trim() && !prayer.trim()) { alert("내용 또는 기도제목을 입력해주세요"); return; }
+    setSaving(true);
+    await supabase.from("pastoral_notes").insert([{
+      member_id: memberId,
+      date,
+      method,
+      content: content.trim(),
+      prayer: prayer.trim(),
+      author_email: userEmail,
+    }]);
+    setSaving(false);
+    onSave();
+  };
+
+  const methods = [
+    { value: "face", label: "대면" },
+    { value: "phone", label: "전화" },
+    { value: "chat", label: "카톡" },
+  ];
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+        <div className="modal-handle" />
+        <div className="modal-title">📝 심방 기록 작성</div>
+
+        <div className="form-group">
+          <label className="form-label">날짜</label>
+          <input className="form-input" type="date" value={date} onChange={e => setDate(e.target.value)} />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">심방 방식</label>
+          <div style={{ display: "flex", gap: 8 }}>
+            {methods.map(m => (
+              <button key={m.value}
+                className="btn"
+                style={{
+                  flex: 1, padding: "10px",
+                  background: method === m.value ? "var(--primary)" : "var(--gray-100)",
+                  color: method === m.value ? "white" : "var(--gray-600)",
+                  fontSize: 14, fontWeight: 600,
+                }}
+                onClick={() => setMethod(m.value)}>
+                {m.value === "face" ? "👤" : m.value === "phone" ? "📞" : "💬"} {m.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">내용 <span className="optional">(선택)</span></label>
+          <textarea className="form-input" placeholder="심방 내용을 입력하세요"
+            value={content} onChange={e => setContent(e.target.value)}
+            rows={4} style={{ resize: "none", lineHeight: 1.6 }} />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">🙏 기도제목 <span className="optional">(선택)</span></label>
+          <textarea className="form-input" placeholder="기도제목을 입력하세요"
+            value={prayer} onChange={e => setPrayer(e.target.value)}
+            rows={3} style={{ resize: "none", lineHeight: 1.6 }} />
+        </div>
+
+        <button className="btn btn-primary" onClick={submit} disabled={saving}>
+          <Icon name="check" size={16} color="white" />
+          {saving ? "저장 중..." : "기록 저장"}
+        </button>
+      </div>
+    </div>
+  );
 }
