@@ -530,11 +530,46 @@ export default function App() {
   const toggleAttendance = async (memberId, date) => { const ex=attendanceList.find(a=>a.member_id===memberId&&a.date===date); setSaving(true); if(ex){await supabase.from("attendance").update({status:!ex.status}).eq("id",ex.id);}else{await supabase.from("attendance").insert([{member_id:memberId,date,status:true}]);} const {data}=await supabase.from("attendance").select("*"); if(data)setAttendanceList(data); setSaving(false); };
   const setAllAttendance = async (memberIds,date,status) => { setSaving(true); for(const memberId of memberIds){const ex=attendanceList.find(a=>a.member_id===memberId&&a.date===date); if(ex){await supabase.from("attendance").update({status}).eq("id",ex.id);}else{await supabase.from("attendance").insert([{member_id:memberId,date,status}]);}} const {data}=await supabase.from("attendance").select("*"); if(data)setAttendanceList(data); setSaving(false); };
   const toggleSamAttendance = async (memberId,samId,date) => { const ex=samAttendanceList.find(a=>a.member_id===memberId&&a.sam_id===samId&&a.date===date); setSaving(true); if(ex){await supabase.from("sam_attendance").update({status:!ex.status}).eq("id",ex.id);}else{await supabase.from("sam_attendance").insert([{member_id:memberId,sam_id:samId,date,status:true}]);} const {data}=await supabase.from("sam_attendance").select("*"); if(data)setSamAttendanceList(data); setSaving(false); };
-  const saveNewMember = async (m) => { setSaving(true); await supabase.from("new_members").insert([{name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,week1:false,week2:false,week3:false,week4:false}]); await fetchAll(); setSaving(false); closeModal(); };
+  const saveNewMember = async (m) => {
+    setSaving(true);
+    await supabase.from("new_members").insert([{
+      name:m.name, gender:m.gender, phone:m.phone,
+      birth_year:m.birthYear, birthday:m.birthday,
+      week1:false, week2:false, week3:false, week4:false,
+      registered_at: today(), // 새가족 등록 날짜 자동 기록
+    }]);
+    await fetchAll(); setSaving(false); closeModal();
+  };
   const updateNewMember = async (id,m) => { setSaving(true); await supabase.from("new_members").update({name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday}).eq("id",id); await fetchAll(); setSaving(false); closeModal(); };
   const deleteNewMember = async (id) => { if(!window.confirm("정말 삭제하시겠습니까?")) return; setSaving(true); await supabase.from("new_members").delete().eq("id",id); await fetchAll(); setSaving(false); };
-  const toggleEdu = async (id,weekIdx) => { const member=newMembers.find(m=>m.id===id); if(!member)return; const key=`week${weekIdx+1}`; setSaving(true); await supabase.from("new_members").update({[key]:!member[key]}).eq("id",id); const {data}=await supabase.from("new_members").select("*").order("created_at"); if(data)setNewMembers(data); setSaving(false); };
-  const assignNewMemberToSam = async (newMember,samId) => { setSaving(true); await supabase.from("members").insert([{name:newMember.name,gender:newMember.gender,phone:newMember.phone,birth_year:newMember.birth_year,birthday:newMember.birthday,sam_id:samId||null,military:false}]); await supabase.from("new_members").delete().eq("id",newMember.id); await fetchAll(); setSaving(false); closeModal(); };
+  const toggleEdu = async (id, weekIdx) => {
+    const member = newMembers.find(m=>m.id===id); if(!member) return;
+    const key = `week${weekIdx+1}`;
+    const newVal = !member[key];
+    setSaving(true);
+    const updateData = { [key]: newVal };
+    // 4주차를 완료 체크할 때 edu_completed_at 자동 기록
+    // 4주차를 해제할 때는 날짜 초기화
+    if (weekIdx === 3) {
+      updateData.edu_completed_at = newVal ? today() : null;
+    }
+    await supabase.from("new_members").update(updateData).eq("id", id);
+    const {data} = await supabase.from("new_members").select("*").order("created_at");
+    if(data) setNewMembers(data);
+    setSaving(false);
+  };
+  const assignNewMemberToSam = async (newMember, samId) => {
+    setSaving(true);
+    await supabase.from("members").insert([{
+      name: newMember.name, gender: newMember.gender,
+      phone: newMember.phone, birth_year: newMember.birth_year,
+      birthday: newMember.birthday, sam_id: samId||null, military: false,
+      assigned_at: today(), // 샘 배정 날짜 자동 기록
+      new_member_registered_at: newMember.registered_at||null, // 새가족 등록일 이력 보존
+    }]);
+    await supabase.from("new_members").delete().eq("id", newMember.id);
+    await fetchAll(); setSaving(false); closeModal();
+  };
 
   // 로그인 로딩 중
   if (authLoading) {
@@ -877,6 +912,21 @@ function MembersPage({members,sams,setModal,onDelete,admin,userEmail,onSelectMem
                   {m.birthday&&<span style={{marginLeft:4}}>· 🎂{m.birthday}</span>}
                 </div>
                 {m.phone&&<div style={{marginTop:3,display:"flex",alignItems:"center",gap:4}}><Icon name="phone" size={11} color="#94A3B8"/><a href={`tel:${m.phone}`} className="phone-link" onClick={e=>e.stopPropagation()}>{m.phone}</a></div>}
+                {/* 전환 이력 날짜 */}
+                {(m.new_member_registered_at || m.assigned_at) && (
+                  <div style={{display:"flex",gap:4,marginTop:4,flexWrap:"wrap"}}>
+                    {m.new_member_registered_at&&(
+                      <span style={{fontSize:10,background:"#EFF6FF",color:"#2563EB",borderRadius:6,padding:"2px 6px"}}>
+                        📅 새가족 {formatDate(m.new_member_registered_at)}
+                      </span>
+                    )}
+                    {m.assigned_at&&(
+                      <span style={{fontSize:10,background:"#ECFDF5",color:"#10B981",borderRadius:6,padding:"2px 6px"}}>
+                        🌱 샘배정 {formatDate(m.assigned_at)}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               {admin&&(<div className="member-actions"><button className="btn-icon" onClick={e=>{e.stopPropagation();setModal({type:"editMember",member:m});}}><Icon name="edit" size={14}/></button><button className="btn-icon danger" onClick={e=>{e.stopPropagation();onDelete(m.id);}}><Icon name="trash" size={14}/></button></div>)}
             </div>
@@ -1105,6 +1155,19 @@ function NewMembersPage({newMembers,sams,setModal,onDelete,onToggleEdu,onAssign,
                 </div>
                 {admin&&(<div style={{display:"flex",gap:6}}><button className="btn-icon" onClick={()=>setModal({type:"editNewMember",member:m})}><Icon name="edit" size={14}/></button><button className="btn-icon danger" onClick={()=>onDelete(m.id)}><Icon name="trash" size={14}/></button></div>)}
               </div>
+
+              {/* 전환 이력 날짜 표시 */}
+              <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
+                <div style={{display:"flex",alignItems:"center",gap:4,background:"#EFF6FF",borderRadius:8,padding:"4px 8px"}}>
+                  <span style={{fontSize:10,color:"#94A3B8"}}>📅 등록</span>
+                  <span style={{fontSize:11,fontWeight:600,color:"#2563EB"}}>{m.registered_at ? formatDate(m.registered_at) : "미기록"}</span>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:4,background:m.edu_completed_at?"#ECFDF5":"var(--gray-50)",borderRadius:8,padding:"4px 8px"}}>
+                  <span style={{fontSize:10,color:"#94A3B8"}}>📚 교육완료</span>
+                  <span style={{fontSize:11,fontWeight:600,color:m.edu_completed_at?"#10B981":"#CBD5E1"}}>{m.edu_completed_at ? formatDate(m.edu_completed_at) : "미완료"}</span>
+                </div>
+              </div>
+
               <div style={{fontSize:12,fontWeight:600,color:"#64748B",marginBottom:6}}>새가족 교육 ({eduDone}/4주 완료)<div className="progress-bar-wrap" style={{marginTop:4}}><div className="progress-bar-fill" style={{width:`${(eduDone/4)*100}%`}}/></div></div>
               <div className="edu-weeks">
                 {["1주차","2주차","3주차","4주차"].map((label,i)=>{
