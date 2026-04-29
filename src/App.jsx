@@ -62,7 +62,7 @@ const getThisMonthBirthdays = (members) => {
 // 관리자 여부 판단 (youth 계정은 조회자)
 const isAdmin = (email) => email && !email.startsWith("youth@");
 
-// 심방 기록 권한
+// 나눔 기록 권한
 // 전체열람: leader0, leader1 (목사님)
 // 본인것만: leader3~7 (샘장)
 // 접근불가: leader2 (회장), youth
@@ -242,7 +242,7 @@ const css = `
   .toggle-switch.on{background:#6B7280;}
   .toggle-knob{width:20px;height:20px;background:white;border-radius:50%;position:absolute;top:2px;left:2px;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
   .toggle-switch.on .toggle-knob{transform:translateX(20px);}
-  /* 심방 기록 */
+  /* 나눔 기록 */
   .detail-page{position:fixed;inset:0;background:var(--white);z-index:100;display:flex;flex-direction:column;max-width:430px;margin:0 auto;}
   .detail-header{background:var(--white);padding:14px 16px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;gap:10px;flex-shrink:0;}
   .detail-header-title{font-size:16px;font-weight:700;color:var(--gray-900);flex:1;}
@@ -462,8 +462,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null); // 상세 페이지용
-  const [noteCountMap, setNoteCountMap] = useState({}); // 청년별 심방 기록 건수
-  const [recentNotes, setRecentNotes] = useState([]); // 홈 최근 심방 기록
+  const [noteCountMap, setNoteCountMap] = useState({}); // 청년별 나눔 기록 건수
+  const [recentNotes, setRecentNotes] = useState([]); // 홈 최근 나눔 기록
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -496,7 +496,7 @@ export default function App() {
     if(a.data) setAttendanceList(a.data);
     if(sa.data) setSamAttendanceList(sa.data);
 
-    // 심방 기록 건수 및 최근 기록 fetch
+    // 나눔 기록 건수 및 최근 기록 fetch
     const { data: notesData } = await supabase
       .from("pastoral_notes")
       .select("id, member_id, date, author_email")
@@ -625,7 +625,7 @@ export default function App() {
         )}
         {modal?.type==="changePw" && <ChangePasswordModal onClose={closeModal}/>}
       </div>
-      {/* 청년 상세 페이지 (심방 기록) */}
+      {/* 청년 상세 페이지 (나눔 기록) */}
       {selectedMember && (
         <MemberDetailPage
           member={selectedMember}
@@ -678,7 +678,7 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
   const militaryCount=members.filter(m=>m.military).length;
   const alerts=members.filter(m=>!m.military).map(m=>{const w=getAbsentWeeks(m.id,attendanceList);return(w!==null&&w>=4)?{member:m,weeks:w}:null;}).filter(Boolean).sort((a,b)=>b.weeks-a.weeks);
 
-  // 심방 권한 있는 사람만 최근 심방 카드 표시
+  // 나눔 기록 권한 있는 사람만 최근 나눔 카드 표시
   const showNotes = canWriteNotes(userEmail) || canViewAllNotes(userEmail);
   const authorLabel = (email) => email?.replace("@hiyouth.com","") || "";
 
@@ -747,11 +747,11 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
       {thisMonthBirthdays.length>0&&(<><div className="section-header"><div className="section-title">🎂 {parseInt(mm)}월 생일자</div><span className="badge badge-yellow">{thisMonthBirthdays.length}명</span></div>{thisMonthBirthdays.map(m=>(<div key={m.id} className={`month-birthday-item ${m.isToday?"today":""}`}><div className={`birthday-date-badge ${m.isToday?"today":""}`}><span className="bday-month">{mm}월</span><span className="bday-day">{m.dayNum}</span></div><div className={`member-avatar ${m.gender}`} style={{width:34,height:34,fontSize:13}}>{m.name.charAt(0)}</div><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:"#1E293B"}}>{m.name} {m.isToday&&"🎉"}</div><div style={{fontSize:12,color:"#94A3B8"}}>{m.gender==="male"?"남":"여"}{m.birth_year&&` · ${m.birth_year}년생`}{m.isToday&&<span style={{color:"#F97316",fontWeight:600}}> · 오늘!</span>}{m.isPast&&!m.isToday&&<span style={{color:"#CBD5E1"}}> · 지남</span>}</div></div>{m.phone&&<a href={`tel:${m.phone}`} style={{flexShrink:0,color:"#2563EB"}}><Icon name="phone" size={18}/></a>}</div>))}<div style={{marginBottom:16}}/></>)}
       {alerts.length>0&&(<><div className="section-header"><div className="section-title">⚠️ 장기 결석 알림</div><span className="badge badge-red">{alerts.length}명</span></div>{alerts.map(({member,weeks})=>(<div key={member.id} className={`alert-item ${weeks>=8?"weekly":"warn"}`}><div style={{marginTop:1}}><Icon name="bell" size={16} color={weeks>=8?"#EF4444":"#F59E0B"}/></div><div className="alert-text"><div className="alert-title">{member.name}</div><div className="alert-sub">{weeks>=8?`🔴 ${weeks}주째 결석 — 매주 확인 필요`:`🟡 ${weeks}주째 결석 — 연락 필요`}{member.phone&&<> · <a href={`tel:${member.phone}`} className="phone-link">{member.phone}</a></>}</div></div></div>))}</>)}
 
-      {/* 최근 심방 기록 — 심방 권한 있는 사람만 표시 */}
+      {/* 최근 나눔 기록 — 나눔 권한 있는 사람만 표시 */}
       {showNotes && recentNotes.length > 0 && (
         <>
           <div className="section-header">
-            <div className="section-title">📝 최근 심방 기록</div>
+            <div className="section-title">📝 최근 나눔 기록</div>
             <button className="btn btn-secondary btn-sm" onClick={()=>setActiveNav("members")}>
               청년 명단 →
             </button>
@@ -859,7 +859,7 @@ function MembersPage({members,sams,setModal,onDelete,admin,userEmail,onSelectMem
                 <div className="member-name" style={{display:"flex",alignItems:"center",gap:6}}>
                   {m.name}
                   {noteAccess&&<span style={{fontSize:10,color:"var(--gray-400)"}}>📝</span>}
-                  {/* 심방 기록 건수 뱃지 */}
+                  {/* 나눔 기록 건수 뱃지 */}
                   {noteCountMap[m.id]>0 && (
                     <span style={{
                       background:"#EDE9FE", color:"#7C3AED",
@@ -1169,7 +1169,7 @@ function AssignSamModal({sams,newMember,onAssign,onClose}){
   return(<div className="modal-overlay" onClick={onClose}><div className="modal-sheet" onClick={e=>e.stopPropagation()}><div className="modal-handle"/><div className="modal-title">🎉 샘 배정</div><div style={{background:"#ECFDF5",border:"1px solid #A7F3D0",borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:13,color:"#065F46"}}><strong>{newMember.name}</strong> 님이 4주 교육을 모두 마쳤습니다!<br/>샘을 배정하면 청년 명단으로 이동됩니다.</div><div className="form-group"><label className="form-label">배정할 샘 선택</label><select className="form-select" value={samId} onChange={e=>setSamId(e.target.value)}><option value="">샘을 선택하세요</option>{sams.map(s=><option key={s.id} value={s.id}>{s.name}샘</option>)}</select></div><button className="assign-btn" style={{marginTop:0}} onClick={()=>{if(!samId){alert("샘을 선택해주세요");return;}onAssign(newMember,samId);}}><Icon name="assign" size={16} color="white"/>샘 배정 완료</button><button className="btn btn-secondary" style={{width:"100%",marginTop:8}} onClick={()=>onAssign(newMember,"")}>샘 미배정으로 이동</button></div></div>);
 }
 
-// ==================== 청년 상세 페이지 (심방 기록) ====================
+// ==================== 청년 상세 페이지 (나눔 기록) ====================
 function MemberDetailPage({ member, sams, userEmail, onClose }) {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1197,7 +1197,7 @@ function MemberDetailPage({ member, sams, userEmail, onClose }) {
 
   // 삭제
   const deleteNote = async (noteId) => {
-    if (!window.confirm("이 심방 기록을 삭제하시겠습니까?")) return;
+    if (!window.confirm("이 나눔 기록을 삭제하시겠습니까?")) return;
     await supabase.from("pastoral_notes").delete().eq("id", noteId);
     await fetchNotes();
   };
@@ -1221,7 +1221,7 @@ function MemberDetailPage({ member, sams, userEmail, onClose }) {
         <button className="btn-icon" style={{ background: "var(--gray-100)", color: "var(--gray-600)" }} onClick={onClose}>
           <Icon name="back" size={18} />
         </button>
-        <div className="detail-header-title">심방 기록</div>
+        <div className="detail-header-title">나눔 기록</div>
       </div>
 
       <div className="detail-content">
@@ -1249,11 +1249,11 @@ function MemberDetailPage({ member, sams, userEmail, onClose }) {
         {/* 권한 안내 */}
         {viewOwn && !viewAll && (
           <div className="info-hint" style={{ marginBottom: 12 }}>
-            📝 본인이 작성한 심방 기록만 볼 수 있습니다
+            📝 본인이 작성한 나눔 기록만 볼 수 있습니다
           </div>
         )}
 
-        {/* 심방 기록 목록 */}
+        {/* 나눔 기록 목록 */}
         {loading ? (
           <div style={{ textAlign: "center", padding: 40, color: "var(--gray-400)" }}>
             <div className="spinner" style={{ margin: "0 auto 12px" }} />
@@ -1261,8 +1261,8 @@ function MemberDetailPage({ member, sams, userEmail, onClose }) {
         ) : notes.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">📋</div>
-            <div className="empty-state-text">심방 기록이 없습니다</div>
-            {canWrite && <div className="empty-state-sub">아래 + 버튼으로 기록을 추가하세요</div>}
+            <div className="empty-state-text">나눔 기록이 없습니다</div>
+            {canWrite && <div className="empty-state-sub">아래 + 버튼으로 나눔 기록을 추가하세요</div>}
           </div>
         ) : (
           notes.map(note => {
@@ -1317,7 +1317,7 @@ function MemberDetailPage({ member, sams, userEmail, onClose }) {
         </button>
       )}
 
-      {/* 심방 기록 작성/수정 모달 */}
+      {/* 나눔 기록 작성/수정 모달 */}
       {showForm && (
         <PastoralNoteForm
           memberId={member.id}
@@ -1331,7 +1331,7 @@ function MemberDetailPage({ member, sams, userEmail, onClose }) {
   );
 }
 
-// ==================== 심방 기록 작성/수정 폼 ====================
+// ==================== 나눔 기록 작성/수정 폼 ====================
 function PastoralNoteForm({ memberId, userEmail, initial, onSave, onClose }) {
   const [date, setDate] = useState(initial?.date || new Date().toISOString().split("T")[0]);
   const [method, setMethod] = useState(initial?.method || "face");
@@ -1377,7 +1377,7 @@ function PastoralNoteForm({ memberId, userEmail, initial, onSave, onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-sheet" onClick={e => e.stopPropagation()}>
         <div className="modal-handle" />
-        <div className="modal-title">{isEdit ? "📝 심방 기록 수정" : "📝 심방 기록 작성"}</div>
+        <div className="modal-title">{isEdit ? "📝 나눔 기록 수정" : "📝 나눔 기록 작성"}</div>
 
         <div className="form-group">
           <label className="form-label">날짜</label>
@@ -1385,7 +1385,7 @@ function PastoralNoteForm({ memberId, userEmail, initial, onSave, onClose }) {
         </div>
 
         <div className="form-group">
-          <label className="form-label">심방 방식</label>
+          <label className="form-label">나눔 방식</label>
           <div style={{ display: "flex", gap: 8 }}>
             {methods.map(m => (
               <button key={m.value}
@@ -1405,7 +1405,7 @@ function PastoralNoteForm({ memberId, userEmail, initial, onSave, onClose }) {
 
         <div className="form-group">
           <label className="form-label">내용 <span className="optional">(선택)</span></label>
-          <textarea className="form-input" placeholder="심방 내용을 입력하세요"
+          <textarea className="form-input" placeholder="나눔 내용을 입력하세요"
             value={content} onChange={e => setContent(e.target.value)}
             rows={4} style={{ resize: "none", lineHeight: 1.6 }} />
         </div>
