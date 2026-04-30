@@ -29,6 +29,10 @@ const Icon = ({ name, size = 20, color = "currentColor" }) => {
     note: (<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></>),
     pray: (<><path d="M12 2L8 7H4l3 3-1 5 6-3 6 3-1-5 3-3h-4z" /></>),
     back: (<polyline points="15 18 9 12 15 6" />),
+    bullhorn: (<><path d="M3 9v6h4l5 5V4L7 9H3z" /><path d="M18 8a6 6 0 0 1 0 8" /></>),
+    prayhand: (<><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" /></>),
+    contact: (<><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" /></>),
+    more: (<><circle cx="12" cy="5" r="1" fill="currentColor" /><circle cx="12" cy="12" r="1" fill="currentColor" /><circle cx="12" cy="19" r="1" fill="currentColor" /></>),
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -266,6 +270,36 @@ const css = `
   .note-prayer-text{font-size:13px;color:#9D174D;line-height:1.6;white-space:pre-wrap;}
   .fab{position:fixed;bottom:max(80px,calc(env(safe-area-inset-bottom)+80px));right:calc(50% - 215px + 16px);width:52px;height:52px;background:var(--primary);border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,0.4);z-index:101;transition:transform 0.15s;}
   .fab:hover{transform:scale(1.05);}
+  /* 더보기/공지/기도/결석 */
+  .more-page-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+  .more-page-btn{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:16px 12px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;cursor:pointer;transition:all 0.15s;box-shadow:var(--shadow);width:100%;}
+  .more-page-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);}
+  .more-page-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;}
+  .more-page-label{font-size:13px;font-weight:700;color:var(--gray-800);}
+  .more-page-sub{font-size:11px;color:var(--gray-400);margin-top:1px;}
+  .notice-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:14px;margin-bottom:10px;box-shadow:var(--shadow);}
+  .notice-card.schedule{border-left:3px solid #8B5CF6;}
+  .notice-card.notice{border-left:3px solid var(--primary);}
+  .notice-title{font-size:14px;font-weight:700;color:var(--gray-800);margin-bottom:4px;}
+  .notice-content{font-size:13px;color:var(--gray-600);margin-top:8px;line-height:1.6;white-space:pre-wrap;}
+  .prayer-card{background:var(--white);border:1px solid var(--gray-200);border-left:3px solid #DB2777;border-radius:var(--radius-lg);padding:14px;margin-bottom:10px;box-shadow:var(--shadow);}
+  .prayer-card.answered{background:#F0FDF4;border-color:#A7F3D0;border-left-color:#10B981;opacity:0.85;}
+  .prayer-member{font-size:13px;font-weight:700;color:var(--gray-800);margin-bottom:4px;}
+  .prayer-content{font-size:13px;color:var(--gray-700);line-height:1.6;}
+  .prayer-meta{font-size:11px;color:var(--gray-400);margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:6px;}
+  .contact-done-btn{background:#ECFDF5;color:#10B981;border:1px solid #A7F3D0;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;font-family:'Noto Sans KR',sans-serif;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all 0.15s;}
+  .contact-done-btn:hover{background:#D1FAE5;}
+  .contact-done-badge{background:#ECFDF5;color:#10B981;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:3px;}
+  /* 생일자 2열 그리드 */
+  .birthday-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+  .birthday-grid-card{background:var(--gray-50);border:1px solid var(--gray-100);border-radius:var(--radius);padding:10px;display:flex;align-items:center;gap:8px;}
+  .birthday-grid-card.today{background:#FFF7ED;border-color:#FED7AA;}
+  .birthday-grid-badge{width:34px;height:34px;border-radius:8px;background:var(--gray-200);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;color:var(--gray-600);}
+  .birthday-grid-badge.today{background:#F97316;color:white;}
+  .birthday-grid-month{font-size:8px;font-weight:600;opacity:0.75;}
+  .birthday-grid-day{font-size:14px;font-weight:800;line-height:1.1;}
+  .birthday-grid-name{font-size:13px;font-weight:600;color:#1E293B;}
+  .birthday-grid-sub{font-size:11px;color:#94A3B8;margin-top:1px;}
   /* 로그인 화면 */
   .login-wrapper{min-height:100vh;background:linear-gradient(135deg,#1D4ED8 0%,#2563EB 60%,#3B82F6 100%);display:flex;align-items:center;justify-content:center;padding:20px;}
   .login-box{background:white;border-radius:24px;padding:32px 28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.15);}
@@ -461,9 +495,12 @@ export default function App() {
   const [modal, setModal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [selectedMember, setSelectedMember] = useState(null); // 상세 페이지용
-  const [noteCountMap, setNoteCountMap] = useState({}); // 청년별 나눔 기록 건수
-  const [recentNotes, setRecentNotes] = useState([]); // 홈 최근 나눔 기록
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [noteCountMap, setNoteCountMap] = useState({});
+  const [recentNotes, setRecentNotes] = useState([]);
+  const [notices, setNotices] = useState([]);
+  const [prayers, setPrayers] = useState([]);
+  const [absenceContacts, setAbsenceContacts] = useState([]);
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -502,15 +539,19 @@ export default function App() {
       .select("id, member_id, date, author_email")
       .order("date", { ascending: false });
     if(notesData) {
-      // 청년별 건수 맵
       const countMap = {};
-      notesData.forEach(n => {
-        countMap[n.member_id] = (countMap[n.member_id] || 0) + 1;
-      });
+      notesData.forEach(n => { countMap[n.member_id] = (countMap[n.member_id]||0)+1; });
       setNoteCountMap(countMap);
-      // 최근 5건 (홈 화면용)
-      setRecentNotes(notesData.slice(0, 5));
+      setRecentNotes(notesData.slice(0,5));
     }
+    const [noticesRes,prayersRes,absenceRes] = await Promise.all([
+      supabase.from("notices").select("*").order("created_at",{ascending:false}),
+      supabase.from("prayers").select("*").order("created_at",{ascending:false}),
+      supabase.from("absence_contacts").select("*").order("contact_date",{ascending:false}),
+    ]);
+    if(noticesRes.data) setNotices(noticesRes.data);
+    if(prayersRes.data) setPrayers(prayersRes.data);
+    if(absenceRes.data) setAbsenceContacts(absenceRes.data);
     setLoading(false);
   };
 
@@ -591,13 +632,17 @@ export default function App() {
     {id:"members",label:"청년 명단",icon:"users"},
     {id:"attendance",label:"예배 출석",icon:"calendar"},
     {id:"sam",label:"샘 출석",icon:"group"},
-    {id:"newmembers",label:"새가족",icon:"newuser"},
+    {id:"more",label:"더보기",icon:"more"},
   ];
   const pageTitles = {
     home:{title:"학익교회 청년부 예배현황",sub:"오늘도 주님을 예배합니다 🙏"},
     members:{title:"청년 명단",sub:`전체 ${members.length}명 · 군복무 ${members.filter(m=>m.military).length}명`},
     attendance:{title:"예배 출석",sub:"주일예배 출석 체크"},
     sam:{title:"샘 모임",sub:"소그룹 출석 체크"},
+    more:{title:"더보기",sub:"추가 기능 메뉴"},
+    notices:{title:"공지 · 일정",sub:"청년부 소식"},
+    prayers:{title:"기도제목",sub:"함께 기도해요 🙏"},
+    absenceContact:{title:"결석자 연락",sub:"장기결석 연락 관리"},
     newmembers:{title:"새가족",sub:`등록 ${newMembers.length}명`},
   };
 
@@ -606,6 +651,10 @@ export default function App() {
     members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} noteCountMap={noteCountMap} />,
     attendance:<AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} />,
     sam:<SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} />,
+    more:<MorePage setActiveNav={setActiveNav} admin={admin} newMembersCount={newMembers.length} noticesCount={notices.length} prayersCount={prayers.filter(p=>!p.is_answered).length} />,
+    notices:<NoticePage notices={notices} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />,
+    prayers:<PrayerPage prayers={prayers} members={members} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />,
+    absenceContact:<AbsenceContactPage members={members} attendanceList={attendanceList} absenceContacts={absenceContacts} admin={admin} userEmail={user?.email} onRefresh={fetchAll} />,
     newmembers:<NewMembersPage newMembers={newMembers} sams={sams} setModal={setModal} onDelete={deleteNewMember} onToggleEdu={toggleEdu} onAssign={(nm)=>setModal({type:"assignSam",newMember:nm})} admin={admin} />,
   };
 
@@ -631,9 +680,15 @@ export default function App() {
             {admin && activeNav==="members" && <button className="btn-icon" onClick={()=>setModal({type:"addMember"})}><Icon name="plus" size={16}/></button>}
             {admin && activeNav==="newmembers" && <button className="btn-icon" onClick={()=>setModal({type:"addNewMember"})}><Icon name="plus" size={16}/></button>}
             {admin && activeNav==="sam" && <button className="btn-icon" onClick={()=>setModal({type:"addSam"})}><Icon name="plus" size={16}/></button>}
+            {admin && activeNav==="notices" && <button className="btn-icon" onClick={()=>setModal({type:"addNotice"})}><Icon name="plus" size={16}/></button>}
+            {admin && activeNav==="prayers" && <button className="btn-icon" onClick={()=>setModal({type:"addPrayer"})}><Icon name="plus" size={16}/></button>}
+            {(activeNav==="notices"||activeNav==="prayers"||activeNav==="absenceContact"||activeNav==="newmembers") && (
+              <button className="btn-icon" style={{background:"var(--gray-100)",color:"var(--gray-600)"}} onClick={()=>setActiveNav("more")}>
+                <Icon name="back" size={16}/>
+              </button>
+            )}
             {/* 내 계정 메뉴 */}
-            <button className="btn-icon" style={{background:"transparent"}} onClick={()=>setModal({type:"myAccount"})}
-              title={userId}>
+            <button className="btn-icon" style={{background:"transparent"}} onClick={()=>setModal({type:"myAccount"})} title={userId}>
               <div style={{width:28,height:28,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:admin?"#1D4ED8":"#166534"}}>
                 {userId.charAt(0).toUpperCase()}
               </div>
@@ -655,6 +710,10 @@ export default function App() {
         {admin && modal?.type==="addNewMember" && <NewMemberFormModal onSave={saveNewMember} onClose={closeModal}/>}
         {admin && modal?.type==="editNewMember" && <NewMemberFormModal initial={modal.member} onSave={m=>updateNewMember(modal.member.id,m)} onClose={closeModal}/>}
         {admin && modal?.type==="assignSam" && <AssignSamModal sams={sams} newMember={modal.newMember} onAssign={assignNewMemberToSam} onClose={closeModal}/>}
+        {admin && modal?.type==="addNotice" && <NoticeFormModal userEmail={user?.email} onSave={async(d)=>{await supabase.from("notices").insert([d]);await fetchAll();closeModal();}} onClose={closeModal}/>}
+        {admin && modal?.type==="editNotice" && <NoticeFormModal initial={modal.notice} userEmail={user?.email} onSave={async(d)=>{await supabase.from("notices").update(d).eq("id",modal.notice.id);await fetchAll();closeModal();}} onClose={closeModal}/>}
+        {admin && modal?.type==="addPrayer" && <PrayerFormModal members={members} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").insert([d]);await fetchAll();closeModal();}} onClose={closeModal}/>}
+        {admin && modal?.type==="editPrayer" && <PrayerFormModal members={members} initial={modal.prayer} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").update({content:d.content,member_id:d.member_id}).eq("id",modal.prayer.id);await fetchAll();closeModal();}} onClose={closeModal}/>}
         {modal?.type==="myAccount" && (
           <MyAccountModal userId={userId} admin={admin} onChangePw={()=>setModal({type:"changePw"})} onLogout={handleLogout} onClose={closeModal}/>
         )}
@@ -779,7 +838,31 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
           </div>
         </>
       )}
-      {thisMonthBirthdays.length>0&&(<><div className="section-header"><div className="section-title">🎂 {parseInt(mm)}월 생일자</div><span className="badge badge-yellow">{thisMonthBirthdays.length}명</span></div>{thisMonthBirthdays.map(m=>(<div key={m.id} className={`month-birthday-item ${m.isToday?"today":""}`}><div className={`birthday-date-badge ${m.isToday?"today":""}`}><span className="bday-month">{mm}월</span><span className="bday-day">{m.dayNum}</span></div><div className={`member-avatar ${m.gender}`} style={{width:34,height:34,fontSize:13}}>{m.name.charAt(0)}</div><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:"#1E293B"}}>{m.name} {m.isToday&&"🎉"}</div><div style={{fontSize:12,color:"#94A3B8"}}>{m.gender==="male"?"남":"여"}{m.birth_year&&` · ${m.birth_year}년생`}{m.isToday&&<span style={{color:"#F97316",fontWeight:600}}> · 오늘!</span>}{m.isPast&&!m.isToday&&<span style={{color:"#CBD5E1"}}> · 지남</span>}</div></div>{m.phone&&<a href={`tel:${m.phone}`} style={{flexShrink:0,color:"#2563EB"}}><Icon name="phone" size={18}/></a>}</div>))}<div style={{marginBottom:16}}/></>)}
+      {thisMonthBirthdays.length>0&&(
+        <>
+          <div className="section-header"><div className="section-title">🎂 {parseInt(mm)}월 생일자</div><span className="badge badge-yellow">{thisMonthBirthdays.length}명</span></div>
+          <div className="birthday-grid">
+            {thisMonthBirthdays.map(m=>(
+              <div key={m.id} className={`birthday-grid-card ${m.isToday?"today":""}`}>
+                <div className={`birthday-grid-badge ${m.isToday?"today":""}`}>
+                  <span className="birthday-grid-month">{mm}월</span>
+                  <span className="birthday-grid-day">{m.dayNum}</span>
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div className="birthday-grid-name" style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                    {m.name}{m.isToday&&" 🎉"}
+                  </div>
+                  <div className="birthday-grid-sub">
+                    {m.gender==="male"?"남":"여"}{m.birth_year&&` · ${m.birth_year}`}
+                    {m.isToday&&<span style={{color:"#F97316",fontWeight:600}}> 오늘!</span>}
+                  </div>
+                </div>
+                {m.phone&&<a href={`tel:${m.phone}`} style={{flexShrink:0,color:"#2563EB"}}><Icon name="phone" size={14}/></a>}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
       {alerts.length>0&&(<><div className="section-header"><div className="section-title">⚠️ 장기 결석 알림</div><span className="badge badge-red">{alerts.length}명</span></div>{alerts.map(({member,weeks})=>(<div key={member.id} className={`alert-item ${weeks>=8?"weekly":"warn"}`}><div style={{marginTop:1}}><Icon name="bell" size={16} color={weeks>=8?"#EF4444":"#F59E0B"}/></div><div className="alert-text"><div className="alert-title">{member.name}</div><div className="alert-sub">{weeks>=8?`🔴 ${weeks}주째 결석 — 매주 확인 필요`:`🟡 ${weeks}주째 결석 — 연락 필요`}{member.phone&&<> · <a href={`tel:${member.phone}`} className="phone-link">{member.phone}</a></>}</div></div></div>))}</>)}
 
       {/* 최근 나눔 기록 — 나눔 권한 있는 사람만 표시 */}
@@ -1483,6 +1566,331 @@ function PastoralNoteForm({ memberId, userEmail, initial, onSave, onClose }) {
         <button className="btn btn-primary" onClick={submit} disabled={saving}>
           <Icon name="check" size={16} color="white" />
           {saving ? "저장 중..." : isEdit ? "수정 완료" : "기록 저장"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ==================== 더보기 페이지 ====================
+function MorePage({setActiveNav,admin,newMembersCount,noticesCount,prayersCount}){
+  const menus=[
+    {id:"newmembers",label:"새가족",sub:`등록 ${newMembersCount}명`,icon:"newuser",bg:"#FFFBEB",color:"#D97706"},
+    {id:"notices",label:"공지 · 일정",sub:`${noticesCount}건`,icon:"bullhorn",bg:"#F5F3FF",color:"#7C3AED"},
+    {id:"prayers",label:"기도제목",sub:`응답대기 ${prayersCount}건`,icon:"prayhand",bg:"#FDF2F8",color:"#DB2777"},
+    {id:"absenceContact",label:"결석자 연락",sub:"연락 이력 관리",icon:"contact",bg:"#FFF7ED",color:"#EA580C"},
+  ];
+  return(
+    <div>
+      <div style={{marginBottom:16,padding:"12px 14px",background:"var(--primary-light)",borderRadius:"var(--radius)",border:"1px solid #BFDBFE"}}>
+        <div style={{fontSize:13,fontWeight:600,color:"var(--primary)"}}>추가 기능 메뉴</div>
+        <div style={{fontSize:12,color:"var(--gray-500)",marginTop:2}}>아래 메뉴를 선택하세요</div>
+      </div>
+      <div className="more-page-grid">
+        {menus.map(m=>(
+          <button key={m.id} className="more-page-btn" onClick={()=>setActiveNav(m.id)}>
+            <div className="more-page-icon" style={{background:m.bg}}>
+              <Icon name={m.icon} size={20} color={m.color}/>
+            </div>
+            <div>
+              <div className="more-page-label">{m.label}</div>
+              <div className="more-page-sub">{m.sub}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ==================== 공지/일정 페이지 ====================
+function NoticePage({notices,admin,userEmail,onRefresh,setModal}){
+  const [tab,setTab]=useState("all");
+  const filtered=tab==="all"?notices:notices.filter(n=>n.category===tab);
+
+  const deleteNotice=async(id)=>{
+    if(!window.confirm("삭제하시겠습니까?")) return;
+    await supabase.from("notices").delete().eq("id",id);
+    onRefresh();
+  };
+
+  return(
+    <div>
+      <div className="tab-bar">
+        <button className={`tab-item ${tab==="all"?"active":""}`} onClick={()=>setTab("all")}>전체</button>
+        <button className={`tab-item ${tab==="notice"?"active":""}`} onClick={()=>setTab("notice")}>📢 공지</button>
+        <button className={`tab-item ${tab==="schedule"?"active":""}`} onClick={()=>setTab("schedule")}>📅 일정</button>
+      </div>
+      {filtered.length===0?(
+        <div className="empty-state"><div className="empty-state-icon">📋</div><div className="empty-state-text">등록된 내용이 없습니다</div>{admin&&<div className="empty-state-sub">우측 상단 + 버튼으로 추가하세요</div>}</div>
+      ):(
+        filtered.map(n=>{
+          const isSchedule=n.category==="schedule";
+          const bg=isSchedule?"#F5F3FF":"#EFF6FF";
+          const color=isSchedule?"#7C3AED":"#2563EB";
+          return(
+            <div key={n.id} className={`notice-card ${n.category}`}>
+              <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
+                <div style={{flex:1}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
+                    <span style={{background:bg,color,borderRadius:20,padding:"2px 8px",fontSize:11,fontWeight:600}}>{isSchedule?"📅 일정":"📢 공지"}</span>
+                    {n.event_date&&<span style={{fontSize:12,color:"var(--gray-500)"}}>📅 {formatDate(n.event_date)}</span>}
+                  </div>
+                  <div className="notice-title">{n.title}</div>
+                  {n.content&&<div className="notice-content">{n.content}</div>}
+                  <div style={{fontSize:11,color:"var(--gray-400)",marginTop:6}}>{formatDate(n.created_at?.split("T")[0])}</div>
+                </div>
+                {admin&&(
+                  <div style={{display:"flex",gap:4,flexShrink:0}}>
+                    <button className="btn-icon" style={{width:28,height:28}} onClick={()=>setModal({type:"editNotice",notice:n})}><Icon name="edit" size={13}/></button>
+                    <button className="btn-icon danger" style={{width:28,height:28}} onClick={()=>deleteNotice(n.id)}><Icon name="trash" size={13}/></button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+// ==================== 기도제목 페이지 ====================
+function PrayerPage({prayers,members,admin,userEmail,onRefresh,setModal}){
+  const [tab,setTab]=useState("active");
+  const filtered=tab==="active"?prayers.filter(p=>!p.is_answered):prayers.filter(p=>p.is_answered);
+  const getMemberName=(id)=>members.find(m=>m.id===id)?.name||"알 수 없음";
+  const authorLabel=(email)=>email?.replace("@hiyouth.com","")||"";
+
+  const toggleAnswered=async(p)=>{
+    await supabase.from("prayers").update({is_answered:!p.is_answered,answered_at:!p.is_answered?today():null}).eq("id",p.id);
+    onRefresh();
+  };
+  const deletePrayer=async(id)=>{
+    if(!window.confirm("삭제하시겠습니까?")) return;
+    await supabase.from("prayers").delete().eq("id",id);
+    onRefresh();
+  };
+
+  return(
+    <div>
+      <div className="tab-bar">
+        <button className={`tab-item ${tab==="active"?"active":""}`} onClick={()=>setTab("active")}>🙏 기도 중 ({prayers.filter(p=>!p.is_answered).length})</button>
+        <button className={`tab-item ${tab==="answered"?"active":""}`} onClick={()=>setTab("answered")}>✅ 응답됨 ({prayers.filter(p=>p.is_answered).length})</button>
+      </div>
+      {filtered.length===0?(
+        <div className="empty-state"><div className="empty-state-icon">🙏</div><div className="empty-state-text">{tab==="active"?"기도제목이 없습니다":"응답된 기도가 없습니다"}</div>{admin&&tab==="active"&&<div className="empty-state-sub">우측 상단 + 버튼으로 추가하세요</div>}</div>
+      ):(
+        filtered.map(p=>(
+          <div key={p.id} className={`prayer-card ${p.is_answered?"answered":""}`}>
+            <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
+              <div style={{flex:1}}>
+                <div className="prayer-member">
+                  👤 {getMemberName(p.member_id)}
+                  {p.is_answered&&<span className="contact-done-badge" style={{marginLeft:6}}>✅ {p.answered_at?formatDate(p.answered_at):""}</span>}
+                </div>
+                <div className="prayer-content">{p.content}</div>
+                <div className="prayer-meta">
+                  <span>{formatDate(p.created_at?.split("T")[0])} · {authorLabel(p.author_email)}</span>
+                  <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                    {admin&&!p.is_answered&&(
+                      <button className="contact-done-btn" onClick={()=>toggleAnswered(p)}>
+                        <Icon name="check" size={12}/>응답 완료
+                      </button>
+                    )}
+                    {admin&&p.is_answered&&(
+                      <button className="contact-done-btn" style={{background:"var(--gray-100)",color:"var(--gray-500)",borderColor:"var(--gray-200)"}} onClick={()=>toggleAnswered(p)}>취소</button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {admin&&(
+                <div style={{display:"flex",gap:4,flexShrink:0}}>
+                  <button className="btn-icon" style={{width:28,height:28}} onClick={()=>setModal({type:"editPrayer",prayer:p})}><Icon name="edit" size={13}/></button>
+                  <button className="btn-icon danger" style={{width:28,height:28}} onClick={()=>deletePrayer(p.id)}><Icon name="trash" size={13}/></button>
+                </div>
+              )}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+// ==================== 결석자 연락 페이지 ====================
+function AbsenceContactPage({members,attendanceList,absenceContacts,admin,userEmail,onRefresh}){
+  const [contactModal,setContactModal]=useState(null);
+
+  const absentMembers=members.filter(m=>{
+    if(m.military) return false;
+    const w=getAbsentWeeks(m.id,attendanceList);
+    return w!==null&&w>=4;
+  }).sort((a,b)=>(getAbsentWeeks(b.id,attendanceList)||0)-(getAbsentWeeks(a.id,attendanceList)||0));
+
+  const getLastContact=(memberId)=>{
+    const list=absenceContacts.filter(c=>c.member_id===memberId).sort((a,b)=>b.contact_date.localeCompare(a.contact_date));
+    return list[0]||null;
+  };
+  const authorLabel=(email)=>email?.replace("@hiyouth.com","")||"";
+
+  const saveContact=async(memberId,memo)=>{
+    await supabase.from("absence_contacts").insert([{member_id:memberId,contact_date:today(),memo:memo.trim(),author_email:userEmail}]);
+    onRefresh();
+    setContactModal(null);
+  };
+
+  return(
+    <div>
+      {absentMembers.length===0?(
+        <div className="empty-state"><div className="empty-state-icon">🎉</div><div className="empty-state-text">장기결석자가 없습니다</div><div className="empty-state-sub">모든 청년이 출석 중이에요!</div></div>
+      ):(
+        <>
+          <div style={{fontSize:13,color:"var(--gray-500)",marginBottom:12}}>4주 이상 결석 중인 청년 · 총 {absentMembers.length}명</div>
+          {absentMembers.map(m=>{
+            const weeks=getAbsentWeeks(m.id,attendanceList)||0;
+            const lastContact=getLastContact(m.id);
+            return(
+              <div key={m.id} className={`alert-item ${weeks>=8?"weekly":"warn"}`} style={{flexDirection:"column",gap:8,alignItems:"stretch"}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div className={`member-avatar ${m.gender}`} style={{width:36,height:36,fontSize:13,flexShrink:0}}>{m.name.charAt(0)}</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontWeight:700,color:"var(--gray-800)"}}>{m.name}</div>
+                    <div style={{fontSize:12,color:"var(--gray-500)"}}>{weeks>=8?`🔴 ${weeks}주째 결석`:`🟡 ${weeks}주째 결석`}{m.phone&&<> · <a href={`tel:${m.phone}`} className="phone-link">{m.phone}</a></>}</div>
+                  </div>
+                </div>
+                {lastContact?(
+                  <div style={{background:"rgba(255,255,255,0.7)",borderRadius:8,padding:"6px 10px",fontSize:12}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <span className="contact-done-badge">✅ {formatDate(lastContact.contact_date)} 연락완료</span>
+                      <span style={{fontSize:11,color:"var(--gray-400)"}}>{authorLabel(lastContact.author_email)}</span>
+                    </div>
+                    {lastContact.memo&&<div style={{marginTop:4,color:"var(--gray-600)"}}>{lastContact.memo}</div>}
+                  </div>
+                ):(
+                  <div style={{fontSize:12,color:"var(--gray-400)"}}>연락 기록 없음</div>
+                )}
+                {admin&&(
+                  <button className="contact-done-btn" style={{width:"100%",justifyContent:"center"}} onClick={()=>setContactModal(m)}>
+                    <Icon name="phone" size={14}/>연락 완료 기록하기
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </>
+      )}
+      {contactModal&&<ContactMemoModal member={contactModal} onSave={(memo)=>saveContact(contactModal.id,memo)} onClose={()=>setContactModal(null)}/>}
+    </div>
+  );
+}
+
+// ==================== 연락 메모 모달 ====================
+function ContactMemoModal({member,onSave,onClose}){
+  const [memo,setMemo]=useState("");
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
+        <div className="modal-handle"/>
+        <div className="modal-title">📞 연락 완료 기록</div>
+        <div style={{background:"var(--primary-light)",borderRadius:10,padding:"10px 14px",marginBottom:16,fontSize:13,color:"var(--primary)"}}>
+          <strong>{member.name}</strong> 님과 연락한 내용을 기록해 두세요
+        </div>
+        <div className="form-group">
+          <label className="form-label">메모 <span className="optional">(선택)</span></label>
+          <textarea className="form-input" placeholder="예) 카톡으로 연락, 다음 주 출석 예정" value={memo} onChange={e=>setMemo(e.target.value)} rows={3} style={{resize:"none",lineHeight:1.6}}/>
+        </div>
+        <button className="btn btn-primary" onClick={()=>onSave(memo)}>
+          <Icon name="check" size={16} color="white"/>연락 완료 저장
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ==================== 공지 작성/수정 폼 ====================
+function NoticeFormModal({initial,userEmail,onSave,onClose}){
+  const [title,setTitle]=useState(initial?.title||"");
+  const [content,setContent]=useState(initial?.content||"");
+  const [category,setCategory]=useState(initial?.category||"notice");
+  const [eventDate,setEventDate]=useState(initial?.event_date||"");
+  const [saving,setSaving]=useState(false);
+
+  const submit=async()=>{
+    if(!title.trim()){alert("제목을 입력해주세요");return;}
+    setSaving(true);
+    await onSave({title:title.trim(),content:content.trim(),category,event_date:eventDate||null,author_email:userEmail});
+    setSaving(false);
+  };
+
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
+        <div className="modal-handle"/>
+        <div className="modal-title">{initial?"공지/일정 수정":"공지/일정 등록"}</div>
+        <div className="form-group">
+          <label className="form-label">유형</label>
+          <div style={{display:"flex",gap:8}}>
+            {[{v:"notice",l:"📢 공지"},{v:"schedule",l:"📅 일정"}].map(c=>(
+              <button key={c.v} className="btn" style={{flex:1,padding:"10px",background:category===c.v?"var(--primary)":"var(--gray-100)",color:category===c.v?"white":"var(--gray-600)",fontSize:14,fontWeight:600}} onClick={()=>setCategory(c.v)}>{c.l}</button>
+            ))}
+          </div>
+        </div>
+        <div className="form-group">
+          <label className="form-label">제목 <span style={{color:"#EF4444"}}>*</span></label>
+          <input className="form-input" placeholder="제목 입력" value={title} onChange={e=>setTitle(e.target.value)}/>
+        </div>
+        {category==="schedule"&&(
+          <div className="form-group">
+            <label className="form-label">일정 날짜 <span className="optional">(선택)</span></label>
+            <input className="form-input" type="date" value={eventDate} onChange={e=>setEventDate(e.target.value)}/>
+          </div>
+        )}
+        <div className="form-group">
+          <label className="form-label">내용 <span className="optional">(선택)</span></label>
+          <textarea className="form-input" placeholder="내용 입력" value={content} onChange={e=>setContent(e.target.value)} rows={4} style={{resize:"none",lineHeight:1.6}}/>
+        </div>
+        <button className="btn btn-primary" onClick={submit} disabled={saving}>
+          <Icon name="check" size={16} color="white"/>{saving?"저장 중...":initial?"수정 완료":"등록하기"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ==================== 기도제목 작성/수정 폼 ====================
+function PrayerFormModal({members,initial,userEmail,onSave,onClose}){
+  const [memberId,setMemberId]=useState(initial?.member_id||"");
+  const [content,setContent]=useState(initial?.content||"");
+  const [saving,setSaving]=useState(false);
+  const activeMembers=sortByName(members.filter(m=>!m.military));
+
+  const submit=async()=>{
+    if(!memberId){alert("청년을 선택해주세요");return;}
+    if(!content.trim()){alert("기도제목을 입력해주세요");return;}
+    setSaving(true);
+    await onSave({member_id:memberId,content:content.trim(),author_email:userEmail,is_answered:false});
+    setSaving(false);
+  };
+
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
+        <div className="modal-handle"/>
+        <div className="modal-title">{initial?"기도제목 수정":"기도제목 등록"}</div>
+        <div className="form-group">
+          <label className="form-label">청년 선택 <span style={{color:"#EF4444"}}>*</span></label>
+          <select className="form-select" value={memberId} onChange={e=>setMemberId(e.target.value)}>
+            <option value="">청년을 선택하세요</option>
+            {activeMembers.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
+          </select>
+        </div>
+        <div className="form-group">
+          <label className="form-label">기도제목 <span style={{color:"#EF4444"}}>*</span></label>
+          <textarea className="form-input" placeholder="기도제목을 입력하세요" value={content} onChange={e=>setContent(e.target.value)} rows={4} style={{resize:"none",lineHeight:1.6}}/>
+        </div>
+        <button className="btn btn-primary" onClick={submit} disabled={saving}>
+          <Icon name="check" size={16} color="white"/>{saving?"저장 중...":initial?"수정 완료":"등록하기"}
         </button>
       </div>
     </div>
