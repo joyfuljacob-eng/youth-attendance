@@ -1861,9 +1861,35 @@ function NoticeFormModal({initial,userEmail,onSave,onClose}){
 // ==================== 기도제목 작성/수정 폼 ====================
 function PrayerFormModal({members,initial,userEmail,onSave,onClose}){
   const [memberId,setMemberId]=useState(initial?.member_id||"");
+  const [searchText,setSearchText]=useState(()=>{
+    if(initial?.member_id){
+      const m=members.find(m=>m.id===initial.member_id);
+      return m?m.name:"";
+    }
+    return "";
+  });
+  const [showList,setShowList]=useState(false);
   const [content,setContent]=useState(initial?.content||"");
   const [saving,setSaving]=useState(false);
+
   const activeMembers=sortByName(members.filter(m=>!m.military));
+  const filtered=searchText.trim()
+    ? activeMembers.filter(m=>m.name.includes(searchText.trim()))
+    : activeMembers;
+
+  const selectedMember=members.find(m=>m.id===memberId);
+
+  const handleSelect=(m)=>{
+    setMemberId(m.id);
+    setSearchText(m.name);
+    setShowList(false);
+  };
+
+  const handleSearchChange=(e)=>{
+    setSearchText(e.target.value);
+    setMemberId(""); // 검색어 바꾸면 선택 초기화
+    setShowList(true);
+  };
 
   const submit=async()=>{
     if(!memberId){alert("청년을 선택해주세요");return;}
@@ -1878,16 +1904,96 @@ function PrayerFormModal({members,initial,userEmail,onSave,onClose}){
       <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
         <div className="modal-handle"/>
         <div className="modal-title">{initial?"기도제목 수정":"기도제목 등록"}</div>
-        <div className="form-group">
-          <label className="form-label">청년 선택 <span style={{color:"#EF4444"}}>*</span></label>
-          <select className="form-select" value={memberId} onChange={e=>setMemberId(e.target.value)}>
-            <option value="">청년을 선택하세요</option>
-            {activeMembers.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
-          </select>
+
+        {/* 이름 검색 입력 */}
+        <div className="form-group" style={{position:"relative"}}>
+          <label className="form-label">청년 이름 검색 <span style={{color:"#EF4444"}}>*</span></label>
+          <div className="input-with-icon">
+            <span className="input-icon"><Icon name="users" size={15}/></span>
+            <input
+              className="form-input"
+              style={{paddingLeft:38}}
+              placeholder="이름 입력 후 선택..."
+              value={searchText}
+              onChange={handleSearchChange}
+              onFocus={()=>setShowList(true)}
+              autoComplete="off"
+            />
+            {/* 선택된 경우 체크 표시 */}
+            {memberId&&(
+              <span style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",color:"#10B981",fontSize:14}}>✓</span>
+            )}
+          </div>
+
+          {/* 자동완성 드롭다운 */}
+          {showList&&searchText.trim()&&(
+            <div style={{
+              position:"absolute",top:"100%",left:0,right:0,
+              background:"var(--white)",border:"1.5px solid var(--primary)",
+              borderRadius:"var(--radius)",boxShadow:"var(--shadow-md)",
+              zIndex:300,maxHeight:200,overflowY:"auto",marginTop:2,
+            }}>
+              {filtered.length===0?(
+                <div style={{padding:"12px 14px",fontSize:13,color:"var(--gray-400)",textAlign:"center"}}>
+                  일치하는 청년이 없습니다
+                </div>
+              ):(
+                filtered.map(m=>(
+                  <div key={m.id}
+                    onClick={()=>handleSelect(m)}
+                    style={{
+                      display:"flex",alignItems:"center",gap:10,
+                      padding:"10px 14px",cursor:"pointer",
+                      background:memberId===m.id?"var(--primary-light)":"transparent",
+                      borderBottom:"1px solid var(--gray-100)",
+                      transition:"background 0.1s",
+                    }}
+                    onMouseEnter={e=>e.currentTarget.style.background="var(--primary-light)"}
+                    onMouseLeave={e=>e.currentTarget.style.background=memberId===m.id?"var(--primary-light)":"transparent"}
+                  >
+                    <div className={`member-avatar ${m.gender}`} style={{width:30,height:30,fontSize:12,flexShrink:0}}>
+                      {m.name.charAt(0)}
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:14,fontWeight:600,color:"var(--gray-800)"}}>{m.name}</div>
+                      <div style={{fontSize:11,color:"var(--gray-400)"}}>
+                        {m.gender==="male"?"남":"여"}
+                        {m.birth_year&&` · ${m.birth_year}년생`}
+                        {m.sam_id&&members&&` · ${members.find?.(s=>s.id===m.sam_id)?.name||""}샘`}
+                      </div>
+                    </div>
+                    {memberId===m.id&&<span style={{color:"#10B981",fontSize:14}}>✓</span>}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
+
+        {/* 선택된 청년 표시 */}
+        {selectedMember&&(
+          <div style={{
+            background:"var(--primary-light)",border:"1px solid #BFDBFE",
+            borderRadius:"var(--radius)",padding:"10px 14px",
+            marginBottom:16,display:"flex",alignItems:"center",gap:10,
+          }}>
+            <div className={`member-avatar ${selectedMember.gender}`} style={{width:34,height:34,fontSize:13}}>
+              {selectedMember.name.charAt(0)}
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:14,fontWeight:600,color:"var(--primary)"}}>{selectedMember.name}</div>
+              <div style={{fontSize:12,color:"var(--gray-500)"}}>선택됨 ✓</div>
+            </div>
+            <button style={{background:"none",border:"none",color:"var(--gray-400)",cursor:"pointer",fontSize:16}}
+              onClick={()=>{setMemberId("");setSearchText("");setShowList(false);}}>✕</button>
+          </div>
+        )}
+
         <div className="form-group">
           <label className="form-label">기도제목 <span style={{color:"#EF4444"}}>*</span></label>
-          <textarea className="form-input" placeholder="기도제목을 입력하세요" value={content} onChange={e=>setContent(e.target.value)} rows={4} style={{resize:"none",lineHeight:1.6}}/>
+          <textarea className="form-input" placeholder="기도제목을 입력하세요"
+            value={content} onChange={e=>setContent(e.target.value)}
+            rows={4} style={{resize:"none",lineHeight:1.6}}/>
         </div>
         <button className="btn btn-primary" onClick={submit} disabled={saving}>
           <Icon name="check" size={16} color="white"/>{saving?"저장 중...":initial?"수정 완료":"등록하기"}
