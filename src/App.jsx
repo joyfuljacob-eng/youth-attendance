@@ -157,9 +157,9 @@ const css = `
   .date-input-styled{flex:1;padding:10px 14px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-size:14px;font-family:'Noto Sans KR',sans-serif;color:var(--gray-800);background:var(--white);outline:none;}
   .date-input-styled:focus{border-color:var(--primary);}
   .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-  .stat-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:14px;text-align:center;}
-  .stat-number{font-family:'Montserrat',sans-serif;font-size:28px;font-weight:700;color:var(--primary);line-height:1;margin-bottom:4px;}
-  .stat-label{font-size:12px;color:var(--gray-500);}
+  .stat-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:10px;text-align:center;}
+  .stat-number{font-family:'Montserrat',sans-serif;font-size:24px;font-weight:700;color:var(--primary);line-height:1;margin-bottom:2px;}
+  .stat-label{font-size:11px;color:var(--gray-500);}
   .alert-item{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:var(--radius);margin-bottom:8px;}
   .alert-item.warn{background:var(--warning-light);border-left:3px solid var(--warning);}
   .alert-item.danger{background:var(--danger-light);border-left:3px solid var(--danger);}
@@ -215,11 +215,11 @@ const css = `
   .home-banner::after{content:'✝';position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:64px;opacity:0.1;}
   .home-banner-title{font-family:'Montserrat',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px;}
   .home-banner-sub{font-size:13px;opacity:0.85;}
-  .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-  .quick-action{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:16px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;cursor:pointer;transition:all 0.15s;box-shadow:var(--shadow);}
+  .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+  .quick-action{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:12px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;cursor:pointer;transition:all 0.15s;box-shadow:var(--shadow);}
   .quick-action:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);}
-  .quick-action-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;}
-  .quick-action-label{font-size:13px;font-weight:600;color:var(--gray-700);}
+  .quick-action-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+  .quick-action-label{font-size:12px;font-weight:600;color:var(--gray-700);}
   .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
   .section-title{font-size:15px;font-weight:700;color:var(--gray-800);}
   .progress-bar-wrap{background:var(--gray-200);border-radius:999px;height:6px;overflow:hidden;}
@@ -647,7 +647,7 @@ export default function App() {
   };
 
   const pages = {
-    home:<HomePage members={members} newMembers={newMembers} sams={sams} attendanceList={attendanceList} setActiveNav={setActiveNav} todayBirthdays={todayBirthdays} userEmail={user?.email} recentNotes={recentNotes} onSelectMember={setSelectedMember} />,
+    home:<HomePage members={members} newMembers={newMembers} sams={sams} attendanceList={attendanceList} setActiveNav={setActiveNav} todayBirthdays={todayBirthdays} userEmail={user?.email} recentNotes={recentNotes} onSelectMember={setSelectedMember} notices={notices} />,
     members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} noteCountMap={noteCountMap} />,
     attendance:<AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} />,
     sam:<SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} />,
@@ -763,7 +763,7 @@ function MyAccountModal({ userId, admin, onChangePw, onLogout, onClose }) {
 }
 
 // ==================== HOME PAGE ====================
-function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirthdays,userEmail,recentNotes,onSelectMember}){
+function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirthdays,userEmail,recentNotes,onSelectMember,notices}){
   const todayStr=today();
   const presentToday=attendanceList.filter(a=>a.date===todayStr&&a.status).length;
   const allPeople=[...members,...newMembers];
@@ -775,6 +775,12 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
   // 나눔 기록 권한 있는 사람만 최근 나눔 카드 표시
   const showNotes = canWriteNotes(userEmail) || canViewAllNotes(userEmail);
   const authorLabel = (email) => email?.replace("@hiyouth.com","") || "";
+
+  // 홈 화면 공지/일정
+  const todayDate = today();
+  const upcomingSchedules = (notices||[]).filter(n=>n.category==="schedule"&&(!n.event_date||n.event_date>=todayDate)).sort((a,b)=>(a.event_date||"9999").localeCompare(b.event_date||"9999")).slice(0,3);
+  const recentNotices = (notices||[]).filter(n=>n.category==="notice").slice(0,2);
+  const homeNotices = [...upcomingSchedules,...recentNotices].slice(0,4);
 
   return(
     <div>
@@ -796,6 +802,46 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
         <button className="quick-action" onClick={()=>setActiveNav("members")}><div className="quick-action-icon" style={{background:"#FDF2F8"}}><Icon name="users" size={20} color="#DB2777"/></div><div className="quick-action-label">청년 명단</div></button>
         <button className="quick-action" onClick={()=>setActiveNav("newmembers")}><div className="quick-action-icon" style={{background:"#FFFBEB"}}><Icon name="newuser" size={20} color="#D97706"/></div><div className="quick-action-label">새가족 관리</div></button>
       </div>
+
+      {/* 공지/일정 홈 카드 */}
+      {homeNotices.length>0&&(
+        <>
+          <div className="section-header">
+            <div className="section-title">📢 공지 · 일정</div>
+            <button className="btn btn-secondary btn-sm" onClick={()=>setActiveNav("notices")}>전체보기 →</button>
+          </div>
+          <div style={{background:"var(--white)",border:"1px solid var(--gray-200)",borderRadius:"var(--radius-lg)",overflow:"hidden",marginBottom:14,boxShadow:"var(--shadow)"}}>
+            {homeNotices.map((n,idx)=>{
+              const isSchedule = n.category==="schedule";
+              const bg = isSchedule ? "#F5F3FF" : "#EFF6FF";
+              const color = isSchedule ? "#7C3AED" : "#2563EB";
+              const label = isSchedule ? "📅 일정" : "📢 공지";
+              return(
+                <div key={n.id}
+                  onClick={()=>setActiveNav("notices")}
+                  style={{
+                    display:"flex",alignItems:"center",gap:10,
+                    padding:"10px 14px",cursor:"pointer",
+                    borderBottom:idx<homeNotices.length-1?"1px solid var(--gray-100)":"none",
+                    borderLeft:`3px solid ${color}`,
+                    transition:"background 0.15s",
+                  }}
+                  onMouseEnter={e=>e.currentTarget.style.background="var(--gray-50)"}
+                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                >
+                  <span style={{background:bg,color,borderRadius:20,padding:"2px 7px",fontSize:10,fontWeight:700,flexShrink:0}}>{label}</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:600,color:"var(--gray-800)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.title}</div>
+                    {isSchedule&&n.event_date&&<div style={{fontSize:11,color:"var(--gray-400)",marginTop:1}}>{formatDate(n.event_date)}</div>}
+                  </div>
+                  <div style={{color:"var(--gray-300)",flexShrink:0,fontSize:16}}>›</div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
       {/* 샘별 인원수 */}
       {sams.length>0&&(
         <>
