@@ -216,10 +216,10 @@ const css = `
   .home-banner-title{font-family:'Montserrat',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px;}
   .home-banner-sub{font-size:13px;opacity:0.85;}
   .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
-  .quick-action{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:12px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;cursor:pointer;transition:all 0.15s;box-shadow:var(--shadow);}
-  .quick-action:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);}
-  .quick-action-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;}
-  .quick-action-label{font-size:12px;font-weight:600;color:var(--gray-700);}
+  .quick-action{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:10px 12px;display:flex;flex-direction:row;align-items:center;gap:10px;cursor:pointer;transition:all 0.15s;box-shadow:var(--shadow);}
+  .quick-action:hover{transform:translateY(-1px);box-shadow:var(--shadow-md);}
+  .quick-action-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .quick-action-label{font-size:12px;font-weight:600;color:var(--gray-700);text-align:left;}
   .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
   .section-title{font-size:15px;font-weight:700;color:var(--gray-800);}
   .progress-bar-wrap{background:var(--gray-200);border-radius:999px;height:6px;overflow:hidden;}
@@ -797,10 +797,10 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
         <div className="stat-card"><div className="stat-number" style={{color:"#8B5CF6"}}>{newMembers.length}</div><div className="stat-label">새가족</div></div>
       </div>
       <div className="quick-grid">
-        <button className="quick-action" onClick={()=>setActiveNav("attendance")}><div className="quick-action-icon" style={{background:"#EFF6FF"}}><Icon name="calendar" size={20} color="#2563EB"/></div><div className="quick-action-label">예배 출석 체크</div></button>
-        <button className="quick-action" onClick={()=>setActiveNav("sam")}><div className="quick-action-icon" style={{background:"#ECFDF5"}}><Icon name="group" size={20} color="#10B981"/></div><div className="quick-action-label">샘 출석 체크</div></button>
-        <button className="quick-action" onClick={()=>setActiveNav("members")}><div className="quick-action-icon" style={{background:"#FDF2F8"}}><Icon name="users" size={20} color="#DB2777"/></div><div className="quick-action-label">청년 명단</div></button>
-        <button className="quick-action" onClick={()=>setActiveNav("newmembers")}><div className="quick-action-icon" style={{background:"#FFFBEB"}}><Icon name="newuser" size={20} color="#D97706"/></div><div className="quick-action-label">새가족 관리</div></button>
+        <button className="quick-action" onClick={()=>setActiveNav("attendance")}><div className="quick-action-icon" style={{background:"#EFF6FF"}}><Icon name="calendar" size={17} color="#2563EB"/></div><div className="quick-action-label">예배 출석 체크</div></button>
+        <button className="quick-action" onClick={()=>setActiveNav("sam")}><div className="quick-action-icon" style={{background:"#ECFDF5"}}><Icon name="group" size={17} color="#10B981"/></div><div className="quick-action-label">샘 출석 체크</div></button>
+        <button className="quick-action" onClick={()=>setActiveNav("members")}><div className="quick-action-icon" style={{background:"#FDF2F8"}}><Icon name="users" size={17} color="#DB2777"/></div><div className="quick-action-label">청년 명단</div></button>
+        <button className="quick-action" onClick={()=>setActiveNav("newmembers")}><div className="quick-action-icon" style={{background:"#FFFBEB"}}><Icon name="newuser" size={17} color="#D97706"/></div><div className="quick-action-label">새가족 관리</div></button>
       </div>
 
       {/* 공지/일정 홈 카드 */}
