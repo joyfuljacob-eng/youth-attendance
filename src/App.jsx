@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabaseClient";
 
 // ==================== ICONS ====================
@@ -372,8 +372,8 @@ function BirthdayInput({ value, onChange }) {
   const month = value ? value.split("/")[0] || "" : "";
   const day   = value ? value.split("/")[1] || "" : "";
 
-  const monthRef = React.useRef();
-  const dayRef   = React.useRef();
+  const monthRef = useRef();
+  const dayRef   = useRef();
 
   const handleMonth = (e) => {
     const v = e.target.value.replace(/[^0-9]/g,"").slice(0,2);
