@@ -46,6 +46,17 @@ const today = () => new Date().toISOString().split("T")[0];
 const formatDate = (d) => { if (!d) return ""; const dt = new Date(d + "T00:00:00"); return `${dt.getFullYear()}.${String(dt.getMonth()+1).padStart(2,"0")}.${String(dt.getDate()).padStart(2,"0")}`; };
 const getDayLabel = (d) => { const days=["일","월","화","수","목","금","토"]; return days[new Date(d+"T00:00:00").getDay()]; };
 const sortByName = (arr) => [...arr].sort((a, b) => a.name.localeCompare(b.name, "ko"));
+
+// 생일 값 정규화 (저장 시 MM/DD 형식으로 변환)
+const normalizeBirthday = (val) => {
+  if(!val) return "";
+  const parts = val.split("\/");
+  if(parts.length !== 2) return val;
+  const mm = parts[0].padStart(2,"0");
+  const dd = parts[1].padStart(2,"0");
+  if(!mm || !dd || mm==="00" || dd==="00") return "";
+  return `${mm}/${dd}`;
+};
 const getAbsentWeeks = (memberId, list) => {
   const recs = list.filter(a => a.member_id === memberId && a.status === true).sort((a,b) => b.date.localeCompare(a.date));
   if (!recs.length) return null;
@@ -350,6 +361,81 @@ function GenderToggle({ gender, setGender }) {
         <button className={`gender-btn female ${gender==="female"?"active":""}`} onClick={()=>setGender("female")}>
           <Icon name="female" size={16} color={gender==="female"?"#DB2777":"#94A3B8"} />여
         </button>
+      </div>
+    </div>
+  );
+}
+
+// 월/일 분리 생일 입력 컴포넌트
+function BirthdayInput({ value, onChange }) {
+  // value: "MM/DD" 형식
+  const month = value ? value.split("/")[0] || "" : "";
+  const day   = value ? value.split("/")[1] || "" : "";
+
+  const monthRef = React.useRef();
+  const dayRef   = React.useRef();
+
+  const handleMonth = (e) => {
+    const v = e.target.value.replace(/[^0-9]/g,"").slice(0,2);
+    const m = parseInt(v);
+    // 유효성: 1~12
+    if(v !== "" && m > 12) return;
+    const newVal = v && day ? `${v}/${day}` : v ? `${v}/` : "";
+    onChange(v && day ? `${v}/${day}` : v);
+    // 2자리 입력 완료 또는 2 이상 첫 자리면 일 칸으로 이동
+    if(v.length === 2 || (v.length === 1 && parseInt(v) > 1)) {
+      dayRef.current?.focus();
+    }
+  };
+
+  const handleDay = (e) => {
+    const v = e.target.value.replace(/[^0-9]/g,"").slice(0,2);
+    const d = parseInt(v);
+    if(v !== "" && d > 31) return;
+    onChange(month && v ? `${month}/${v}` : month ? month : "");
+  };
+
+  const handleMonthKeyDown = (e) => {
+    if(e.key === "/" || e.key === "." || e.key === "-") {
+      e.preventDefault();
+      dayRef.current?.focus();
+    }
+  };
+
+  const handleDayKeyDown = (e) => {
+    if(e.key === "Backspace" && !day) {
+      monthRef.current?.focus();
+    }
+  };
+
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:6}}>
+      <div style={{flex:1,position:"relative"}}>
+        <input
+          ref={monthRef}
+          className="form-input"
+          type="number"
+          placeholder="월"
+          value={month}
+          onChange={handleMonth}
+          onKeyDown={handleMonthKeyDown}
+          min="1" max="12"
+          style={{textAlign:"center",paddingLeft:8,paddingRight:8}}
+        />
+      </div>
+      <span style={{color:"var(--gray-400)",fontWeight:600,fontSize:16,flexShrink:0}}>/</span>
+      <div style={{flex:1,position:"relative"}}>
+        <input
+          ref={dayRef}
+          className="form-input"
+          type="number"
+          placeholder="일"
+          value={day}
+          onChange={handleDay}
+          onKeyDown={handleDayKeyDown}
+          min="1" max="31"
+          style={{textAlign:"center",paddingLeft:8,paddingRight:8}}
+        />
       </div>
     </div>
   );
@@ -1373,7 +1459,7 @@ function MemberFormModal({sams,initial,onSave,onClose}){
   const [birthday,setBirthday]=useState(initial?.birthday||"");
   const [samId,setSamId]=useState(initial?.sam_id||"");
   const [military,setMilitary]=useState(initial?.military||false);
-  const submit=()=>{if(!name.trim()){alert("이름을 입력해주세요");return;}onSave({name:name.trim(),gender,phone:phone.trim(),birthYear,birthday,samId,military});};
+  const submit=()=>{if(!name.trim()){alert("이름을 입력해주세요");return;}onSave({name:name.trim(),gender,phone:phone.trim(),birthYear,birthday:normalizeBirthday(birthday),samId,military});};
   return(
     <div className="modal-overlay" onClick={onClose}><div className="modal-sheet" onClick={e=>e.stopPropagation()}>
       <div className="modal-handle"/><div className="modal-title">{initial?"청년 정보 수정":"청년 등록"}</div>
@@ -1382,7 +1468,7 @@ function MemberFormModal({sams,initial,onSave,onClose}){
       <div className="form-group"><label className="form-label">전화번호 <span className="optional">(선택)</span></label><div className="input-with-icon"><span className="input-icon"><Icon name="phone" size={15}/></span><input className="form-input" type="tel" placeholder="010-0000-0000" value={phone} onChange={e=>setPhone(e.target.value)}/></div></div>
       <div className="form-row">
         <div className="form-group"><label className="form-label">출생년도 <span className="optional">(선택)</span></label><input className="form-input" placeholder="예) 1998" type="number" value={birthYear} onChange={e=>setBirthYear(e.target.value)}/></div>
-        <div className="form-group"><label className="form-label">생일 <span className="optional">(선택)</span></label><input className="form-input" placeholder="MM/DD" value={birthday} onChange={e=>setBirthday(e.target.value)}/></div>
+        <div className="form-group"><label className="form-label">생일 <span className="optional">(선택)</span></label><BirthdayInput value={birthday} onChange={setBirthday}/></div>
       </div>
       <div className="form-group"><label className="form-label">샘 배정 <span className="optional">(선택)</span></label><select className="form-select" value={samId} onChange={e=>setSamId(e.target.value)}><option value="">샘 선택</option>{sams.map(s=><option key={s.id} value={s.id}>{s.name}샘</option>)}</select></div>
       <div className={`military-toggle ${military?"active":""}`} onClick={()=>setMilitary(!military)}><div className="military-toggle-label"><Icon name="shield" size={18} color={military?"#4B5563":"#94A3B8"}/><span style={{fontSize:14,fontWeight:500,color:military?"#374151":"#94A3B8"}}>🪖 군복무 중</span></div><div className={`toggle-switch ${military?"on":""}`}><div className="toggle-knob"/></div></div>
@@ -1401,8 +1487,24 @@ function NewMemberFormModal({initial,onSave,onClose}){
   const [phone,setPhone]=useState(initial?.phone||"");
   const [birthYear,setBirthYear]=useState(initial?.birth_year||"");
   const [birthday,setBirthday]=useState(initial?.birthday||"");
-  const submit=()=>{if(!name.trim()){alert("이름을 입력해주세요");return;}onSave({name:name.trim(),gender,phone:phone.trim(),birthYear,birthday});};
-  return(<div className="modal-overlay" onClick={onClose}><div className="modal-sheet" onClick={e=>e.stopPropagation()}><div className="modal-handle"/><div className="modal-title">{initial?"새가족 정보 수정":"새가족 등록"}</div><div className="form-group"><label className="form-label">이름 <span style={{color:"#EF4444"}}>*</span></label><input className="form-input" placeholder="이름 입력" value={name} onChange={e=>setName(e.target.value)}/></div><GenderToggle gender={gender} setGender={setGender}/><div className="form-group"><label className="form-label">전화번호 <span className="optional">(선택)</span></label><div className="input-with-icon"><span className="input-icon"><Icon name="phone" size={15}/></span><input className="form-input" type="tel" placeholder="010-0000-0000" value={phone} onChange={e=>setPhone(e.target.value)}/></div></div><div className="form-row"><div className="form-group"><label className="form-label">출생년도 <span className="optional">(선택)</span></label><input className="form-input" placeholder="예) 1998" type="number" value={birthYear} onChange={e=>setBirthYear(e.target.value)}/></div><div className="form-group"><label className="form-label">생일 <span className="optional">(선택)</span></label><input className="form-input" placeholder="MM/DD" value={birthday} onChange={e=>setBirthday(e.target.value)}/></div></div><div className="info-hint">💡 새가족 교육 4주 이수 체크는 등록 후 명단에서 직접 체크할 수 있습니다</div><button className="btn btn-primary" onClick={submit}><Icon name="check" size={16} color="white"/>{initial?"수정 완료":"등록하기"}</button></div></div>);
+  const submit=()=>{if(!name.trim()){alert("이름을 입력해주세요");return;}onSave({name:name.trim(),gender,phone:phone.trim(),birthYear,birthday:normalizeBirthday(birthday)});};
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
+        <div className="modal-handle"/>
+        <div className="modal-title">{initial?"새가족 정보 수정":"새가족 등록"}</div>
+        <div className="form-group"><label className="form-label">이름 <span style={{color:"#EF4444"}}>*</span></label><input className="form-input" placeholder="이름 입력" value={name} onChange={e=>setName(e.target.value)}/></div>
+        <GenderToggle gender={gender} setGender={setGender}/>
+        <div className="form-group"><label className="form-label">전화번호 <span className="optional">(선택)</span></label><div className="input-with-icon"><span className="input-icon"><Icon name="phone" size={15}/></span><input className="form-input" type="tel" placeholder="010-0000-0000" value={phone} onChange={e=>setPhone(e.target.value)}/></div></div>
+        <div className="form-row">
+          <div className="form-group"><label className="form-label">출생년도 <span className="optional">(선택)</span></label><input className="form-input" placeholder="예) 1998" type="number" value={birthYear} onChange={e=>setBirthYear(e.target.value)}/></div>
+          <div className="form-group"><label className="form-label">생일 <span className="optional">(선택)</span></label><BirthdayInput value={birthday} onChange={setBirthday}/></div>
+        </div>
+        <div className="info-hint">💡 새가족 교육 4주 이수 체크는 등록 후 명단에서 직접 체크할 수 있습니다</div>
+        <button className="btn btn-primary" onClick={submit}><Icon name="check" size={16} color="white"/>{initial?"수정 완료":"등록하기"}</button>
+      </div>
+    </div>
+  );
 }
 function AssignSamModal({sams,newMember,onAssign,onClose}){
   const [samId,setSamId]=useState("");
