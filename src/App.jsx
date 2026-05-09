@@ -66,6 +66,20 @@ const getThisMonthBirthdays = (members) => {
 // 관리자 여부 판단 (youth 계정은 조회자)
 const isAdmin = (email) => email && !email.startsWith("youth@");
 
+// 새가족 메모 권한
+// 작성 가능: leader0, leader1, leader2
+// 열람만: leader3~7 (관리자)
+// 접근불가: youth
+const canWriteNewMemberMemo = (email) => {
+  if(!email) return false;
+  const id = email.replace("@hiyouth.com","");
+  return ["leader0","leader1","leader2"].includes(id);
+};
+const canReadNewMemberMemo = (email) => {
+  if(!email) return false;
+  return isAdmin(email); // 모든 관리자 열람 가능 (youth 제외)
+};
+
 // 나눔 기록 권한
 // 전체열람: leader0, leader1 (목사님)
 // 본인것만: leader3~7 (샘장)
@@ -290,6 +304,13 @@ const css = `
   .contact-done-btn{background:#ECFDF5;color:#10B981;border:1px solid #A7F3D0;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;font-family:'Noto Sans KR',sans-serif;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all 0.15s;}
   .contact-done-btn:hover{background:#D1FAE5;}
   .contact-done-badge{background:#ECFDF5;color:#10B981;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:3px;}
+  /* 새가족 메모 */
+  .memo-btn{background:#F5F3FF;border:1px solid #DDD6FE;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#7C3AED;font-family:'Noto Sans KR',sans-serif;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all 0.15s;width:100%;justify-content:center;margin-top:8px;}
+  .memo-btn:hover{background:#EDE9FE;}
+  .memo-card{background:#FAFAFA;border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px;margin-bottom:8px;}
+  .memo-date{font-size:11px;font-weight:600;color:var(--gray-500);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;}
+  .memo-content{font-size:13px;color:var(--gray-800);line-height:1.6;white-space:pre-wrap;}
+  .memo-author{font-size:11px;color:var(--gray-400);margin-top:5px;text-align:right;}
   /* 생일자 2열 그리드 */
   .birthday-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
   .birthday-grid-card{background:var(--gray-50);border:1px solid var(--gray-100);border-radius:var(--radius);padding:10px;display:flex;align-items:center;gap:8px;}
@@ -501,6 +522,7 @@ export default function App() {
   const [notices, setNotices] = useState([]);
   const [prayers, setPrayers] = useState([]);
   const [absenceContacts, setAbsenceContacts] = useState([]);
+  const [newMemberMemos, setNewMemberMemos] = useState([]);
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -544,14 +566,16 @@ export default function App() {
       setNoteCountMap(countMap);
       setRecentNotes(notesData.slice(0,5));
     }
-    const [noticesRes,prayersRes,absenceRes] = await Promise.all([
+    const [noticesRes,prayersRes,absenceRes,memosRes] = await Promise.all([
       supabase.from("notices").select("*").order("created_at",{ascending:false}),
       supabase.from("prayers").select("*").order("created_at",{ascending:false}),
       supabase.from("absence_contacts").select("*").order("contact_date",{ascending:false}),
+      supabase.from("new_member_memos").select("*").order("date",{ascending:false}),
     ]);
     if(noticesRes.data) setNotices(noticesRes.data);
     if(prayersRes.data) setPrayers(prayersRes.data);
     if(absenceRes.data) setAbsenceContacts(absenceRes.data);
+    if(memosRes.data) setNewMemberMemos(memosRes.data);
     setLoading(false);
   };
 
@@ -655,7 +679,7 @@ export default function App() {
     notices:<NoticePage notices={notices} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />,
     prayers:<PrayerPage prayers={prayers} members={members} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />,
     absenceContact:<AbsenceContactPage members={members} attendanceList={attendanceList} absenceContacts={absenceContacts} admin={admin} userEmail={user?.email} onRefresh={fetchAll} />,
-    newmembers:<NewMembersPage newMembers={newMembers} sams={sams} setModal={setModal} onDelete={deleteNewMember} onToggleEdu={toggleEdu} onAssign={(nm)=>setModal({type:"assignSam",newMember:nm})} admin={admin} />,
+    newmembers:<NewMembersPage newMembers={newMembers} sams={sams} setModal={setModal} onDelete={deleteNewMember} onToggleEdu={toggleEdu} onAssign={(nm)=>setModal({type:"assignSam",newMember:nm})} admin={admin} userEmail={user?.email} newMemberMemos={newMemberMemos} onRefresh={fetchAll} />,
   };
 
   return (
@@ -1263,9 +1287,13 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,
 }
 
 // ==================== NEW MEMBERS PAGE ====================
-function NewMembersPage({newMembers,sams,setModal,onDelete,onToggleEdu,onAssign,admin}){
+function NewMembersPage({newMembers,sams,setModal,onDelete,onToggleEdu,onAssign,admin,userEmail,newMemberMemos,onRefresh}){
   const [search,setSearch]=useState("");
+  const [memoTarget,setMemoTarget]=useState(null); // 메모 팝업 대상
   const filtered=sortByName(newMembers).filter(m=>m.name.includes(search));
+  const canWrite=canWriteNewMemberMemo(userEmail);
+  const canRead=canReadNewMemberMemo(userEmail);
+  const getMemoCount=(id)=>newMemberMemos.filter(m=>m.new_member_id===id).length;
   return(
     <div>
       <div className="search-bar"><span className="search-icon"><Icon name="users" size={16}/></span><input placeholder="이름으로 검색..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
@@ -1308,9 +1336,29 @@ function NewMembersPage({newMembers,sams,setModal,onDelete,onToggleEdu,onAssign,
                 })}
               </div>
               {admin&&allDone&&(<button className="assign-btn" onClick={()=>onAssign(m)}><Icon name="assign" size={16} color="white"/>🎉 4주 완료! 샘 배정하기</button>)}
+
+              {/* 메모 버튼 — 읽기 권한 있는 사람에게만 표시 */}
+              {canRead&&(
+                <button className="memo-btn" onClick={()=>setMemoTarget(m)}>
+                  <Icon name="note" size={14} color="#7C3AED"/>
+                  메모 {getMemoCount(m.id)>0?`${getMemoCount(m.id)}건 보기`:"추가하기"}
+                </button>
+              )}
             </div>
           );
         })
+      )}
+
+      {/* 메모 팝업 시트 */}
+      {memoTarget&&(
+        <NewMemberMemoSheet
+          newMember={memoTarget}
+          memos={newMemberMemos.filter(m=>m.new_member_id===memoTarget.id)}
+          userEmail={userEmail}
+          canWrite={canWrite}
+          onClose={()=>setMemoTarget(null)}
+          onRefresh={onRefresh}
+        />
       )}
     </div>
   );
@@ -2044,6 +2092,138 @@ function PrayerFormModal({members,initial,userEmail,onSave,onClose}){
         <button className="btn btn-primary" onClick={submit} disabled={saving}>
           <Icon name="check" size={16} color="white"/>{saving?"저장 중...":initial?"수정 완료":"등록하기"}
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ==================== 새가족 메모 팝업 시트 ====================
+function NewMemberMemoSheet({newMember, memos, userEmail, canWrite, onClose, onRefresh}){
+  const [showInput, setShowInput] = useState(false);
+  const [content, setContent] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [editingMemo, setEditingMemo] = useState(null);
+
+  const authorLabel = (email) => email?.replace("@hiyouth.com","") || "";
+
+  // 내림차순 정렬 (최신 먼저)
+  const sortedMemos = [...memos].sort((a,b)=>b.date.localeCompare(a.date));
+
+  const saveMemo = async () => {
+    if(!content.trim()){alert("메모 내용을 입력해주세요");return;}
+    setSaving(true);
+    if(editingMemo){
+      await supabase.from("new_member_memos").update({
+        content: content.trim(),
+        date: editingMemo.date,
+      }).eq("id", editingMemo.id);
+    } else {
+      await supabase.from("new_member_memos").insert([{
+        new_member_id: newMember.id,
+        date: today(),
+        content: content.trim(),
+        author_email: userEmail,
+      }]);
+    }
+    setSaving(false);
+    setContent("");
+    setShowInput(false);
+    setEditingMemo(null);
+    onRefresh();
+  };
+
+  const deleteMemo = async (id) => {
+    if(!window.confirm("메모를 삭제하시겠습니까?")) return;
+    await supabase.from("new_member_memos").delete().eq("id", id);
+    onRefresh();
+  };
+
+  const startEdit = (memo) => {
+    setEditingMemo(memo);
+    setContent(memo.content);
+    setShowInput(true);
+  };
+
+  const cancelInput = () => {
+    setShowInput(false);
+    setContent("");
+    setEditingMemo(null);
+  };
+
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
+        <div className="modal-handle"/>
+
+        {/* 헤더 */}
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+          <div className={`member-avatar ${newMember.gender}`} style={{width:38,height:38,fontSize:14}}>
+            {newMember.name.charAt(0)}
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:16,fontWeight:700,color:"var(--gray-900)"}}>{newMember.name}</div>
+            <div style={{fontSize:12,color:"var(--gray-400)"}}>새가족 메모</div>
+          </div>
+          {canWrite&&!showInput&&(
+            <button className="btn-icon" onClick={()=>{setShowInput(true);setEditingMemo(null);setContent("");}}>
+              <Icon name="plus" size={16}/>
+            </button>
+          )}
+        </div>
+
+        {/* 메모 입력 폼 */}
+        {showInput&&(
+          <div style={{background:"#F5F3FF",border:"1px solid #DDD6FE",borderRadius:"var(--radius)",padding:"12px",marginBottom:14}}>
+            <div style={{fontSize:12,fontWeight:600,color:"#7C3AED",marginBottom:8}}>
+              {editingMemo?"✏️ 메모 수정":"📝 새 메모 작성"} · {formatDate(editingMemo?.date||today())}
+            </div>
+            <textarea
+              className="form-input"
+              placeholder="메모 내용을 입력하세요"
+              value={content}
+              onChange={e=>setContent(e.target.value)}
+              rows={3}
+              style={{resize:"none",lineHeight:1.6,marginBottom:8}}
+              autoFocus
+            />
+            <div style={{display:"flex",gap:8}}>
+              <button className="btn btn-primary" style={{flex:1,padding:"9px"}} onClick={saveMemo} disabled={saving}>
+                <Icon name="check" size={14} color="white"/>
+                {saving?"저장 중...":editingMemo?"수정 완료":"저장"}
+              </button>
+              <button className="btn btn-secondary" style={{padding:"9px 16px"}} onClick={cancelInput}>취소</button>
+            </div>
+          </div>
+        )}
+
+        {/* 메모 목록 */}
+        {sortedMemos.length===0?(
+          <div className="empty-state" style={{padding:"30px 20px"}}>
+            <div className="empty-state-icon" style={{fontSize:36}}>📝</div>
+            <div className="empty-state-text">메모가 없습니다</div>
+            {canWrite&&<div className="empty-state-sub">우측 상단 + 버튼으로 추가하세요</div>}
+          </div>
+        ):(
+          sortedMemos.map(memo=>(
+            <div key={memo.id} className="memo-card">
+              <div className="memo-date">
+                <span>📅 {formatDate(memo.date)}</span>
+                {canWrite&&(
+                  <div style={{display:"flex",gap:4}}>
+                    <button className="btn-icon" style={{width:24,height:24}} onClick={()=>startEdit(memo)}>
+                      <Icon name="edit" size={11}/>
+                    </button>
+                    <button className="btn-icon danger" style={{width:24,height:24}} onClick={()=>deleteMemo(memo.id)}>
+                      <Icon name="trash" size={11}/>
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="memo-content">{memo.content}</div>
+              <div className="memo-author">👤 {authorLabel(memo.author_email)}</div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
