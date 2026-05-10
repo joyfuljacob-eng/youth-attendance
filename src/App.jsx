@@ -1010,21 +1010,18 @@ function HomePage({members,newMembers,sams,attendanceList,samAttendanceList,setA
         <div style={{background:"var(--gray-50)",borderRadius:"var(--radius)",padding:"16px",marginBottom:14,textAlign:"center",fontSize:13,color:"var(--gray-400)"}}>참석 기록이 없습니다</div>
       ):(
         <div style={{background:"var(--white)",border:"1px solid var(--gray-200)",borderRadius:"var(--radius-lg)",padding:"14px",marginBottom:14,boxShadow:"var(--shadow)"}}>
-          {samAttendanceStats.map(({sam,avg,total})=>{
-            const pct=total>0?Math.round(avg/total*100):0;
-            return(
-              <div key={sam.id} style={{marginBottom:10}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-                  <span style={{fontSize:12,fontWeight:600,color:"var(--gray-600)"}}>{sam.name}샘</span>
-                  <span style={{fontSize:13,fontWeight:700,color:"#10B981"}}>{avg}<span style={{fontSize:11,color:"var(--gray-400)",fontWeight:400}}>/{total}명</span></span>
-                </div>
-                <div style={{background:"var(--gray-100)",borderRadius:999,height:8,overflow:"hidden"}}>
-                  <div style={{height:"100%",borderRadius:999,background:"#10B981",width:`${pct}%`,transition:"width 0.3s"}}/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
+            {samAttendanceStats.map(({sam,avg,total})=>(
+              <div key={sam.id} style={{background:"var(--gray-50)",borderRadius:"var(--radius)",padding:"8px 10px"}}>
+                <div style={{fontSize:11,fontWeight:600,color:"var(--gray-500)",marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{sam.name}샘</div>
+                <div style={{display:"flex",alignItems:"baseline",gap:2}}>
+                  <span style={{fontSize:20,fontWeight:800,color:"#10B981",fontFamily:"'Montserrat',sans-serif"}}>{avg}</span>
+                  <span style={{fontSize:11,color:"var(--gray-400)"}}>/{total}명</span>
                 </div>
               </div>
-            );
-          })}
-          <div style={{fontSize:11,color:"var(--gray-400)",marginTop:4,textAlign:"right"}}>최근 4주 평균 · 군복무 제외</div>
+            ))}
+          </div>
+          <div style={{fontSize:11,color:"var(--gray-400)",marginTop:8,textAlign:"right"}}>최근 4주 평균 · 군복무 제외</div>
         </div>
       )}
 
