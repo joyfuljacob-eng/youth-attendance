@@ -740,15 +740,15 @@ export default function App() {
   const navItems = [
     {id:"home",label:"홈",icon:"home"},
     {id:"members",label:"청년 명단",icon:"users"},
-    {id:"attendance",label:"예배 출석",icon:"calendar"},
-    {id:"sam",label:"샘 출석",icon:"group"},
+    {id:"attendance",label:"예배참석",icon:"calendar"},
+    {id:"sam",label:"샘별참석",icon:"group"},
     {id:"more",label:"더보기",icon:"more"},
   ];
   const pageTitles = {
     home:{title:"학익교회 청년부 예배현황",sub:"오늘도 주님을 예배합니다 🙏"},
     members:{title:"청년 명단",sub:`전체 ${members.length}명 · 군복무 ${members.filter(m=>m.military).length}명`},
-    attendance:{title:"예배 출석",sub:"주일예배 출석 체크"},
-    sam:{title:"샘 모임",sub:"소그룹 출석 체크"},
+    attendance:{title:"예배참석",sub:"주일예배 참석 체크"},
+    sam:{title:"샘별참석",sub:"소그룹 참석 체크"},
     more:{title:"더보기",sub:"추가 기능 메뉴"},
     notices:{title:"공지 · 일정",sub:"청년부 소식"},
     prayers:{title:"기도제목",sub:"함께 기도해요 🙏"},
@@ -757,7 +757,7 @@ export default function App() {
   };
 
   const pages = {
-    home:<HomePage members={members} newMembers={newMembers} sams={sams} attendanceList={attendanceList} setActiveNav={setActiveNav} todayBirthdays={todayBirthdays} userEmail={user?.email} recentNotes={recentNotes} onSelectMember={setSelectedMember} notices={notices} />,
+    home:<HomePage members={members} newMembers={newMembers} sams={sams} attendanceList={attendanceList} samAttendanceList={samAttendanceList} setActiveNav={setActiveNav} todayBirthdays={todayBirthdays} userEmail={user?.email} recentNotes={recentNotes} onSelectMember={setSelectedMember} notices={notices} />,
     members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} noteCountMap={noteCountMap} />,
     attendance:<AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} />,
     sam:<SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} />,
@@ -873,24 +873,50 @@ function MyAccountModal({ userId, admin, onChangePw, onLogout, onClose }) {
 }
 
 // ==================== HOME PAGE ====================
-function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirthdays,userEmail,recentNotes,onSelectMember,notices}){
-  const todayStr=today();
-  const presentToday=attendanceList.filter(a=>a.date===todayStr&&a.status).length;
+function HomePage({members,newMembers,sams,attendanceList,samAttendanceList,setActiveNav,todayBirthdays,userEmail,recentNotes,onSelectMember,notices}){
   const allPeople=[...members,...newMembers];
   const thisMonthBirthdays=getThisMonthBirthdays(allPeople);
   const now=new Date(); const mm=String(now.getMonth()+1).padStart(2,"0");
   const militaryCount=members.filter(m=>m.military).length;
   const alerts=members.filter(m=>!m.military).map(m=>{const w=getAbsentWeeks(m.id,attendanceList);return(w!==null&&w>=4)?{member:m,weeks:w}:null;}).filter(Boolean).sort((a,b)=>b.weeks-a.weeks);
-
-  // 나눔 기록 권한 있는 사람만 최근 나눔 카드 표시
   const showNotes = canWriteNotes(userEmail) || canViewAllNotes(userEmail);
   const authorLabel = (email) => email?.replace("@hiyouth.com","") || "";
 
-  // 홈 화면 공지/일정
+  // 공지/일정
   const todayDate = today();
   const upcomingSchedules = (notices||[]).filter(n=>n.category==="schedule"&&(!n.event_date||n.event_date>=todayDate)).sort((a,b)=>(a.event_date||"9999").localeCompare(b.event_date||"9999")).slice(0,3);
   const recentNotices = (notices||[]).filter(n=>n.category==="notice").slice(0,2);
   const homeNotices = [...upcomingSchedules,...recentNotices].slice(0,4);
+
+  // 예배참석현황 — 일요일만 + 실제 출석(status=true) 있는 날짜만, 최근 4주
+  const isSunday = (d) => new Date(d+"T00:00:00").getDay() === 0;
+  const sundayDates = [...new Set(
+    attendanceList
+      .filter(a => a.status===true && isSunday(a.date))
+      .map(a=>a.date)
+  )].sort().reverse().slice(0,4);
+
+  const activeMembers = members.filter(m=>!m.military);
+  const totalActive = activeMembers.length;
+
+  // 샘별참석현황 — 최근 4주 일요일 평균
+  const samAttendanceStats = sams.map(s=>{
+    const samMembers = activeMembers.filter(m=>m.sam_id===s.id);
+    const total = samMembers.length;
+    if(total===0) return {sam:s, avg:0, total:0};
+    // 해당 샘의 일요일 출석 기록만
+    const samSundayDates = [...new Set(
+      samAttendanceList
+        .filter(a=>a.sam_id===s.id && a.status===true && isSunday(a.date))
+        .map(a=>a.date)
+    )].sort().reverse().slice(0,4);
+    if(samSundayDates.length===0) return {sam:s, avg:0, total};
+    const counts = samSundayDates.map(d=>
+      samAttendanceList.filter(a=>a.sam_id===s.id&&a.date===d&&a.status===true).length
+    );
+    const avg = Math.round(counts.reduce((a,b)=>a+b,0)/counts.length);
+    return {sam:s, avg, total, dates:samSundayDates};
+  });
 
   return(
     <div>
@@ -899,21 +925,24 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
         <div className="home-banner-sub">{new Date().toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"})}</div>
       </div>
       {todayBirthdays.length>0&&(<div className="birthday-banner"><div className="birthday-banner-title">🎂 오늘의 생일자</div>{todayBirthdays.map(m=>(<div key={m.id} className="birthday-person"><div className="birthday-avatar">{m.name.charAt(0)}</div><div><div className="birthday-name">🎉 {m.name}</div><div className="birthday-detail">{m.gender==="male"?"남":"여"}{m.birth_year&&` · ${m.birth_year}년생`}{m.phone&&` · ${m.phone}`}</div></div></div>))}</div>)}
-      {militaryCount>0&&(<div className="military-banner"><Icon name="shield" size={22} color="white"/><div><div className="military-banner-text">🪖 군복무 중 {militaryCount}명</div><div className="military-banner-sub">예배 & 샘모임 카운트에서 제외됩니다</div></div></div>)}
-      <div className="stats-grid">
+      {militaryCount>0&&(<div className="military-banner"><Icon name="shield" size={22} color="white"/><div><div className="military-banner-text">🪖 군복무 중 {militaryCount}명</div><div className="military-banner-sub">참석 카운트에서 제외됩니다</div></div></div>)}
+
+      {/* 통계 카드 3개 */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
         <div className="stat-card"><div className="stat-number">{members.length}</div><div className="stat-label">전체 청년</div></div>
-        <div className="stat-card"><div className="stat-number" style={{color:"#10B981"}}>{presentToday}</div><div className="stat-label">오늘 출석</div></div>
         <div className="stat-card"><div className="stat-number" style={{color:"#F59E0B"}}>{sams.length}</div><div className="stat-label">샘 그룹 수</div></div>
         <div className="stat-card"><div className="stat-number" style={{color:"#8B5CF6"}}>{newMembers.length}</div><div className="stat-label">새가족</div></div>
       </div>
+
+      {/* 바로가기 버튼 */}
       <div className="quick-grid">
-        <button className="quick-action" onClick={()=>setActiveNav("attendance")}><div className="quick-action-icon" style={{background:"#EFF6FF"}}><Icon name="calendar" size={17} color="#2563EB"/></div><div className="quick-action-label">예배 출석 체크</div></button>
-        <button className="quick-action" onClick={()=>setActiveNav("sam")}><div className="quick-action-icon" style={{background:"#ECFDF5"}}><Icon name="group" size={17} color="#10B981"/></div><div className="quick-action-label">샘 출석 체크</div></button>
+        <button className="quick-action" onClick={()=>setActiveNav("attendance")}><div className="quick-action-icon" style={{background:"#EFF6FF"}}><Icon name="calendar" size={17} color="#2563EB"/></div><div className="quick-action-label">예배참석 체크</div></button>
+        <button className="quick-action" onClick={()=>setActiveNav("sam")}><div className="quick-action-icon" style={{background:"#ECFDF5"}}><Icon name="group" size={17} color="#10B981"/></div><div className="quick-action-label">샘별참석 체크</div></button>
         <button className="quick-action" onClick={()=>setActiveNav("members")}><div className="quick-action-icon" style={{background:"#FDF2F8"}}><Icon name="users" size={17} color="#DB2777"/></div><div className="quick-action-label">청년 명단</div></button>
         <button className="quick-action" onClick={()=>setActiveNav("newmembers")}><div className="quick-action-icon" style={{background:"#FFFBEB"}}><Icon name="newuser" size={17} color="#D97706"/></div><div className="quick-action-label">새가족 관리</div></button>
       </div>
 
-      {/* 공지/일정 홈 카드 */}
+      {/* 공지/일정 */}
       {homeNotices.length>0&&(
         <>
           <div className="section-header">
@@ -922,23 +951,15 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
           </div>
           <div style={{background:"var(--white)",border:"1px solid var(--gray-200)",borderRadius:"var(--radius-lg)",overflow:"hidden",marginBottom:14,boxShadow:"var(--shadow)"}}>
             {homeNotices.map((n,idx)=>{
-              const isSchedule = n.category==="schedule";
-              const bg = isSchedule ? "#F5F3FF" : "#EFF6FF";
-              const color = isSchedule ? "#7C3AED" : "#2563EB";
-              const label = isSchedule ? "📅 일정" : "📢 공지";
+              const isSchedule=n.category==="schedule";
+              const bg=isSchedule?"#F5F3FF":"#EFF6FF";
+              const color=isSchedule?"#7C3AED":"#2563EB";
+              const label=isSchedule?"📅 일정":"📢 공지";
               return(
-                <div key={n.id}
-                  onClick={()=>setActiveNav("notices")}
-                  style={{
-                    display:"flex",alignItems:"center",gap:10,
-                    padding:"10px 14px",cursor:"pointer",
-                    borderBottom:idx<homeNotices.length-1?"1px solid var(--gray-100)":"none",
-                    borderLeft:`3px solid ${color}`,
-                    transition:"background 0.15s",
-                  }}
+                <div key={n.id} onClick={()=>setActiveNav("notices")}
+                  style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",cursor:"pointer",borderBottom:idx<homeNotices.length-1?"1px solid var(--gray-100)":"none",borderLeft:`3px solid ${color}`,transition:"background 0.15s"}}
                   onMouseEnter={e=>e.currentTarget.style.background="var(--gray-50)"}
-                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}
-                >
+                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                   <span style={{background:bg,color,borderRadius:20,padding:"2px 7px",fontSize:10,fontWeight:700,flexShrink:0}}>{label}</span>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:600,color:"var(--gray-800)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.title}</div>
@@ -950,6 +971,61 @@ function HomePage({members,newMembers,sams,attendanceList,setActiveNav,todayBirt
             })}
           </div>
         </>
+      )}
+
+      {/* 예배참석현황 */}
+      <div className="section-header">
+        <div className="section-title">📊 예배참석현황</div>
+        <button className="btn btn-secondary btn-sm" onClick={()=>setActiveNav("attendance")}>자세히 →</button>
+      </div>
+      {sundayDates.length===0?(
+        <div style={{background:"var(--gray-50)",borderRadius:"var(--radius)",padding:"16px",marginBottom:14,textAlign:"center",fontSize:13,color:"var(--gray-400)"}}>참석 기록이 없습니다</div>
+      ):(
+        <div style={{background:"var(--white)",border:"1px solid var(--gray-200)",borderRadius:"var(--radius-lg)",padding:"14px",marginBottom:14,boxShadow:"var(--shadow)"}}>
+          {sundayDates.map(d=>{
+            const count=attendanceList.filter(a=>a.date===d&&a.status===true).length;
+            const pct=totalActive>0?Math.round(count/totalActive*100):0;
+            return(
+              <div key={d} style={{marginBottom:10}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                  <span style={{fontSize:12,fontWeight:600,color:"var(--gray-600)"}}>{formatDate(d)} (일)</span>
+                  <span style={{fontSize:13,fontWeight:700,color:"var(--primary)"}}>{count}<span style={{fontSize:11,color:"var(--gray-400)",fontWeight:400}}>/{totalActive}명</span></span>
+                </div>
+                <div style={{background:"var(--gray-100)",borderRadius:999,height:8,overflow:"hidden"}}>
+                  <div style={{height:"100%",borderRadius:999,background:"var(--primary)",width:`${pct}%`,transition:"width 0.3s"}}/>
+                </div>
+              </div>
+            );
+          })}
+          <div style={{fontSize:11,color:"var(--gray-400)",marginTop:4,textAlign:"right"}}>군복무 {militaryCount}명 제외</div>
+        </div>
+      )}
+
+      {/* 샘별참석현황 */}
+      <div className="section-header">
+        <div className="section-title">🌱 샘별참석현황</div>
+        <button className="btn btn-secondary btn-sm" onClick={()=>setActiveNav("sam")}>자세히 →</button>
+      </div>
+      {samAttendanceStats.length===0?(
+        <div style={{background:"var(--gray-50)",borderRadius:"var(--radius)",padding:"16px",marginBottom:14,textAlign:"center",fontSize:13,color:"var(--gray-400)"}}>참석 기록이 없습니다</div>
+      ):(
+        <div style={{background:"var(--white)",border:"1px solid var(--gray-200)",borderRadius:"var(--radius-lg)",padding:"14px",marginBottom:14,boxShadow:"var(--shadow)"}}>
+          {samAttendanceStats.map(({sam,avg,total})=>{
+            const pct=total>0?Math.round(avg/total*100):0;
+            return(
+              <div key={sam.id} style={{marginBottom:10}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                  <span style={{fontSize:12,fontWeight:600,color:"var(--gray-600)"}}>{sam.name}샘</span>
+                  <span style={{fontSize:13,fontWeight:700,color:"#10B981"}}>{avg}<span style={{fontSize:11,color:"var(--gray-400)",fontWeight:400}}>/{total}명</span></span>
+                </div>
+                <div style={{background:"var(--gray-100)",borderRadius:999,height:8,overflow:"hidden"}}>
+                  <div style={{height:"100%",borderRadius:999,background:"#10B981",width:`${pct}%`,transition:"width 0.3s"}}/>
+                </div>
+              </div>
+            );
+          })}
+          <div style={{fontSize:11,color:"var(--gray-400)",marginTop:4,textAlign:"right"}}>최근 4주 평균 · 군복무 제외</div>
+        </div>
       )}
 
       {/* 샘별 인원수 */}
@@ -1227,7 +1303,11 @@ function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin}){
   const filteredMembers=filterSam==="all"?activeMembers:activeMembers.filter(m=>m.sam_id===filterSam);
   const isPresent=memberId=>!!attendanceList.find(a=>a.member_id===memberId&&a.date===selectedDate&&a.status);
   const presentCount=filteredMembers.filter(m=>isPresent(m.id)).length;
-  const allDates=[...new Set(attendanceList.map(a=>a.date))].sort().reverse().slice(0,5);
+  const allDates=[...new Set(
+    attendanceList
+      .filter(a=>a.status===true && new Date(a.date+"T00:00:00").getDay()===0)
+      .map(a=>a.date)
+  )].sort().reverse().slice(0,5);
   const getSamName=samId=>sams.find(s=>s.id===samId)?.name||"";
   return(
     <div>
@@ -1273,8 +1353,8 @@ function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin}){
         </>
       ):(
         <>
-          <div style={{fontSize:13,color:"#64748B",marginBottom:12}}>최근 5주 출석 현황 (군복무 제외)</div>
-          {allDates.length===0?(<div className="empty-state"><div className="empty-state-icon">📊</div><div className="empty-state-text">출석 기록이 없습니다</div></div>):(
+          <div style={{fontSize:13,color:"#64748B",marginBottom:12}}>최근 5주 참석 현황 (군복무 제외)</div>
+          {allDates.length===0?(<div className="empty-state"><div className="empty-state-icon">📊</div><div className="empty-state-text">참석 기록이 없습니다</div></div>):(
             <div style={{overflowX:"auto"}}><table className="summary-table"><thead><tr><th>이름</th>{allDates.map(d=><th key={d}>{formatDate(d).slice(5)}<br/><span style={{fontWeight:400}}>({getDayLabel(d)})</span></th>)}</tr></thead><tbody>{sortByName(members.filter(m=>!m.military)).map(m=><tr key={m.id}><td>{m.name}</td>{allDates.map(d=>{const rec=attendanceList.find(a=>a.member_id===m.id&&a.date===d);return<td key={d}>{rec?.status?<span className="dot-present">✓</span>:<span className="dot-absent"/>}</td>;})}</tr>)}</tbody></table></div>
           )}
         </>
@@ -1294,7 +1374,11 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,
   const militaryMembers=sortByName(allSamMembers.filter(m=>m.military));
   const isPresent=memberId=>!!samAttendanceList.find(a=>a.member_id===memberId&&a.sam_id===selectedSam&&a.date===selectedDate&&a.status);
   const presentCount=activeMembers.filter(m=>isPresent(m.id)).length;
-  const allDates=[...new Set(samAttendanceList.filter(a=>a.sam_id===selectedSam).map(a=>a.date))].sort().reverse().slice(0,5);
+  const allDates=[...new Set(
+    samAttendanceList
+      .filter(a=>a.sam_id===selectedSam && a.status===true && new Date(a.date+"T00:00:00").getDay()===0)
+      .map(a=>a.date)
+  )].sort().reverse().slice(0,5);
   return(
     <div>
       {sams.length===0?(<div className="empty-state"><div className="empty-state-icon">🌱</div><div className="empty-state-text">샘 그룹이 없습니다</div></div>):(
@@ -1358,8 +1442,8 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,
                 </>
               ):(
                 <>
-                  <div style={{fontSize:13,color:"#64748B",marginBottom:12}}>최근 5회 출석 현황 (군복무 제외)</div>
-                  {allDates.length===0?(<div className="empty-state"><div className="empty-state-icon">📊</div><div className="empty-state-text">출석 기록이 없습니다</div></div>):(
+                  <div style={{fontSize:13,color:"#64748B",marginBottom:12}}>최근 5회 참석 현황 (군복무 제외)</div>
+                  {allDates.length===0?(<div className="empty-state"><div className="empty-state-icon">📊</div><div className="empty-state-text">참석 기록이 없습니다</div></div>):(
                     <div style={{overflowX:"auto"}}><table className="summary-table"><thead><tr><th>이름</th>{allDates.map(d=><th key={d}>{formatDate(d).slice(5)}</th>)}</tr></thead><tbody>{activeMembers.map(m=>(<tr key={m.id}><td>{m.name}</td>{allDates.map(d=>{const rec=samAttendanceList.find(a=>a.member_id===m.id&&a.sam_id===selectedSam&&a.date===d);return<td key={d}>{rec?.status?<span className="dot-present">✓</span>:<span className="dot-absent"/>}</td>;})}</tr>))}{militaryMembers.length>0&&militaryMembers.map(m=>(<tr key={m.id} style={{opacity:0.5}}><td><span style={{fontSize:11}}>🪖</span> {m.name}</td>{allDates.map(d=><td key={d}><span className="dot-military">🪖</span></td>)}</tr>))}</tbody></table></div>
                   )}
                 </>
