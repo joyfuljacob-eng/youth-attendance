@@ -1352,9 +1352,7 @@ function MembersPage({members,sams,setModal,onDelete,onInactivate,onRestore,onPe
     </div>
   );
 }
-  const sorted=sortByName(members);
-  // 일반 탭: 샘 선택 시 해당 샘의 군복무자도 포함
-  const filtered=sorted.filter(m=>{
+
 // ==================== ATTENDANCE PAGE ====================
 function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin}){
   const [selectedDate,setSelectedDate]=useState(today());
