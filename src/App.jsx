@@ -316,6 +316,13 @@ const css = `
   .contact-done-btn:hover{background:#D1FAE5;}
   .contact-done-badge{background:#ECFDF5;color:#10B981;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:3px;}
   /* 새가족 메모 */
+  .member-item.inactive-item{background:#FFF7ED;border-color:#FED7AA;opacity:0.85;}
+  .member-item.inactive-item:hover{border-color:#F97316;background:#FFEDD5;}
+  .badge-inactive{background:#FEF3C7;color:#D97706;}
+  .btn-restore{background:#ECFDF5;color:#10B981;border:1px solid #A7F3D0;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;font-family:'Noto Sans KR',sans-serif;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all 0.15s;}
+  .btn-restore:hover{background:#D1FAE5;}
+  .btn-permanent-delete{background:#FEF2F2;color:#EF4444;border:1px solid #FECACA;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;font-family:'Noto Sans KR',sans-serif;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all 0.15s;}
+  .btn-permanent-delete:hover{background:#FEE2E2;}
   .memo-btn{background:#F5F3FF;border:1px solid #DDD6FE;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#7C3AED;font-family:'Noto Sans KR',sans-serif;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all 0.15s;width:100%;justify-content:center;margin-top:8px;}
   .memo-btn:hover{background:#EDE9FE;}
   .memo-card{background:#FAFAFA;border:1px solid var(--gray-200);border-radius:var(--radius);padding:12px;margin-bottom:8px;}
@@ -673,9 +680,29 @@ export default function App() {
   const closeModal = () => setModal(null);
   const todayBirthdays = getTodayBirthdays([...members,...newMembers]);
 
-  const saveMember = async (m) => { setSaving(true); await supabase.from("members").insert([{name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,sam_id:m.samId||null,military:m.military||false}]); await fetchAll(); setSaving(false); closeModal(); };
+  const saveMember = async (m) => { setSaving(true); await supabase.from("members").insert([{name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,sam_id:m.samId||null,military:m.military||false,is_active:true}]); await fetchAll(); setSaving(false); closeModal(); };
   const updateMember = async (id,m) => { setSaving(true); await supabase.from("members").update({name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,sam_id:m.samId||null,military:m.military||false}).eq("id",id); await fetchAll(); setSaving(false); closeModal(); };
   const deleteMember = async (id) => { if(!window.confirm("정말 삭제하시겠습니까?")) return; setSaving(true); await supabase.from("members").delete().eq("id",id); await fetchAll(); setSaving(false); };
+  // 비활성 처리
+  const inactivateMember = async (id, reason) => {
+    setSaving(true);
+    await supabase.from("members").update({is_active:false, inactive_reason:reason, inactive_at:today()}).eq("id",id);
+    await fetchAll(); setSaving(false); closeModal();
+  };
+  // 비활성 → 복구
+  const restoreMember = async (id) => {
+    if(!window.confirm("해당 청년을 다시 활성화하시겠습니까?")) return;
+    setSaving(true);
+    await supabase.from("members").update({is_active:true, inactive_reason:null, inactive_at:null}).eq("id",id);
+    await fetchAll(); setSaving(false);
+  };
+  // 완전 삭제 (비활성 탭에서만)
+  const permanentDeleteMember = async (m) => {
+    if(!window.confirm(`⚠️ 완전 삭제 확인\n\n${m.name} 님의 모든 데이터가\n영구적으로 삭제됩니다.\n\n삭제 후 복구가 불가능합니다.\n정말 삭제하시겠습니까?`)) return;
+    setSaving(true);
+    await supabase.from("members").delete().eq("id",m.id);
+    await fetchAll(); setSaving(false);
+  };
   const saveSam = async (name) => { setSaving(true); await supabase.from("sams").insert([{name}]); await fetchAll(); setSaving(false); closeModal(); };
   const deleteSam = async (id) => { if(!window.confirm("샘을 삭제하시겠습니까?")) return; setSaving(true); await supabase.from("sams").delete().eq("id",id); await fetchAll(); setSaving(false); };
   const toggleAttendance = async (memberId, date) => { const ex=attendanceList.find(a=>a.member_id===memberId&&a.date===date); setSaving(true); if(ex){await supabase.from("attendance").update({status:!ex.status}).eq("id",ex.id);}else{await supabase.from("attendance").insert([{member_id:memberId,date,status:true}]);} const {data}=await supabase.from("attendance").select("*"); if(data)setAttendanceList(data); setSaving(false); };
@@ -758,7 +785,7 @@ export default function App() {
 
   const pages = {
     home:<HomePage members={members} newMembers={newMembers} sams={sams} attendanceList={attendanceList} samAttendanceList={samAttendanceList} setActiveNav={setActiveNav} todayBirthdays={todayBirthdays} userEmail={user?.email} recentNotes={recentNotes} onSelectMember={setSelectedMember} notices={notices} />,
-    members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} noteCountMap={noteCountMap} />,
+    members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} onInactivate={(id,reason)=>inactivateMember(id,reason)} onRestore={restoreMember} onPermanentDelete={permanentDeleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} noteCountMap={noteCountMap} />,
     attendance:<AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} />,
     sam:<SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} />,
     more:<MorePage setActiveNav={setActiveNav} admin={admin} newMembersCount={newMembers.length} noticesCount={notices.length} prayersCount={prayers.filter(p=>!p.is_answered).length} />,
@@ -816,6 +843,7 @@ export default function App() {
         {/* 모달들 */}
         {admin && modal?.type==="addMember" && <MemberFormModal sams={sams} onSave={saveMember} onClose={closeModal}/>}
         {admin && modal?.type==="editMember" && <MemberFormModal sams={sams} initial={modal.member} onSave={m=>updateMember(modal.member.id,m)} onClose={closeModal}/>}
+        {admin && modal?.type==="inactivateMember" && <InactivateModal member={modal.member} onSave={(reason)=>inactivateMember(modal.member.id,reason)} onClose={closeModal}/>}
         {admin && modal?.type==="addSam" && <AddSamModal onSave={saveSam} onClose={closeModal}/>}
         {admin && modal?.type==="addNewMember" && <NewMemberFormModal onSave={saveNewMember} onClose={closeModal}/>}
         {admin && modal?.type==="editNewMember" && <NewMemberFormModal initial={modal.member} onSave={m=>updateNewMember(modal.member.id,m)} onClose={closeModal}/>}
@@ -1141,38 +1169,126 @@ function HomePage({members,newMembers,sams,attendanceList,samAttendanceList,setA
 }
 
 // ==================== MEMBERS PAGE ====================
-function MembersPage({members,sams,setModal,onDelete,admin,userEmail,onSelectMember,noteCountMap}){
+function MembersPage({members,sams,setModal,onDelete,onInactivate,onRestore,onPermanentDelete,admin,userEmail,onSelectMember,noteCountMap}){
   const [search,setSearch]=useState("");
   const [filterSam,setFilterSam]=useState("all");
-  const [showMilitary,setShowMilitary]=useState(false);
-  const sorted=sortByName(members);
-  // 일반 탭: 샘 선택 시 해당 샘의 군복무자도 포함
-  const filtered=sorted.filter(m=>{
-    const ms=(m.name.includes(search)||(m.phone||"").includes(search));
-    if(showMilitary) return ms && m.military;
-    if(filterSam==="all") return ms && !m.military;
-    if(filterSam==="unassigned") return ms && !m.sam_id; // 미지정 (군복무 포함)
-    // 특정 샘 선택 시 → 일반 청년 + 해당 샘 군복무자 모두 포함
-    return ms && m.sam_id===filterSam;
-  });
-  const militaryList=sortByName(members.filter(m=>m.military));
+  const [activeTab,setActiveTab]=useState("active"); // active | military | inactive
+
+  // 활성 청년 (is_active=true, 군복무 제외)
+  const activeMembers = sortByName(members.filter(m=>(m.is_active!==false)&&!m.military));
+  // 군복무 청년
+  const militaryList = sortByName(members.filter(m=>(m.is_active!==false)&&m.military));
+  // 비활성 청년
+  const inactiveList = sortByName(members.filter(m=>m.is_active===false));
+
+  const filtered = (() => {
+    const ms = (m) => m.name.includes(search)||(m.phone||"").includes(search);
+    if(activeTab==="military") return militaryList.filter(ms);
+    if(activeTab==="inactive") return inactiveList.filter(ms);
+    // active 탭
+    const base = activeMembers.filter(ms);
+    if(filterSam==="all") return base;
+    if(filterSam==="unassigned") return members.filter(m=>(m.is_active!==false)&&!m.sam_id&&ms(m));
+    // 특정 샘 선택 — 일반 + 해당 샘 군복무자
+    return members.filter(m=>(m.is_active!==false)&&m.sam_id===filterSam&&ms(m));
+  })();
+
+  const militaryInSam = activeTab==="active" && filterSam!=="all"
+    ? filtered.filter(m=>m.military) : [];
+  const normalInSam = activeTab==="active"
+    ? filtered.filter(m=>!m.military) : filtered;
+
   const getSamName=samId=>sams.find(s=>s.id===samId)?.name||"";
-  // 샘별 인원수 계산 (일반+군복무 합산)
-  const getSamCount=samId=>members.filter(m=>m.sam_id===samId).length;
-  const getSamActiveCount=samId=>members.filter(m=>m.sam_id===samId&&!m.military).length;
-  const getSamMilitaryCount=samId=>members.filter(m=>m.sam_id===samId&&m.military).length;
-  const unassignedCount=members.filter(m=>!m.sam_id).length;
+  const getSamCount=samId=>members.filter(m=>m.sam_id===samId&&m.is_active!==false).length;
+  const getSamMilitaryCount=samId=>members.filter(m=>m.sam_id===samId&&m.military&&m.is_active!==false).length;
+  const unassignedCount=members.filter(m=>!m.sam_id&&m.is_active!==false&&!m.military).length;
+
+  const renderMemberCard = (m, isInactive=false) => {
+    const noteAccess = canWriteNotes(userEmail);
+    return(
+      <div key={m.id} className={`member-item ${m.military?"military-item":""} ${isInactive?"inactive-item":""}`}
+        style={{cursor:(!isInactive&&noteAccess)?"pointer":"default"}}
+        onClick={()=>(!isInactive&&noteAccess)&&onSelectMember(m)}>
+        <div className={`member-avatar ${m.military?"military-av":m.gender}`}>
+          {m.military?"🪖":m.name.charAt(0)}
+        </div>
+        <div className="member-info">
+          <div className="member-name" style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+            <span className={m.military?"military-name":""}>{m.name}</span>
+            {!isInactive&&noteAccess&&<span style={{fontSize:10,color:"var(--gray-400)"}}>📝</span>}
+            {!isInactive&&noteCountMap[m.id]>0&&(
+              <span style={{background:"#EDE9FE",color:"#7C3AED",borderRadius:20,padding:"1px 7px",fontSize:11,fontWeight:700}}>
+                📝 {noteCountMap[m.id]}건
+              </span>
+            )}
+          </div>
+          <div className="member-meta">
+            {m.military
+              ? <span className="badge badge-military">🪖 군복무 중</span>
+              : <span className={`badge ${m.gender==="male"?"badge-blue":"badge-pink"}`}>{m.gender==="male"?"남":"여"}</span>
+            }
+            {getSamName(m.sam_id)&&<span className="badge badge-green" style={{marginLeft:4}}>{getSamName(m.sam_id)}샘</span>}
+            {m.birth_year&&<span style={{marginLeft:4}}>· {m.birth_year}년생</span>}
+            {m.birthday&&<span style={{marginLeft:4}}>· 🎂{m.birthday}</span>}
+            {isInactive&&m.inactive_reason&&<span className="badge badge-inactive" style={{marginLeft:4}}>🚪 {m.inactive_reason}</span>}
+          </div>
+          {m.phone&&<div style={{marginTop:3,display:"flex",alignItems:"center",gap:4}}><Icon name="phone" size={11} color="#94A3B8"/><a href={`tel:${m.phone}`} className="phone-link" onClick={e=>e.stopPropagation()}>{m.phone}</a></div>}
+          {isInactive&&m.inactive_at&&<div style={{fontSize:11,color:"var(--gray-400)",marginTop:3}}>비활성 처리일: {formatDate(m.inactive_at)}</div>}
+          {!isInactive&&(m.new_member_registered_at||m.assigned_at)&&(
+            <div style={{display:"flex",gap:4,marginTop:4,flexWrap:"wrap"}}>
+              {m.new_member_registered_at&&<span style={{fontSize:10,background:"#EFF6FF",color:"#2563EB",borderRadius:6,padding:"2px 6px"}}>📅 새가족 {formatDate(m.new_member_registered_at)}</span>}
+              {m.assigned_at&&<span style={{fontSize:10,background:"#ECFDF5",color:"#10B981",borderRadius:6,padding:"2px 6px"}}>🌱 샘배정 {formatDate(m.assigned_at)}</span>}
+            </div>
+          )}
+        </div>
+        <div className="member-actions">
+          {isInactive ? (
+            // 비활성 탭 — 복구 + 완전삭제
+            <>
+              <button className="btn-restore" onClick={e=>{e.stopPropagation();onRestore(m.id);}}>
+                <Icon name="refresh" size={12}/>복구
+              </button>
+              <button className="btn-permanent-delete" onClick={e=>{e.stopPropagation();onPermanentDelete(m);}}>
+                <Icon name="trash" size={12}/>삭제
+              </button>
+            </>
+          ) : admin ? (
+            // 일반/군복무 탭 — 수정 + 비활성처리
+            <>
+              <button className="btn-icon" onClick={e=>{e.stopPropagation();setModal({type:"editMember",member:m});}}><Icon name="edit" size={14}/></button>
+              <button className="btn-icon" style={{background:"#FFF7ED",color:"#F97316"}} title="비활성 처리"
+                onClick={e=>{e.stopPropagation();setModal({type:"inactivateMember",member:m});}}>
+                <Icon name="logout" size={14}/>
+              </button>
+            </>
+          ) : null}
+        </div>
+      </div>
+    );
+  };
+
   return(
     <div>
       <div className="search-bar"><span className="search-icon"><Icon name="users" size={16}/></span><input placeholder="이름 또는 전화번호 검색..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+
+      {/* 탭 3개 */}
       <div className="tab-bar" style={{marginBottom:12}}>
-        <button className={`tab-item ${!showMilitary?"active":""}`} onClick={()=>setShowMilitary(false)}>일반 청년 ({members.filter(m=>!m.military).length}명)</button>
-        <button className={`tab-item ${showMilitary?"active":""}`} onClick={()=>setShowMilitary(true)}>🪖 군복무 ({militaryList.length}명)</button>
+        <button className={`tab-item ${activeTab==="active"?"active":""}`} onClick={()=>setActiveTab("active")}>
+          일반 ({activeMembers.length}명)
+        </button>
+        <button className={`tab-item ${activeTab==="military"?"active":""}`} onClick={()=>setActiveTab("military")}>
+          🪖 군복무 ({militaryList.length}명)
+        </button>
+        <button className={`tab-item ${activeTab==="inactive"?"active":""}`} onClick={()=>setActiveTab("inactive")}>
+          🚪 비활성 ({inactiveList.length}명)
+        </button>
       </div>
-      {!showMilitary&&(
+
+      {/* 샘 필터 (일반 탭만) */}
+      {activeTab==="active"&&(
         <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>
           <button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam("all")}>
-            전체 ({members.filter(m=>!m.military).length}명)
+            전체 ({activeMembers.length}명)
           </button>
           {sams.map(s=>{
             const total=getSamCount(s.id);
@@ -1183,120 +1299,68 @@ function MembersPage({members,sams,setModal,onDelete,admin,userEmail,onSelectMem
               </button>
             );
           })}
-          {/* 미지정 필터 버튼 */}
           {unassignedCount>0&&(
             <button className={`btn btn-sm ${filterSam==="unassigned"?"btn-primary":"btn-secondary"}`}
-              style={{whiteSpace:"nowrap",padding:"6px 14px",background:filterSam==="unassigned"?"#EA580C":"",borderColor:filterSam!=="unassigned"?"#FED7AA":"",color:filterSam==="unassigned"?"white":"#C2410C"}}
+              style={{whiteSpace:"nowrap",padding:"6px 14px",
+                background:filterSam==="unassigned"?"#EA580C":"",
+                borderColor:filterSam!=="unassigned"?"#FED7AA":"",
+                color:filterSam==="unassigned"?"white":"#C2410C"}}
               onClick={()=>setFilterSam("unassigned")}>
               ⚠️ 미지정 ({unassignedCount}명)
             </button>
           )}
         </div>
       )}
-      {filtered.length===0?(<div className="empty-state"><div className="empty-state-icon">{showMilitary?"🪖":filterSam==="unassigned"?"⚠️":"👥"}</div><div className="empty-state-text">{showMilitary?"군복무 청년이 없습니다":filterSam==="unassigned"?"샘 미지정 청년이 없습니다":"청년이 없습니다"}</div></div>):(
+
+      {/* 비활성 탭 안내 */}
+      {activeTab==="inactive"&&inactiveList.length>0&&(
+        <div className="info-hint" style={{marginBottom:12}}>
+          🚪 비활성 청년은 출석/통계에서 제외됩니다. 복구하거나 완전 삭제할 수 있어요.
+        </div>
+      )}
+
+      {/* 목록 */}
+      {filtered.length===0?(
+        <div className="empty-state">
+          <div className="empty-state-icon">{activeTab==="inactive"?"🚪":activeTab==="military"?"🪖":"👥"}</div>
+          <div className="empty-state-text">
+            {activeTab==="inactive"?"비활성 청년이 없습니다":activeTab==="military"?"군복무 청년이 없습니다":"청년이 없습니다"}
+          </div>
+        </div>
+      ):(
         <>
-          {/* 일반 청년 먼저 */}
-          {filtered.filter(m=>!m.military).map(m=>{
-            const noteAccess = canWriteNotes(userEmail);
-            return(
-            <div key={m.id} className="member-item" style={{cursor:noteAccess?"pointer":"default"}}
-              onClick={()=>noteAccess&&onSelectMember(m)}>
-              <div className={`member-avatar ${m.gender}`}>{m.name.charAt(0)}</div>
-              <div className="member-info">
-                <div className="member-name" style={{display:"flex",alignItems:"center",gap:6}}>
-                  {m.name}
-                  {noteAccess&&<span style={{fontSize:10,color:"var(--gray-400)"}}>📝</span>}
-                  {/* 나눔 기록 건수 뱃지 */}
-                  {noteCountMap[m.id]>0 && (
-                    <span style={{
-                      background:"#EDE9FE", color:"#7C3AED",
-                      borderRadius:20, padding:"1px 7px",
-                      fontSize:11, fontWeight:700,
-                    }}>
-                      📝 {noteCountMap[m.id]}건
-                    </span>
-                  )}
-                </div>
-                <div className="member-meta">
-                  <span className={`badge ${m.gender==="male"?"badge-blue":"badge-pink"}`}>{m.gender==="male"?"남":"여"}</span>
-                  {getSamName(m.sam_id)&&<span className="badge badge-green" style={{marginLeft:4}}>{getSamName(m.sam_id)}샘</span>}
-                  {m.birth_year&&<span style={{marginLeft:4}}>· {m.birth_year}년생</span>}
-                  {m.birthday&&<span style={{marginLeft:4}}>· 🎂{m.birthday}</span>}
-                </div>
-                {m.phone&&<div style={{marginTop:3,display:"flex",alignItems:"center",gap:4}}><Icon name="phone" size={11} color="#94A3B8"/><a href={`tel:${m.phone}`} className="phone-link" onClick={e=>e.stopPropagation()}>{m.phone}</a></div>}
-                {/* 전환 이력 날짜 */}
-                {(m.new_member_registered_at || m.assigned_at) && (
-                  <div style={{display:"flex",gap:4,marginTop:4,flexWrap:"wrap"}}>
-                    {m.new_member_registered_at&&(
-                      <span style={{fontSize:10,background:"#EFF6FF",color:"#2563EB",borderRadius:6,padding:"2px 6px"}}>
-                        📅 새가족 {formatDate(m.new_member_registered_at)}
-                      </span>
-                    )}
-                    {m.assigned_at&&(
-                      <span style={{fontSize:10,background:"#ECFDF5",color:"#10B981",borderRadius:6,padding:"2px 6px"}}>
-                        🌱 샘배정 {formatDate(m.assigned_at)}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-              {admin&&(<div className="member-actions"><button className="btn-icon" onClick={e=>{e.stopPropagation();setModal({type:"editMember",member:m});}}><Icon name="edit" size={14}/></button><button className="btn-icon danger" onClick={e=>{e.stopPropagation();onDelete(m.id);}}><Icon name="trash" size={14}/></button></div>)}
-            </div>
-          );})}
-          {/* 특정 샘 선택 또는 미지정 선택 시 군복무자 맨 아래 구분선과 함께 표시 */}
-          {(filterSam!=="all") && filtered.filter(m=>m.military).length>0 && (
+          {/* 일반/군복무 탭 */}
+          {activeTab!=="inactive"&&(
             <>
-              <div className="military-divider">
-                <div className="military-divider-line"/>
-                <div className="military-divider-text">🪖 군복무 중</div>
-                <div className="military-divider-line"/>
-              </div>
-              {filtered.filter(m=>m.military).map(m=>(
-                <div key={m.id} className="member-item military-item">
-                  <div className="member-avatar military-av">🪖</div>
-                  <div className="member-info">
-                    <div className="member-name military-name">{m.name}</div>
-                    <div className="member-meta">
-                      <span className="badge badge-military">🪖 군복무 중</span>
-                      {m.birth_year&&<span style={{marginLeft:4}}>· {m.birth_year}년생</span>}
-                      {m.birthday&&<span style={{marginLeft:4}}>· 🎂{m.birthday}</span>}
-                    </div>
-                    {m.phone&&<div style={{marginTop:3,display:"flex",alignItems:"center",gap:4}}><Icon name="phone" size={11} color="#94A3B8"/><a href={`tel:${m.phone}`} className="phone-link">{m.phone}</a></div>}
+              {normalInSam.map(m=>renderMemberCard(m,false))}
+              {militaryInSam.length>0&&(
+                <>
+                  <div className="military-divider">
+                    <div className="military-divider-line"/>
+                    <div className="military-divider-text">🪖 군복무 중</div>
+                    <div className="military-divider-line"/>
                   </div>
-                  {admin&&(<div className="member-actions"><button className="btn-icon" onClick={()=>setModal({type:"editMember",member:m})}><Icon name="edit" size={14}/></button><button className="btn-icon danger" onClick={()=>onDelete(m.id)}><Icon name="trash" size={14}/></button></div>)}
-                </div>
-              ))}
+                  {militaryInSam.map(m=>renderMemberCard(m,false))}
+                </>
+              )}
             </>
           )}
-          {/* 군복무 탭에서는 군복무자만 표시 */}
-          {showMilitary && filtered.map(m=>(
-            <div key={m.id} className="member-item military-item">
-              <div className="member-avatar military-av">🪖</div>
-              <div className="member-info">
-                <div className="member-name military-name">{m.name}</div>
-                <div className="member-meta">
-                  <span className="badge badge-military">🪖 군복무 중</span>
-                  {getSamName(m.sam_id)&&<span className="badge badge-green" style={{marginLeft:4}}>{getSamName(m.sam_id)}샘</span>}
-                  {m.birth_year&&<span style={{marginLeft:4}}>· {m.birth_year}년생</span>}
-                  {m.birthday&&<span style={{marginLeft:4}}>· 🎂{m.birthday}</span>}
-                </div>
-                {m.phone&&<div style={{marginTop:3,display:"flex",alignItems:"center",gap:4}}><Icon name="phone" size={11} color="#94A3B8"/><a href={`tel:${m.phone}`} className="phone-link">{m.phone}</a></div>}
-              </div>
-              {admin&&(<div className="member-actions"><button className="btn-icon" onClick={()=>setModal({type:"editMember",member:m})}><Icon name="edit" size={14}/></button><button className="btn-icon danger" onClick={()=>onDelete(m.id)}><Icon name="trash" size={14}/></button></div>)}
-            </div>
-          ))}
+          {/* 비활성 탭 */}
+          {activeTab==="inactive"&&filtered.map(m=>renderMemberCard(m,true))}
         </>
       )}
     </div>
   );
 }
-
+  const sorted=sortByName(members);
+  // 일반 탭: 샘 선택 시 해당 샘의 군복무자도 포함
+  const filtered=sorted.filter(m=>{
 // ==================== ATTENDANCE PAGE ====================
 function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin}){
   const [selectedDate,setSelectedDate]=useState(today());
   const [tab,setTab]=useState("check");
   const [filterSam,setFilterSam]=useState("all");
-  const activeMembers=sortByName(members.filter(m=>!m.military));
+  const activeMembers=sortByName(members.filter(m=>!m.military&&m.is_active!==false));
   const filteredMembers=filterSam==="all"?activeMembers:activeMembers.filter(m=>m.sam_id===filterSam);
   const isPresent=memberId=>!!attendanceList.find(a=>a.member_id===memberId&&a.date===selectedDate&&a.status);
   const presentCount=filteredMembers.filter(m=>isPresent(m.id)).length;
@@ -1367,7 +1431,7 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,
   const [tab,setTab]=useState("check");
   useEffect(()=>{if(sams.length>0&&!selectedSam)setSelectedSam(sams[0].id);},[sams]);
   const allSamMembers=members.filter(m=>m.sam_id===selectedSam);
-  const activeMembers=sortByName(allSamMembers.filter(m=>!m.military));
+  const activeMembers=sortByName(allSamMembers.filter(m=>!m.military&&m.is_active!==false));
   const militaryMembers=sortByName(allSamMembers.filter(m=>m.military));
   const isPresent=memberId=>!!samAttendanceList.find(a=>a.member_id===memberId&&a.sam_id===selectedSam&&a.date===selectedDate&&a.status);
   const presentCount=activeMembers.filter(m=>isPresent(m.id)).length;
@@ -2149,7 +2213,7 @@ function PrayerFormModal({members,initial,userEmail,onSave,onClose}){
   const [content,setContent]=useState(initial?.content||"");
   const [saving,setSaving]=useState(false);
 
-  const activeMembers=sortByName(members.filter(m=>!m.military));
+  const activeMembers=sortByName(members.filter(m=>!m.military&&m.is_active!==false));
   const filtered=searchText.trim()
     ? activeMembers.filter(m=>m.name.includes(searchText.trim()))
     : activeMembers;
@@ -2407,6 +2471,53 @@ function NewMemberMemoSheet({newMember, memos, userEmail, canWrite, onClose, onR
             </div>
           ))
         )}
+      </div>
+    </div>
+  );
+}
+
+// ==================== 비활성 처리 모달 ====================
+function InactivateModal({member, onSave, onClose}){
+  const [reason, setReason] = useState("");
+  const reasons = ["타 교회 이적","장년부 이동","지역 이동","개인 사정","기타"];
+
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
+        <div className="modal-handle"/>
+        <div className="modal-title">🚪 비활성 처리</div>
+        <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:13,color:"#92400E"}}>
+          <strong>{member.name}</strong> 님을 비활성 처리합니다.<br/>
+          출석/통계에서 제외되지만 데이터는 보존됩니다.
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">비활성 사유</label>
+          {/* 빠른 선택 버튼 */}
+          <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
+            {reasons.map(r=>(
+              <button key={r}
+                className="btn btn-sm"
+                style={{
+                  background:reason===r?"#F97316":"var(--gray-100)",
+                  color:reason===r?"white":"var(--gray-600)",
+                  padding:"6px 12px",fontSize:12,
+                }}
+                onClick={()=>setReason(r)}>
+                {r}
+              </button>
+            ))}
+          </div>
+          <input className="form-input" placeholder="직접 입력 또는 위에서 선택"
+            value={reason} onChange={e=>setReason(e.target.value)}/>
+        </div>
+
+        <button className="btn btn-primary"
+          style={{background:"#F97316"}}
+          onClick={()=>{if(!reason.trim()){alert("사유를 입력해주세요");return;}onSave(reason.trim());}}>
+          <Icon name="logout" size={16} color="white"/>비활성 처리
+        </button>
+        <button className="btn btn-secondary" style={{width:"100%",marginTop:8}} onClick={onClose}>취소</button>
       </div>
     </div>
   );
