@@ -2391,7 +2391,7 @@ function NewMemberMemoSheet({newMember, memos, userEmail, canWrite, onClose, onR
     setShowInput(true);
   };
 
-  const cancelInput = () => {
+  const 취소Input = () => {
     setShowInput(false);
     setContent("");
     setEditingMemo(null);
@@ -2438,7 +2438,7 @@ function NewMemberMemoSheet({newMember, memos, userEmail, canWrite, onClose, onR
                 <Icon name="check" size={14} color="white"/>
                 {saving?"저장 중...":editingMemo?"수정 완료":"저장"}
               </button>
-              <button className="btn btn-secondary" style={{padding:"9px 16px"}} onClick={cancelInput}>취소</button>
+              <button className="btn btn-secondary" style={{padding:"9px 16px"}} onClick={취소Input}>취소</button>
             </div>
           </div>
         )}
@@ -2479,41 +2479,30 @@ function NewMemberMemoSheet({newMember, memos, userEmail, canWrite, onClose, onR
 // ==================== 비활성 처리 모달 ====================
 function InactivateModal({member, onSave, onClose}){
   const [reason, setReason] = useState("");
-  const reasons = ["타 교회 이적","장년부 이동","지역 이동","개인 사정","기타"];
+  const reasons = ["타 교회 이적","장로부 이동","지역 이동","개인 사정","기타"];
 
   return(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
         <div className="modal-handle"/>
-        <div className="modal-title">🚪 비활성 처리</div>
+        <div className="modal-title">비활성 처리</div>
         <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:13,color:"#92400E"}}>
           <strong>{member.name}</strong> 님을 비활성 처리합니다.<br/>
           출석/통계에서 제외되지만 데이터는 보존됩니다.
         </div>
-
         <div className="form-group">
           <label className="form-label">비활성 사유</label>
-          {/* 빠른 선택 버튼 */}
           <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
             {reasons.map(r=>(
-              <button key={r}
-                className="btn btn-sm"
-                style={{
-                  background:reason===r?"#F97316":"var(--gray-100)",
-                  color:reason===r?"white":"var(--gray-600)",
-                  padding:"6px 12px",fontSize:12,
-                }}
-                onClick={()=>setReason(r)}>
-                {r}
-              </button>
+              <button key={r} className="btn btn-sm"
+                style={{background:reason===r?"#F97316":"var(--gray-100)",color:reason===r?"white":"var(--gray-600)",padding:"6px 12px",fontSize:12}}
+                onClick={()=>setReason(r)}>{r}</button>
             ))}
           </div>
           <input className="form-input" placeholder="직접 입력 또는 위에서 선택"
             value={reason} onChange={e=>setReason(e.target.value)}/>
         </div>
-
-        <button className="btn btn-primary"
-          style={{background:"#F97316"}}
+        <button className="btn btn-primary" style={{background:"#F97316"}}
           onClick={()=>{if(!reason.trim()){alert("사유를 입력해주세요");return;}onSave(reason.trim());}}>
           <Icon name="logout" size={16} color="white"/>비활성 처리
         </button>
