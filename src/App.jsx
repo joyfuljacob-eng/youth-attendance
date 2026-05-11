@@ -1953,6 +1953,7 @@ function MorePage({setActiveNav,admin,newMembersCount,noticesCount,prayersCount}
 function NoticePage({notices,admin,userEmail,onRefresh,setModal}){
   const [tab,setTab]=useState("all");
   const todayDate = today();
+  const filtered = (() => {
     if(tab==="past") return notices.filter(n=>n.category==="schedule"&&n.event_date&&n.event_date<todayDate).sort((a,b)=>b.event_date.localeCompare(a.event_date));
     // 전체/공지/일정 탭에서는 지난 일정 제외
     const active = notices.filter(n=>{
