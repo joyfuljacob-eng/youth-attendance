@@ -1953,13 +1953,16 @@ function MorePage({setActiveNav,admin,newMembersCount,noticesCount,prayersCount}
 function NoticePage({notices,admin,userEmail,onRefresh,setModal}){
   const [tab,setTab]=useState("all");
   const todayDate = today();
-
-  const filtered = (() => {
-    if(tab==="all") return notices;
-    if(tab==="notice") return notices.filter(n=>n.category==="notice");
-    if(tab==="schedule") return notices.filter(n=>n.category==="schedule"&&(!n.event_date||n.event_date>=todayDate));
     if(tab==="past") return notices.filter(n=>n.category==="schedule"&&n.event_date&&n.event_date<todayDate).sort((a,b)=>b.event_date.localeCompare(a.event_date));
-    return notices;
+    // 전체/공지/일정 탭에서는 지난 일정 제외
+    const active = notices.filter(n=>{
+      if(n.category==="schedule"&&n.event_date&&n.event_date<todayDate) return false; // 지난 일정 제외
+      return true;
+    });
+    if(tab==="all") return active;
+    if(tab==="notice") return active.filter(n=>n.category==="notice");
+    if(tab==="schedule") return active.filter(n=>n.category==="schedule");
+    return active;
   })();
 
   const deleteNotice=async(id)=>{
@@ -1985,7 +1988,7 @@ function NoticePage({notices,admin,userEmail,onRefresh,setModal}){
           const bg=isSchedule?"#F5F3FF":"#EFF6FF";
           const color=isSchedule?"#7C3AED":"#2563EB";
           return(
-            <div key={n.id} className={`notice-card ${n.category}`} style={{opacity:isPast?0.6:1}}>
+            <div key={n.id} className={`notice-card ${n.category}`}>
               <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
                 <div style={{flex:1}}>
                   <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
