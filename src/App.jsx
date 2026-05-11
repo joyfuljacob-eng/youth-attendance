@@ -714,11 +714,11 @@ export default function App() {
       name:m.name, gender:m.gender, phone:m.phone,
       birth_year:m.birthYear, birthday:m.birthday,
       week1:false, week2:false, week3:false, week4:false,
-      registered_at: today(), // 새가족 등록 날짜 자동 기록
+      registered_at: m.registeredAt || today(),
     }]);
     await fetchAll(); setSaving(false); closeModal();
   };
-  const updateNewMember = async (id,m) => { setSaving(true); await supabase.from("new_members").update({name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday}).eq("id",id); await fetchAll(); setSaving(false); closeModal(); };
+  const updateNewMember = async (id,m) => { setSaving(true); await supabase.from("new_members").update({name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,registered_at:m.registeredAt||today()}).eq("id",id); await fetchAll(); setSaving(false); closeModal(); };
   const deleteNewMember = async (id) => { if(!window.confirm("정말 삭제하시겠습니까?")) return; setSaving(true); await supabase.from("new_members").delete().eq("id",id); await fetchAll(); setSaving(false); };
   const toggleEdu = async (id, weekIdx) => {
     const member = newMembers.find(m=>m.id===id); if(!member) return;
@@ -1630,7 +1630,8 @@ function NewMemberFormModal({initial,onSave,onClose}){
   const [phone,setPhone]=useState(initial?.phone||"");
   const [birthYear,setBirthYear]=useState(initial?.birth_year||"");
   const [birthday,setBirthday]=useState(initial?.birthday||"");
-  const submit=()=>{if(!name.trim()){alert("이름을 입력해주세요");return;}onSave({name:name.trim(),gender,phone:phone.trim(),birthYear,birthday:normalizeBirthday(birthday)});};
+  const [registeredAt,setRegisteredAt]=useState(initial?.registered_at||today());
+  const submit=()=>{if(!name.trim()){alert("이름을 입력해주세요");return;}onSave({name:name.trim(),gender,phone:phone.trim(),birthYear,birthday:normalizeBirthday(birthday),registeredAt});};
   return(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
@@ -1642,6 +1643,12 @@ function NewMemberFormModal({initial,onSave,onClose}){
         <div className="form-row">
           <div className="form-group"><label className="form-label">출생년도 <span className="optional">(선택)</span></label><input className="form-input" placeholder="예) 1998" type="number" value={birthYear} onChange={e=>setBirthYear(e.target.value)}/></div>
           <div className="form-group"><label className="form-label">생일 <span className="optional">(선택)</span></label><BirthdayInput value={birthday} onChange={setBirthday}/></div>
+        </div>
+        {/* 등록 날짜 입력 */}
+        <div className="form-group">
+          <label className="form-label">등록 날짜</label>
+          <input className="form-input" type="date" value={registeredAt} onChange={e=>setRegisteredAt(e.target.value)}/>
+          <div style={{fontSize:11,color:"var(--gray-400)",marginTop:4}}>💡 실제 처음 방문한 날짜를 입력해 주세요</div>
         </div>
         <div className="info-hint">💡 새가족 교육 4주 이수 체크는 등록 후 명단에서 직접 체크할 수 있습니다</div>
         <button className="btn btn-primary" onClick={submit}><Icon name="check" size={16} color="white"/>{initial?"수정 완료":"등록하기"}</button>
@@ -1945,7 +1952,15 @@ function MorePage({setActiveNav,admin,newMembersCount,noticesCount,prayersCount}
 // ==================== 공지/일정 페이지 ====================
 function NoticePage({notices,admin,userEmail,onRefresh,setModal}){
   const [tab,setTab]=useState("all");
-  const filtered=tab==="all"?notices:notices.filter(n=>n.category===tab);
+  const todayDate = today();
+
+  const filtered = (() => {
+    if(tab==="all") return notices;
+    if(tab==="notice") return notices.filter(n=>n.category==="notice");
+    if(tab==="schedule") return notices.filter(n=>n.category==="schedule"&&(!n.event_date||n.event_date>=todayDate));
+    if(tab==="past") return notices.filter(n=>n.category==="schedule"&&n.event_date&&n.event_date<todayDate).sort((a,b)=>b.event_date.localeCompare(a.event_date));
+    return notices;
+  })();
 
   const deleteNotice=async(id)=>{
     if(!window.confirm("삭제하시겠습니까?")) return;
@@ -1959,21 +1974,23 @@ function NoticePage({notices,admin,userEmail,onRefresh,setModal}){
         <button className={`tab-item ${tab==="all"?"active":""}`} onClick={()=>setTab("all")}>전체</button>
         <button className={`tab-item ${tab==="notice"?"active":""}`} onClick={()=>setTab("notice")}>📢 공지</button>
         <button className={`tab-item ${tab==="schedule"?"active":""}`} onClick={()=>setTab("schedule")}>📅 일정</button>
+        <button className={`tab-item ${tab==="past"?"active":""}`} onClick={()=>setTab("past")}>⏰ 지난</button>
       </div>
       {filtered.length===0?(
         <div className="empty-state"><div className="empty-state-icon">📋</div><div className="empty-state-text">등록된 내용이 없습니다</div>{admin&&<div className="empty-state-sub">우측 상단 + 버튼으로 추가하세요</div>}</div>
       ):(
         filtered.map(n=>{
           const isSchedule=n.category==="schedule";
+          const isPast=isSchedule&&n.event_date&&n.event_date<todayDate;
           const bg=isSchedule?"#F5F3FF":"#EFF6FF";
           const color=isSchedule?"#7C3AED":"#2563EB";
           return(
-            <div key={n.id} className={`notice-card ${n.category}`}>
+            <div key={n.id} className={`notice-card ${n.category}`} style={{opacity:isPast?0.6:1}}>
               <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
                 <div style={{flex:1}}>
                   <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
                     <span style={{background:bg,color,borderRadius:20,padding:"2px 8px",fontSize:11,fontWeight:600}}>{isSchedule?"📅 일정":"📢 공지"}</span>
-                    {n.event_date&&<span style={{fontSize:12,color:"var(--gray-500)"}}>📅 {formatDate(n.event_date)}</span>}
+                    {n.event_date&&<span style={{fontSize:12,color:isPast?"var(--gray-400)":"var(--gray-500)"}}>{isPast?"⏰ 지난 일정 · ":""}{formatDate(n.event_date)}</span>}
                   </div>
                   <div className="notice-title">{n.title}</div>
                   {n.content&&<div className="notice-content">{n.content}</div>}
