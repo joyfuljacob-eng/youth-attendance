@@ -218,7 +218,9 @@ const css = `
   .search-bar input:focus{border-color:var(--primary);background:var(--white);}
   .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--gray-400);}
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
-  .modal-sheet{background:var(--white);border-radius:20px 20px 0 0;width:100%;max-width:430px;max-height:90vh;overflow-y:auto;padding:20px 20px max(20px,env(safe-area-inset-bottom));animation:slideUp 0.25s ease;}
+  .modal-sheet{background:var(--white);border-radius:20px 20px 0 0;width:100%;max-width:430px;max-height:85vh;overflow-y:auto;padding:20px 20px 0;animation:slideUp 0.25s ease;display:flex;flex-direction:column;}
+  .modal-sheet-body{flex:1;overflow-y:auto;padding-bottom:8px;}
+  .modal-sheet-footer{padding:12px 0 max(24px,env(safe-area-inset-bottom));background:var(--white);flex-shrink:0;}
   @keyframes slideUp{from{transform:translateY(100%);opacity:0;}to{transform:translateY(0);opacity:1;}}
   .modal-handle{width:40px;height:4px;background:var(--gray-200);border-radius:2px;margin:0 auto 20px;}
   .modal-title{font-size:18px;font-weight:700;color:var(--gray-900);margin-bottom:20px;}
@@ -3426,9 +3428,11 @@ function EventFormModal({initial,userEmail,onSave,onClose}){
           <label className="form-label">행사 설명 <span className="optional">(선택)</span></label>
           <textarea className="form-input" placeholder="행사에 대한 간단한 설명" value={description} onChange={e=>setDescription(e.target.value)} rows={3} style={{resize:"none"}}/>
         </div>
-        <button className="btn btn-primary" onClick={submit} disabled={saving}>
-          <Icon name="check" size={16} color="white"/>{saving?"저장 중...":initial?"수정 완료":"등록하기"}
-        </button>
+        <div className="modal-sheet-footer">
+          <button className="btn btn-primary" style={{width:"100%"}} onClick={submit} disabled={saving}>
+            <Icon name="check" size={16} color="white"/>{saving?"저장 중...":initial?"수정 완료":"등록하기"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -3464,9 +3468,11 @@ function GuestFormModal({eventId,userEmail,onSave,onClose}){
           <label className="form-label">비고 <span className="optional">(선택)</span></label>
           <input className="form-input" placeholder="예) 목사님, 부장님 / 둘째날 저녁만" value={memo} onChange={e=>setMemo(e.target.value)}/>
         </div>
-        <button className="btn btn-primary" onClick={submit} disabled={saving}>
-          <Icon name="check" size={16} color="white"/>{saving?"저장 중...":"추가하기"}
-        </button>
+        <div className="modal-sheet-footer">
+          <button className="btn btn-primary" style={{width:"100%"}} onClick={submit} disabled={saving}>
+            <Icon name="check" size={16} color="white"/>{saving?"저장 중...":"추가하기"}
+          </button>
+        </div>
       </div>
     </div>
   );
