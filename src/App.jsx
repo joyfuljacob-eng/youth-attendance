@@ -3409,33 +3409,34 @@ function EventFormModal({initial,userEmail,onSave,onClose}){
   };
   return(
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet has-footer" onClick={e=>e.stopPropagation()}>
-        <div className="modal-sheet-scroll" style={{padding:"20px 20px 8px"}}>
-          <div className="modal-handle"/>
-          <div className="modal-title">{initial?"행사 수정":"행사 등록"}</div>
+      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
+        <div className="modal-handle"/>
+        {/* 헤더 — 취소 + 제목 + 등록하기 버튼 */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexShrink:0}}>
+          <button style={{background:"none",border:"none",fontSize:14,color:"var(--gray-400)",cursor:"pointer",padding:"4px 0",fontFamily:"'Noto Sans KR',sans-serif"}} onClick={onClose}>취소</button>
+          <div style={{fontSize:16,fontWeight:700,color:"var(--gray-900)"}}>{initial?"행사 수정":"행사 등록"}</div>
+          <button style={{background:"var(--primary)",border:"none",borderRadius:20,fontSize:14,color:"white",cursor:"pointer",padding:"6px 16px",fontFamily:"'Noto Sans KR',sans-serif",fontWeight:600,opacity:saving?0.7:1}} onClick={submit} disabled={saving}>
+            {saving?"저장 중...":initial?"완료":"등록"}
+          </button>
+        </div>
+        {/* 입력 폼 */}
+        <div className="form-group">
+          <label className="form-label">행사명 *</label>
+          <input className="form-input" placeholder="예) 2025 여름 수련회" value={title} onChange={e=>setTitle(e.target.value)}/>
+        </div>
+        <div className="form-row">
           <div className="form-group">
-            <label className="form-label">행사명 *</label>
-            <input className="form-input" placeholder="예) 2025 여름 수련회" value={title} onChange={e=>setTitle(e.target.value)}/>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">시작일 *</label>
-              <input className="form-input" type="date" value={eventDate} onChange={e=>setEventDate(e.target.value)}/>
-            </div>
-            <div className="form-group">
-              <label className="form-label">종료일 <span className="optional">(선택)</span></label>
-              <input className="form-input" type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}/>
-            </div>
+            <label className="form-label">시작일 *</label>
+            <input className="form-input" type="date" value={eventDate} onChange={e=>setEventDate(e.target.value)}/>
           </div>
           <div className="form-group">
-            <label className="form-label">행사 설명 <span className="optional">(선택)</span></label>
-            <textarea className="form-input" placeholder="행사에 대한 간단한 설명" value={description} onChange={e=>setDescription(e.target.value)} rows={3} style={{resize:"none"}}/>
+            <label className="form-label">종료일 <span className="optional">(선택)</span></label>
+            <input className="form-input" type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}/>
           </div>
         </div>
-        <div className="modal-sheet-footer">
-          <button className="btn btn-primary" style={{width:"100%"}} onClick={submit} disabled={saving}>
-            <Icon name="check" size={16} color="white"/>{saving?"저장 중...":initial?"수정 완료":"등록하기"}
-          </button>
+        <div className="form-group">
+          <label className="form-label">행사 설명 <span className="optional">(선택)</span></label>
+          <textarea className="form-input" placeholder="행사에 대한 간단한 설명" value={description} onChange={e=>setDescription(e.target.value)} rows={3} style={{resize:"none"}}/>
         </div>
       </div>
     </div>
@@ -3457,27 +3458,26 @@ function GuestFormModal({eventId,userEmail,onSave,onClose}){
   };
   return(
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet has-footer" onClick={e=>e.stopPropagation()}>
-        <div className="modal-sheet-scroll" style={{padding:"20px 20px 8px"}}>
-          <div className="modal-handle"/>
-          <div className="modal-title">게스트 추가</div>
-          <div className="form-group">
-            <label className="form-label">그룹명 *</label>
-            <input className="form-input" placeholder="예) 지도자, 외부 찬양팀" value={groupName} onChange={e=>setGroupName(e.target.value)}/>
-          </div>
-          <div className="form-group">
-            <label className="form-label">인원수 *</label>
-            <input className="form-input" type="number" min="1" value={count} onChange={e=>setCount(e.target.value)}/>
-          </div>
-          <div className="form-group">
-            <label className="form-label">비고 <span className="optional">(선택)</span></label>
-            <input className="form-input" placeholder="예) 목사님, 부장님 / 둘째날 저녁만" value={memo} onChange={e=>setMemo(e.target.value)}/>
-          </div>
-        </div>
-        <div className="modal-sheet-footer">
-          <button className="btn btn-primary" style={{width:"100%"}} onClick={submit} disabled={saving}>
-            <Icon name="check" size={16} color="white"/>{saving?"저장 중...":"추가하기"}
+      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
+        <div className="modal-handle"/>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexShrink:0}}>
+          <button style={{background:"none",border:"none",fontSize:14,color:"var(--gray-400)",cursor:"pointer",padding:"4px 0",fontFamily:"'Noto Sans KR',sans-serif"}} onClick={onClose}>취소</button>
+          <div style={{fontSize:16,fontWeight:700,color:"var(--gray-900)"}}>게스트 추가</div>
+          <button style={{background:"var(--primary)",border:"none",borderRadius:20,fontSize:14,color:"white",cursor:"pointer",padding:"6px 16px",fontFamily:"'Noto Sans KR',sans-serif",fontWeight:600,opacity:saving?0.7:1}} onClick={submit} disabled={saving}>
+            {saving?"저장 중...":"추가"}
           </button>
+        </div>
+        <div className="form-group">
+          <label className="form-label">그룹명 *</label>
+          <input className="form-input" placeholder="예) 지도자, 외부 찬양팀" value={groupName} onChange={e=>setGroupName(e.target.value)}/>
+        </div>
+        <div className="form-group">
+          <label className="form-label">인원수 *</label>
+          <input className="form-input" type="number" min="1" value={count} onChange={e=>setCount(e.target.value)}/>
+        </div>
+        <div className="form-group">
+          <label className="form-label">비고 <span className="optional">(선택)</span></label>
+          <input className="form-input" placeholder="예) 목사님, 부장님 / 둘째날 저녁만" value={memo} onChange={e=>setMemo(e.target.value)}/>
         </div>
       </div>
     </div>
