@@ -3033,12 +3033,20 @@ function EventDetailPage({event,participants,guests,members,sams,userEmail,admin
         </div>
       </div>
 
-      {/* 탭 */}
-      <div className="tab-bar" style={{marginBottom:14}}>
-        <button className={`tab-item ${tab==="summary"?"active":""}`} onClick={()=>setTab("summary")}>📊 현황</button>
-        <button className={`tab-item ${tab==="check"?"active":""}`} onClick={()=>setTab("check")}>✅ 체크</button>
-        <button className={`tab-item ${tab==="session"?"active":""}`} onClick={()=>setTab("session")}>📅 세션별</button>
-        <button className={`tab-item ${tab==="sam"?"active":""}`} onClick={()=>setTab("sam")}>🌱 샘별</button>
+      {/* 탭 — 스크롤 시 고정 */}
+      <div style={{
+        position:"sticky", top:0, zIndex:10,
+        background:"var(--bg)", paddingBottom:4,
+        marginBottom:10, marginLeft:-16, marginRight:-16,
+        paddingLeft:16, paddingRight:16,
+        boxShadow:"0 2px 8px rgba(0,0,0,0.06)",
+      }}>
+        <div className="tab-bar" style={{marginBottom:0}}>
+          <button className={`tab-item ${tab==="summary"?"active":""}`} onClick={()=>setTab("summary")}>📊 현황</button>
+          <button className={`tab-item ${tab==="check"?"active":""}`} onClick={()=>setTab("check")}>✅ 체크</button>
+          <button className={`tab-item ${tab==="session"?"active":""}`} onClick={()=>setTab("session")}>📅 세션별</button>
+          <button className={`tab-item ${tab==="sam"?"active":""}`} onClick={()=>setTab("sam")}>🌱 샘별</button>
+        </div>
       </div>
 
       {/* 현황 탭 */}
@@ -3119,57 +3127,15 @@ function EventDetailPage({event,participants,guests,members,sams,userEmail,admin
       {/* 체크 탭 */}
       {tab==="check"&&(
         <div>
-          <div style={{fontSize:12,color:"var(--gray-400)",marginBottom:10}}>
-            {canCheckAll?"전체 청년 참가 여부를 체크하세요":"본인 샘 청년만 체크할 수 있습니다"}
-          </div>
-          {sams.map(s=>{
-            const samMembers = activeMembers.filter(m=>m.sam_id===s.id);
-            if(samMembers.length===0) return null;
-            const canCheck = canCheckAll || sams.find(ss=>ss.id===s.id)?.name===userId;
-            return(
-              <div key={s.id} style={{marginBottom:16}}>
-                <div style={{fontSize:13,fontWeight:700,color:"var(--gray-600)",marginBottom:8,padding:"4px 0",borderBottom:"1px solid var(--gray-100)"}}>
-                  🌱 {s.name}샘 ({samMembers.length}명)
-                </div>
-                {samMembers.map(m=>{
-                  const p = participants.find(pp=>pp.member_id===m.id);
-                  const status = p?.status||"unknown";
-                  return(
-                    <div key={m.id} style={{marginBottom:12,background:"var(--gray-50)",borderRadius:"var(--radius)",padding:"10px 12px"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                        <div className={`member-avatar ${m.gender}`} style={{width:30,height:30,fontSize:12}}>{m.name.charAt(0)}</div>
-                        <span style={{fontSize:14,fontWeight:600}}>{m.name}</span>
-                        <span style={{fontSize:11,background:EVENT_STATUS[status]?.bg,color:EVENT_STATUS[status]?.color,borderRadius:20,padding:"1px 8px",fontWeight:600}}>
-                          {EVENT_STATUS[status]?.short||"미정"}
-                        </span>
-                      </div>
-                      {canCheck&&(
-                        <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                          {Object.entries(EVENT_STATUS).map(([k,v])=>(
-                            <button key={k}
-                              style={{fontSize:11,padding:"4px 8px",borderRadius:20,border:`1px solid ${status===k?v.color:"var(--gray-200)"}`,background:status===k?v.bg:"white",color:status===k?v.color:"var(--gray-500)",cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",fontWeight:status===k?600:400}}
-                              onClick={()=>updateParticipant(m.id,k,p?.memo)}>
-                              {v.short}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      {/* 메모 */}
-                      {canCheck&&(
-                        <input
-                          style={{marginTop:6,width:"100%",fontSize:12,padding:"4px 8px",border:"1px solid var(--gray-200)",borderRadius:6,fontFamily:"'Noto Sans KR',sans-serif",background:"white"}}
-                          placeholder="메모 (예: 토요일 11시 출발)"
-                          defaultValue={p?.memo||""}
-                          onBlur={e=>e.target.value!==(p?.memo||"")&&updateParticipant(m.id,status,e.target.value)}
-                        />
-                      )}
-                      {!canCheck&&p?.memo&&<div style={{fontSize:11,color:"var(--gray-400)",marginTop:4}}>{p.memo}</div>}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
+          <CheckBySam
+            sams={sams}
+            activeMembers={activeMembers}
+            participants={participants}
+            userEmail={userEmail}
+            canCheckAll={canCheckAll}
+            userId={userId}
+            updateParticipant={updateParticipant}
+          />
         </div>
       )}
 
@@ -3217,38 +3183,11 @@ function EventDetailPage({event,participants,guests,members,sams,userEmail,admin
 
       {/* 샘별 탭 */}
       {tab==="sam"&&(
-        <div>
-          {sams.map(s=>{
-            const samMembers = activeMembers.filter(m=>m.sam_id===s.id);
-            const going = samMembers.filter(m=>{const p=participants.find(pp=>pp.member_id===m.id);return p&&p.status!=="absent"&&p.status!=="unknown";}).length;
-            const absent = samMembers.filter(m=>{const p=participants.find(pp=>pp.member_id===m.id);return p?.status==="absent";}).length;
-            const unknown = samMembers.filter(m=>{const p=participants.find(pp=>pp.member_id===m.id);return !p||p.status==="unknown";}).length;
-            return(
-              <div key={s.id} className="card" style={{marginBottom:10}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                  <div style={{fontSize:14,fontWeight:700}}>🌱 {s.name}샘</div>
-                  <div style={{display:"flex",gap:6}}>
-                    <span style={{fontSize:12,background:"#ECFDF5",color:"#10B981",borderRadius:20,padding:"2px 8px",fontWeight:600}}>✅ {going}</span>
-                    <span style={{fontSize:12,background:"#FEF2F2",color:"#EF4444",borderRadius:20,padding:"2px 8px",fontWeight:600}}>❌ {absent}</span>
-                    <span style={{fontSize:12,background:"var(--gray-100)",color:"var(--gray-500)",borderRadius:20,padding:"2px 8px",fontWeight:600}}>❓ {unknown}</span>
-                  </div>
-                </div>
-                {samMembers.map(m=>{
-                  const p=participants.find(pp=>pp.member_id===m.id);
-                  const status=p?.status||"unknown";
-                  return(
-                    <div key={m.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4,fontSize:13}}>
-                      <span>{m.name}</span>
-                      <span style={{fontSize:11,background:EVENT_STATUS[status]?.bg,color:EVENT_STATUS[status]?.color,borderRadius:20,padding:"1px 7px",fontWeight:600}}>
-                        {EVENT_STATUS[status]?.short}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
+        <SamStatusView
+          sams={sams}
+          activeMembers={activeMembers}
+          participants={participants}
+        />
       )}
 
       {/* 게스트 추가 모달 */}
@@ -3259,6 +3198,193 @@ function EventDetailPage({event,participants,guests,members,sams,userEmail,admin
           onSave={async(d)=>{await supabase.from("event_guests").insert([d]);await onRefresh();setShowGuestForm(false);}}
           onClose={()=>setShowGuestForm(false)}
         />
+      )}
+    </div>
+  );
+}
+
+// ==================== 행사 샘별 현황 ====================
+function SamStatusView({sams, activeMembers, participants}){
+  const [selectedSam, setSelectedSam] = useState(null);
+
+  useEffect(()=>{
+    if(sams.length>0 && !selectedSam) setSelectedSam(sams[0].id);
+  },[sams.length]);
+
+  const samMembers = activeMembers.filter(m=>m.sam_id===selectedSam);
+
+  return(
+    <div>
+      {/* 샘 가로 탭 */}
+      <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>
+        {sams.map(s=>{
+          const ms = activeMembers.filter(m=>m.sam_id===s.id);
+          const going = ms.filter(m=>{const p=participants.find(pp=>pp.member_id===m.id);return p&&p.status!=="absent"&&p.status!=="unknown";}).length;
+          return(
+            <button key={s.id}
+              className={`btn btn-sm ${selectedSam===s.id?"btn-primary":"btn-secondary"}`}
+              style={{whiteSpace:"nowrap",padding:"6px 14px",flexShrink:0}}
+              onClick={()=>setSelectedSam(s.id)}>
+              {s.name}샘
+              <span style={{
+                marginLeft:5,fontSize:10,
+                background:selectedSam===s.id?"rgba(255,255,255,0.3)":"var(--gray-200)",
+                color:selectedSam===s.id?"white":"var(--gray-500)",
+                borderRadius:20,padding:"1px 6px",
+              }}>{going}/{ms.length}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 선택된 샘 요약 */}
+      {selectedSam&&(()=>{
+        const ms = activeMembers.filter(m=>m.sam_id===selectedSam);
+        const going = ms.filter(m=>{const p=participants.find(pp=>pp.member_id===m.id);return p&&p.status!=="absent"&&p.status!=="unknown";}).length;
+        const absent = ms.filter(m=>{const p=participants.find(pp=>pp.member_id===m.id);return p?.status==="absent";}).length;
+        const unknown = ms.filter(m=>{const p=participants.find(pp=>pp.member_id===m.id);return !p||p.status==="unknown";}).length;
+        return(
+          <div style={{display:"flex",gap:8,marginBottom:12}}>
+            <div style={{flex:1,background:"#ECFDF5",borderRadius:"var(--radius)",padding:"8px 10px",textAlign:"center"}}>
+              <div style={{fontSize:18,fontWeight:800,color:"#10B981"}}>{going}</div>
+              <div style={{fontSize:11,color:"#10B981"}}>참가</div>
+            </div>
+            <div style={{flex:1,background:"#FEF2F2",borderRadius:"var(--radius)",padding:"8px 10px",textAlign:"center"}}>
+              <div style={{fontSize:18,fontWeight:800,color:"#EF4444"}}>{absent}</div>
+              <div style={{fontSize:11,color:"#EF4444"}}>불참</div>
+            </div>
+            <div style={{flex:1,background:"var(--gray-100)",borderRadius:"var(--radius)",padding:"8px 10px",textAlign:"center"}}>
+              <div style={{fontSize:18,fontWeight:800,color:"var(--gray-500)"}}>{unknown}</div>
+              <div style={{fontSize:11,color:"var(--gray-500)"}}>미정</div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* 인원 목록 */}
+      {samMembers.map(m=>{
+        const p=participants.find(pp=>pp.member_id===m.id);
+        const status=p?.status||"unknown";
+        return(
+          <div key={m.id} style={{
+            display:"flex",justifyContent:"space-between",alignItems:"center",
+            padding:"9px 12px",background:"var(--gray-50)",borderRadius:"var(--radius)",
+            marginBottom:6,
+          }}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div className={`member-avatar ${m.gender}`} style={{width:28,height:28,fontSize:11}}>{m.name.charAt(0)}</div>
+              <div>
+                <div style={{fontSize:13,fontWeight:600}}>{m.name}</div>
+                {p?.memo&&<div style={{fontSize:11,color:"var(--gray-400)"}}>{p.memo}</div>}
+              </div>
+            </div>
+            <span style={{fontSize:11,background:EVENT_STATUS[status]?.bg,color:EVENT_STATUS[status]?.color,borderRadius:20,padding:"2px 8px",fontWeight:600,flexShrink:0}}>
+              {EVENT_STATUS[status]?.short||"미정"}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ==================== 행사 샘별 참가 체크 ====================
+function CheckBySam({sams,activeMembers,participants,userEmail,canCheckAll,userId,updateParticipant}){
+  const [selectedSam,setSelectedSam]=useState(null);
+
+  // 접근 가능한 샘 목록
+  const accessibleSams = sams.filter(s=>{
+    if(canCheckAll) return true;
+    return s.name===userId; // 샘장은 본인 샘만
+  });
+
+  // 초기 선택 샘
+  useEffect(()=>{
+    if(accessibleSams.length>0 && !selectedSam){
+      setSelectedSam(accessibleSams[0].id);
+    }
+  },[accessibleSams.length]);
+
+  const samMembers = activeMembers.filter(m=>m.sam_id===selectedSam);
+  const canCheck = canCheckAll || accessibleSams.some(s=>s.id===selectedSam);
+
+  return(
+    <div>
+      <div style={{fontSize:12,color:"var(--gray-400)",marginBottom:8}}>
+        {canCheckAll?"전체 청년 참가 여부를 체크하세요":"본인 샘 청년만 체크할 수 있습니다"}
+      </div>
+
+      {/* 샘 가로 탭 */}
+      <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>
+        {accessibleSams.map(s=>{
+          const samMs = activeMembers.filter(m=>m.sam_id===s.id);
+          const checked = samMs.filter(m=>{
+            const p=participants.find(p=>p.member_id===m.id);
+            return p&&p.status!=="unknown";
+          }).length;
+          return(
+            <button key={s.id}
+              className={`btn btn-sm ${selectedSam===s.id?"btn-primary":"btn-secondary"}`}
+              style={{whiteSpace:"nowrap",padding:"6px 14px",flexShrink:0}}
+              onClick={()=>setSelectedSam(s.id)}>
+              {s.name}샘
+              <span style={{
+                marginLeft:5,fontSize:10,
+                background:selectedSam===s.id?"rgba(255,255,255,0.3)":"var(--gray-200)",
+                color:selectedSam===s.id?"white":"var(--gray-500)",
+                borderRadius:20,padding:"1px 6px",
+              }}>{checked}/{samMs.length}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 선택된 샘 인원 목록 */}
+      {samMembers.length===0?(
+        <div className="empty-state"><div className="empty-state-icon">👥</div><div className="empty-state-text">샘을 선택해주세요</div></div>
+      ):(
+        samMembers.map(m=>{
+          const p=participants.find(pp=>pp.member_id===m.id);
+          const status=p?.status||"unknown";
+          return(
+            <div key={m.id} style={{marginBottom:10,background:"var(--gray-50)",borderRadius:"var(--radius)",padding:"10px 12px"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                <div className={`member-avatar ${m.gender}`} style={{width:30,height:30,fontSize:12}}>{m.name.charAt(0)}</div>
+                <span style={{fontSize:14,fontWeight:600,flex:1}}>{m.name}</span>
+                <span style={{fontSize:11,background:EVENT_STATUS[status]?.bg,color:EVENT_STATUS[status]?.color,borderRadius:20,padding:"2px 8px",fontWeight:600}}>
+                  {EVENT_STATUS[status]?.short||"미정"}
+                </span>
+              </div>
+              {canCheck&&(
+                <>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
+                    {Object.entries(EVENT_STATUS).map(([k,v])=>(
+                      <button key={k}
+                        style={{fontSize:11,padding:"4px 8px",borderRadius:20,
+                          border:`1px solid ${status===k?v.color:"var(--gray-200)"}`,
+                          background:status===k?v.bg:"white",
+                          color:status===k?v.color:"var(--gray-500)",
+                          cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",
+                          fontWeight:status===k?600:400}}
+                        onClick={()=>updateParticipant(m.id,k,p?.memo)}>
+                        {v.short}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    style={{width:"100%",fontSize:12,padding:"5px 8px",
+                      border:"1px solid var(--gray-200)",borderRadius:6,
+                      fontFamily:"'Noto Sans KR',sans-serif",background:"white"}}
+                    placeholder="메모 (예: 토요일 11시 출발)"
+                    defaultValue={p?.memo||""}
+                    onBlur={e=>e.target.value!==(p?.memo||"")&&updateParticipant(m.id,status,e.target.value)}
+                  />
+                </>
+              )}
+              {!canCheck&&p?.memo&&<div style={{fontSize:11,color:"var(--gray-400)",marginTop:4}}>{p.memo}</div>}
+            </div>
+          );
+        })
       )}
     </div>
   );
