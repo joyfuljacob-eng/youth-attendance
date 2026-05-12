@@ -781,6 +781,8 @@ export default function App() {
     prayers:{title:"기도제목",sub:"함께 기도해요 🙏"},
     absenceContact:{title:"결석자 연락",sub:"장기결석 연락 관리"},
     newmembers:{title:"새가족",sub:`등록 ${newMembers.length}명`},
+    allNotes:{title:"나눔 기록 전체",sub:"전체 나눔 기록 목록"},
+    excel:{title:"엑셀 내보내기",sub:"데이터 다운로드"},
   };
 
   const pages = {
@@ -788,11 +790,13 @@ export default function App() {
     members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} onInactivate={(id,reason)=>inactivateMember(id,reason)} onRestore={restoreMember} onPermanentDelete={permanentDeleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} noteCountMap={noteCountMap} />,
     attendance:<AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} />,
     sam:<SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} />,
-    more:<MorePage setActiveNav={setActiveNav} admin={admin} newMembersCount={newMembers.length} noticesCount={notices.length} prayersCount={prayers.filter(p=>!p.is_answered).length} />,
+    more:<MorePage setActiveNav={setActiveNav} admin={admin} userEmail={user?.email} newMembersCount={newMembers.length} noticesCount={notices.length} prayersCount={prayers.filter(p=>!p.is_answered).length} />,
     notices:<NoticePage notices={notices} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />,
     prayers:<PrayerPage prayers={prayers} members={members} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />,
     absenceContact:<AbsenceContactPage members={members} attendanceList={attendanceList} absenceContacts={absenceContacts} admin={admin} userEmail={user?.email} onRefresh={fetchAll} />,
     newmembers:<NewMembersPage newMembers={newMembers} sams={sams} setModal={setModal} onDelete={deleteNewMember} onToggleEdu={toggleEdu} onAssign={(nm)=>setModal({type:"assignSam",newMember:nm})} admin={admin} userEmail={user?.email} newMemberMemos={newMemberMemos} onRefresh={fetchAll} />,
+    allNotes:<AllNotesPage members={members} sams={sams} userEmail={user?.email} onSelectMember={setSelectedMember} />,
+    excel:<ExcelExportPage members={members} sams={sams} attendanceList={attendanceList} samAttendanceList={samAttendanceList} newMembers={newMembers} admin={admin} />,
   };
 
   return (
@@ -819,8 +823,8 @@ export default function App() {
             {admin && activeNav==="sam" && <button className="btn-icon" onClick={()=>setModal({type:"addSam"})}><Icon name="plus" size={16}/></button>}
             {admin && activeNav==="notices" && <button className="btn-icon" onClick={()=>setModal({type:"addNotice"})}><Icon name="plus" size={16}/></button>}
             {admin && activeNav==="prayers" && <button className="btn-icon" onClick={()=>setModal({type:"addPrayer"})}><Icon name="plus" size={16}/></button>}
-            {(activeNav==="notices"||activeNav==="prayers"||activeNav==="absenceContact"||activeNav==="newmembers") && (
-              <button className="btn-icon" style={{background:"var(--gray-100)",color:"var(--gray-600)"}} onClick={()=>setActiveNav("more")}>
+            {(activeNav==="notices"||activeNav==="prayers"||activeNav==="absenceContact"||activeNav==="newmembers"||activeNav==="allNotes"||activeNav==="excel") && (
+              <button className="btn-icon" style={{background:"var(--gray-100)",color:"var(--gray-600)"}} onClick={()=>setActiveNav(activeNav==="allNotes"?"home":"more")}>
                 <Icon name="back" size={16}/>
               </button>
             )}
@@ -1127,8 +1131,8 @@ function HomePage({members,newMembers,sams,attendanceList,samAttendanceList,setA
         <>
           <div className="section-header">
             <div className="section-title">📝 최근 나눔 기록</div>
-            <button className="btn btn-secondary btn-sm" onClick={()=>setActiveNav("members")}>
-              청년 명단 →
+            <button className="btn btn-secondary btn-sm" onClick={()=>setActiveNav("allNotes")}>
+              전체보기 →
             </button>
           </div>
           <div style={{background:"var(--white)",border:"1px solid var(--gray-200)",borderRadius:"var(--radius-lg)",overflow:"hidden",marginBottom:16,boxShadow:"var(--shadow)"}}>
@@ -1919,7 +1923,7 @@ function PastoralNoteForm({ memberId, userEmail, initial, onSave, onClose }) {
 }
 
 // ==================== 더보기 페이지 ====================
-function MorePage({setActiveNav,admin,newMembersCount,noticesCount,prayersCount}){
+function MorePage({setActiveNav,admin,userEmail,newMembersCount,noticesCount,prayersCount}){
   const menus=[
     {id:"newmembers",label:"새가족",sub:`등록 ${newMembersCount}명`,icon:"newuser",bg:"#FFFBEB",color:"#D97706"},
     {id:"notices",label:"공지 · 일정",sub:`${noticesCount}건`,icon:"bullhorn",bg:"#F5F3FF",color:"#7C3AED"},
@@ -1945,6 +1949,19 @@ function MorePage({setActiveNav,admin,newMembersCount,noticesCount,prayersCount}
           </button>
         ))}
       </div>
+      {/* 엑셀 내보내기 — 관리자만 */}
+      {admin&&(
+        <button className="more-page-btn" style={{width:"100%",flexDirection:"row",gap:12,padding:"14px 16px",background:"#F0FDF4",border:"1px solid #A7F3D0"}}
+          onClick={()=>setActiveNav("excel")}>
+          <div className="more-page-icon" style={{background:"#DCFCE7",flexShrink:0}}>
+            <Icon name="note" size={20} color="#16A34A"/>
+          </div>
+          <div>
+            <div className="more-page-label" style={{color:"#15803D"}}>📊 엑셀 내보내기</div>
+            <div className="more-page-sub">청년/출석/새가족 데이터 다운로드</div>
+          </div>
+        </button>
+      )}
     </div>
   );
 }
@@ -2526,6 +2543,290 @@ function InactivateModal({member, onSave, onClose}){
           <Icon name="logout" size={16} color="white"/>비활성 처리
         </button>
         <button className="btn btn-secondary" style={{width:"100%",marginTop:8}} onClick={onClose}>취소</button>
+      </div>
+    </div>
+  );
+}
+
+// ==================== 나눔 기록 전체 목록 ====================
+function AllNotesPage({members, sams, userEmail, onSelectMember}){
+  const [notes, setNotes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterMember, setFilterMember] = useState("");
+  const [search, setSearch] = useState("");
+
+  const canViewAll = canViewAllNotes(userEmail);
+
+  useEffect(()=>{
+    const fetchNotes = async () => {
+      setLoading(true);
+      let query = supabase.from("pastoral_notes").select("*").order("date",{ascending:false});
+      if(!canViewAll) query = query.eq("author_email", userEmail);
+      const {data} = await query;
+      if(data) setNotes(data);
+      setLoading(false);
+    };
+    fetchNotes();
+  },[]);
+
+  const getMember = (id) => members.find(m=>m.id===id);
+  const getSamName = (samId) => sams.find(s=>s.id===samId)?.name||"";
+  const authorLabel = (email) => email?.replace("@hiyouth.com","")||"";
+  const methodLabel = (m) => m==="face"?"👤 대면":m==="phone"?"📞 전화":m==="chat"?"💬 카톡":m||"";
+
+  // 청년 필터 목록
+  const memberOptions = [...new Set(notes.map(n=>n.member_id))]
+    .map(id=>getMember(id))
+    .filter(Boolean)
+    .sort((a,b)=>a.name.localeCompare(b.name,"ko"));
+
+  const filtered = notes.filter(n=>{
+    if(filterMember && n.member_id!==filterMember) return false;
+    if(search){
+      const m = getMember(n.member_id);
+      if(!m?.name.includes(search)) return false;
+    }
+    return true;
+  });
+
+  return(
+    <div>
+      {/* 검색/필터 */}
+      <div style={{display:"flex",gap:8,marginBottom:12}}>
+        <div className="search-bar" style={{flex:1,margin:0}}>
+          <span className="search-icon"><Icon name="users" size={16}/></span>
+          <input placeholder="이름 검색..." value={search} onChange={e=>{setSearch(e.target.value);setFilterMember("");}}/>
+        </div>
+        <select className="form-select" style={{width:"auto",minWidth:100,fontSize:13}}
+          value={filterMember} onChange={e=>setFilterMember(e.target.value)}>
+          <option value="">전체</option>
+          {memberOptions.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
+        </select>
+      </div>
+      <div style={{fontSize:12,color:"var(--gray-400)",marginBottom:10}}>
+        총 {filtered.length}건{!canViewAll&&" (본인 작성)"}
+      </div>
+
+      {loading?(
+        <div style={{textAlign:"center",padding:40,color:"var(--gray-400)"}}>
+          <div className="spinner" style={{margin:"0 auto 12px"}}/>
+        </div>
+      ):filtered.length===0?(
+        <div className="empty-state">
+          <div className="empty-state-icon">📋</div>
+          <div className="empty-state-text">나눔 기록이 없습니다</div>
+        </div>
+      ):(
+        filtered.map(note=>{
+          const member = getMember(note.member_id);
+          if(!member) return null;
+          return(
+            <div key={note.id} className="note-card" style={{cursor:"pointer"}}
+              onClick={()=>onSelectMember(member)}>
+              <div className="note-card-header">
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div className={`member-avatar ${member.gender}`} style={{width:32,height:32,fontSize:13,flexShrink:0}}>
+                    {member.military?"🪖":member.name.charAt(0)}
+                  </div>
+                  <div>
+                    <div style={{fontSize:14,fontWeight:700,color:"var(--gray-800)"}}>{member.name}</div>
+                    <div style={{fontSize:11,color:"var(--gray-400)"}}>{getSamName(member.sam_id)&&`${getSamName(member.sam_id)}샘 · `}{formatDate(note.date)}</div>
+                  </div>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{fontSize:11,color:"var(--gray-500)"}}>{methodLabel(note.method)}</span>
+                </div>
+              </div>
+              <div className="note-author" style={{marginBottom:0}}>
+                <span style={{background:"#EFF6FF",color:"#2563EB",borderRadius:20,padding:"2px 8px",fontSize:11,fontWeight:600}}>
+                  👤 {authorLabel(note.author_email)}
+                </span>
+              </div>
+              {note.content&&(
+                <div style={{fontSize:13,color:"var(--gray-600)",marginTop:8,lineHeight:1.6,
+                  overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",
+                  WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>
+                  {note.content}
+                </div>
+              )}
+              {note.prayer&&(
+                <div style={{fontSize:12,color:"#7C3AED",marginTop:6,background:"#F5F3FF",borderRadius:6,padding:"4px 8px"}}>
+                  🙏 {note.prayer}
+                </div>
+              )}
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+// ==================== 엑셀 내보내기 ====================
+function ExcelExportPage({members, sams, attendanceList, samAttendanceList, newMembers, admin}){
+  const [startDate, setStartDate] = useState(()=>{
+    const d = new Date(); d.setMonth(d.getMonth()-1);
+    return d.toISOString().split("T")[0];
+  });
+  const [endDate, setEndDate] = useState(today());
+  const [exporting, setExporting] = useState(false);
+
+  if(!admin) return(
+    <div className="empty-state">
+      <div className="empty-state-icon">🔒</div>
+      <div className="empty-state-text">관리자만 접근 가능합니다</div>
+    </div>
+  );
+
+  const getSamName = (id) => sams.find(s=>s.id===id)?.name||"미지정";
+
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      const XLSX = await import("https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs");
+
+      const wb = XLSX.utils.book_new();
+
+      // ===== 시트 1: 청년 명단 =====
+      const activeMembers = members.filter(m=>m.is_active!==false);
+      const sheet1Data = [
+        ["이름","성별","출생년도","생일","전화번호","샘","등록일","군복무"],
+        ...sortByName(activeMembers).map(m=>[
+          m.name,
+          m.gender==="male"?"남":"여",
+          m.birth_year||"",
+          m.birthday||"",
+          m.phone||"",
+          getSamName(m.sam_id),
+          m.assigned_at||"",
+          m.military?"예":"아니오",
+        ])
+      ];
+      const ws1 = XLSX.utils.aoa_to_sheet(sheet1Data);
+      ws1["!cols"] = [{wch:10},{wch:6},{wch:10},{wch:8},{wch:14},{wch:10},{wch:12},{wch:8}];
+      XLSX.utils.book_append_sheet(wb, ws1, "청년 명단");
+
+      // ===== 시트 2: 예배참석 현황 =====
+      const isSunday = d => new Date(d+"T00:00:00").getDay()===0;
+      const sundayDates = [...new Set(
+        attendanceList
+          .filter(a=>a.status&&isSunday(a.date)&&a.date>=startDate&&a.date<=endDate)
+          .map(a=>a.date)
+      )].sort();
+      const attendanceMembers = sortByName(members.filter(m=>!m.military&&m.is_active!==false));
+      const sheet2Data = [
+        ["이름","샘",...sundayDates.map(d=>formatDate(d))],
+        ...attendanceMembers.map(m=>[
+          m.name,
+          getSamName(m.sam_id),
+          ...sundayDates.map(d=>{
+            const rec = attendanceList.find(a=>a.member_id===m.id&&a.date===d);
+            return rec?.status?"O":"";
+          })
+        ])
+      ];
+      const ws2 = XLSX.utils.aoa_to_sheet(sheet2Data);
+      ws2["!cols"] = [{wch:10},{wch:10},...sundayDates.map(()=>({wch:10}))];
+      XLSX.utils.book_append_sheet(wb, ws2, "예배참석 현황");
+
+      // ===== 시트 3: 샘별참석 현황 =====
+      const samDates = [...new Set(
+        samAttendanceList
+          .filter(a=>a.status&&isSunday(a.date)&&a.date>=startDate&&a.date<=endDate)
+          .map(a=>a.date)
+      )].sort();
+      const sheet3Data = [
+        ["이름","샘",...samDates.map(d=>formatDate(d))],
+        ...sams.flatMap(s=>{
+          const samMembers = sortByName(members.filter(m=>m.sam_id===s.id&&!m.military&&m.is_active!==false));
+          return samMembers.map(m=>[
+            m.name,
+            getSamName(m.sam_id),
+            ...samDates.map(d=>{
+              const rec = samAttendanceList.find(a=>a.member_id===m.id&&a.date===d&&a.sam_id===s.id);
+              return rec?.status?"O":"";
+            })
+          ]);
+        })
+      ];
+      const ws3 = XLSX.utils.aoa_to_sheet(sheet3Data);
+      ws3["!cols"] = [{wch:10},{wch:10},...samDates.map(()=>({wch:10}))];
+      XLSX.utils.book_append_sheet(wb, ws3, "샘별참석 현황");
+
+      // ===== 시트 4: 새가족 현황 =====
+      const sheet4Data = [
+        ["이름","성별","전화번호","등록일","4주교육완료일","샘배정일","배정된샘"],
+        ...sortByName(newMembers).map(m=>[
+          m.name,
+          m.gender==="male"?"남":"여",
+          m.phone||"",
+          m.registered_at||"",
+          m.edu_completed_at||"",
+          "",
+          "",
+        ]),
+        ...sortByName(members.filter(m=>m.new_member_registered_at&&m.is_active!==false)).map(m=>[
+          m.name+" (전환)",
+          m.gender==="male"?"남":"여",
+          m.phone||"",
+          m.new_member_registered_at||"",
+          "",
+          m.assigned_at||"",
+          getSamName(m.sam_id),
+        ])
+      ];
+      const ws4 = XLSX.utils.aoa_to_sheet(sheet4Data);
+      ws4["!cols"] = [{wch:12},{wch:6},{wch:14},{wch:12},{wch:14},{wch:12},{wch:10}];
+      XLSX.utils.book_append_sheet(wb, ws4, "새가족 현황");
+
+      // 다운로드
+      const now = new Date();
+      const fileName = `학익청년부_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+    } catch(e) {
+      console.error(e);
+      alert("엑셀 생성 중 오류가 발생했습니다.");
+    }
+    setExporting(false);
+  };
+
+  return(
+    <div>
+      <div style={{background:"#F0FDF4",border:"1px solid #A7F3D0",borderRadius:"var(--radius-lg)",padding:"14px 16px",marginBottom:16}}>
+        <div style={{fontSize:13,fontWeight:600,color:"#15803D",marginBottom:4}}>📊 엑셀 파일 구성</div>
+        <div style={{fontSize:12,color:"#166534",lineHeight:1.8}}>
+          시트 1 — 청년 명단<br/>
+          시트 2 — 예배참석 현황 (기간 선택)<br/>
+          시트 3 — 샘별참석 현황 (기간 선택)<br/>
+          시트 4 — 새가족 현황
+        </div>
+      </div>
+
+      {/* 기간 선택 */}
+      <div className="card" style={{marginBottom:16}}>
+        <div style={{fontSize:13,fontWeight:600,color:"var(--gray-700)",marginBottom:10}}>
+          📅 출석 현황 기간 선택
+        </div>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:11,color:"var(--gray-400)",marginBottom:4}}>시작일</div>
+            <input className="form-input" type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}/>
+          </div>
+          <div style={{color:"var(--gray-400)",marginTop:16}}>~</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:11,color:"var(--gray-400)",marginBottom:4}}>종료일</div>
+            <input className="form-input" type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}/>
+          </div>
+        </div>
+      </div>
+
+      <button className="btn btn-primary" style={{width:"100%",background:"#16A34A",padding:"14px",fontSize:15}}
+        onClick={exportExcel} disabled={exporting}>
+        <Icon name="note" size={18} color="white"/>
+        {exporting?"생성 중...":"📥 엑셀 파일 다운로드"}
+      </button>
+      <div style={{fontSize:11,color:"var(--gray-400)",textAlign:"center",marginTop:8}}>
+        파일명: 학익청년부_날짜.xlsx
       </div>
     </div>
   );
