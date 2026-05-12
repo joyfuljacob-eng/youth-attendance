@@ -218,9 +218,11 @@ const css = `
   .search-bar input:focus{border-color:var(--primary);background:var(--white);}
   .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--gray-400);}
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
-  .modal-sheet{background:var(--white);border-radius:20px 20px 0 0;width:100%;max-width:430px;max-height:85vh;overflow-y:auto;padding:20px 20px 0;animation:slideUp 0.25s ease;display:flex;flex-direction:column;}
-  .modal-sheet-body{flex:1;overflow-y:auto;padding-bottom:8px;}
-  .modal-sheet-footer{padding:12px 0 max(24px,env(safe-area-inset-bottom));background:var(--white);flex-shrink:0;}
+  .modal-sheet{background:var(--white);border-radius:20px 20px 0 0;width:100%;max-width:430px;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 20px max(32px,env(safe-area-inset-bottom));animation:slideUp 0.25s ease;display:flex;flex-direction:column;}
+  .modal-sheet-scroll{flex:1;overflow-y:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch;}
+  .modal-sheet-footer{padding:8px 0 max(20px,env(safe-area-inset-bottom));background:var(--white);flex-shrink:0;border-top:1px solid var(--gray-100);margin:0 -20px;padding-left:20px;padding-right:20px;}
+  .modal-sheet.has-footer{padding-bottom:0;overflow:hidden;}
+  .modal-sheet.has-footer .modal-sheet-scroll{overflow-y:auto;flex:1;}
   @keyframes slideUp{from{transform:translateY(100%);opacity:0;}to{transform:translateY(0);opacity:1;}}
   .modal-handle{width:40px;height:4px;background:var(--gray-200);border-radius:2px;margin:0 auto 20px;}
   .modal-title{font-size:18px;font-weight:700;color:var(--gray-900);margin-bottom:20px;}
@@ -3407,26 +3409,28 @@ function EventFormModal({initial,userEmail,onSave,onClose}){
   };
   return(
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
-        <div className="modal-handle"/>
-        <div className="modal-title">{initial?"행사 수정":"행사 등록"}</div>
-        <div className="form-group">
-          <label className="form-label">행사명 *</label>
-          <input className="form-input" placeholder="예) 2025 여름 수련회" value={title} onChange={e=>setTitle(e.target.value)}/>
-        </div>
-        <div className="form-row">
+      <div className="modal-sheet has-footer" onClick={e=>e.stopPropagation()}>
+        <div className="modal-sheet-scroll" style={{padding:"20px 20px 8px"}}>
+          <div className="modal-handle"/>
+          <div className="modal-title">{initial?"행사 수정":"행사 등록"}</div>
           <div className="form-group">
-            <label className="form-label">시작일 *</label>
-            <input className="form-input" type="date" value={eventDate} onChange={e=>setEventDate(e.target.value)}/>
+            <label className="form-label">행사명 *</label>
+            <input className="form-input" placeholder="예) 2025 여름 수련회" value={title} onChange={e=>setTitle(e.target.value)}/>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">시작일 *</label>
+              <input className="form-input" type="date" value={eventDate} onChange={e=>setEventDate(e.target.value)}/>
+            </div>
+            <div className="form-group">
+              <label className="form-label">종료일 <span className="optional">(선택)</span></label>
+              <input className="form-input" type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}/>
+            </div>
           </div>
           <div className="form-group">
-            <label className="form-label">종료일 <span className="optional">(선택)</span></label>
-            <input className="form-input" type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}/>
+            <label className="form-label">행사 설명 <span className="optional">(선택)</span></label>
+            <textarea className="form-input" placeholder="행사에 대한 간단한 설명" value={description} onChange={e=>setDescription(e.target.value)} rows={3} style={{resize:"none"}}/>
           </div>
-        </div>
-        <div className="form-group">
-          <label className="form-label">행사 설명 <span className="optional">(선택)</span></label>
-          <textarea className="form-input" placeholder="행사에 대한 간단한 설명" value={description} onChange={e=>setDescription(e.target.value)} rows={3} style={{resize:"none"}}/>
         </div>
         <div className="modal-sheet-footer">
           <button className="btn btn-primary" style={{width:"100%"}} onClick={submit} disabled={saving}>
@@ -3453,20 +3457,22 @@ function GuestFormModal({eventId,userEmail,onSave,onClose}){
   };
   return(
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
-        <div className="modal-handle"/>
-        <div className="modal-title">게스트 추가</div>
-        <div className="form-group">
-          <label className="form-label">그룹명 *</label>
-          <input className="form-input" placeholder="예) 지도자, 외부 찬양팀" value={groupName} onChange={e=>setGroupName(e.target.value)}/>
-        </div>
-        <div className="form-group">
-          <label className="form-label">인원수 *</label>
-          <input className="form-input" type="number" min="1" value={count} onChange={e=>setCount(e.target.value)}/>
-        </div>
-        <div className="form-group">
-          <label className="form-label">비고 <span className="optional">(선택)</span></label>
-          <input className="form-input" placeholder="예) 목사님, 부장님 / 둘째날 저녁만" value={memo} onChange={e=>setMemo(e.target.value)}/>
+      <div className="modal-sheet has-footer" onClick={e=>e.stopPropagation()}>
+        <div className="modal-sheet-scroll" style={{padding:"20px 20px 8px"}}>
+          <div className="modal-handle"/>
+          <div className="modal-title">게스트 추가</div>
+          <div className="form-group">
+            <label className="form-label">그룹명 *</label>
+            <input className="form-input" placeholder="예) 지도자, 외부 찬양팀" value={groupName} onChange={e=>setGroupName(e.target.value)}/>
+          </div>
+          <div className="form-group">
+            <label className="form-label">인원수 *</label>
+            <input className="form-input" type="number" min="1" value={count} onChange={e=>setCount(e.target.value)}/>
+          </div>
+          <div className="form-group">
+            <label className="form-label">비고 <span className="optional">(선택)</span></label>
+            <input className="form-input" placeholder="예) 목사님, 부장님 / 둘째날 저녁만" value={memo} onChange={e=>setMemo(e.target.value)}/>
+          </div>
         </div>
         <div className="modal-sheet-footer">
           <button className="btn btn-primary" style={{width:"100%"}} onClick={submit} disabled={saving}>
