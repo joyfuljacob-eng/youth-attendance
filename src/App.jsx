@@ -1289,7 +1289,7 @@ function MembersPage({members,sams,setModal,onDelete,onInactivate,onRestore,onPe
 
   return(
     <div>
-      <div className="search-bar"><span className="search-icon"><Icon name="users" size={16}/></span><input placeholder="이름 또는 전화번호 검색..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      <div className="search-bar" style={{marginBottom:0}}><span className="search-icon"><Icon name="users" size={16}/></span><input placeholder="이름 또는 전화번호 검색..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
 
       {/* 탭 + 샘 필터 — sticky 고정 */}
       <div className="sticky-bar">
@@ -1336,12 +1336,13 @@ function MembersPage({members,sams,setModal,onDelete,onInactivate,onRestore,onPe
 
       {/* 비활성 탭 안내 */}
       {activeTab==="inactive"&&inactiveList.length>0&&(
-        <div className="info-hint" style={{marginBottom:12}}>
+        <div className="info-hint" style={{marginBottom:12,marginTop:8}}>
           🚪 비활성 청년은 출석/통계에서 제외됩니다. 복구하거나 완전 삭제할 수 있어요.
         </div>
       )}
 
-      {/* 목록 */}
+      {/* 목록 — sticky-bar 아래 여백 */}
+      <div style={{height:8}}/>
       {filtered.length===0?(
         <div className="empty-state">
           <div className="empty-state-icon">{activeTab==="inactive"?"🚪":activeTab==="military"?"🪖":"👥"}</div>
