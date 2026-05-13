@@ -122,7 +122,7 @@ const css = `
   .bottom-nav{background:var(--white);border-top:1px solid var(--gray-100);display:flex;padding:8px 0 max(8px,env(safe-area-inset-bottom));flex-shrink:0;z-index:50;}
   .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;cursor:pointer;background:none;border:none;color:var(--gray-400);font-size:10px;font-family:'Noto Sans KR',sans-serif;transition:color 0.15s;}
   .nav-item.active{color:var(--primary);}
-  .page-content{flex:1;overflow-y:auto;padding:16px;padding-bottom:24px;-webkit-overflow-scrolling:touch;background:var(--gray-50);}
+  .page-content{flex:1;overflow-y:auto;padding:16px;padding-bottom:80px;-webkit-overflow-scrolling:touch;background:#F8FAFC;position:relative;}
   .card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);}
   .btn{border:none;border-radius:var(--radius);font-family:'Noto Sans KR',sans-serif;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;white-space:nowrap;}
   .btn-primary{background:var(--primary);color:var(--white);padding:12px 20px;font-size:14px;width:100%;}
@@ -132,7 +132,7 @@ const css = `
   .btn-secondary:hover{background:var(--gray-200);}
   .btn-danger{background:var(--danger-light);color:var(--danger);padding:8px 12px;font-size:12px;}
   .btn-sm{padding:6px 12px !important;font-size:12px !important;border-radius:8px;line-height:1.4;width:auto !important;min-width:0 !important;display:inline-flex !important;align-items:center;}
-  .sticky-bar{position:sticky;top:0;z-index:20;background:#F8FAFC;margin-left:-16px;margin-right:-16px;padding:8px 16px 6px;box-shadow:0 4px 0 0 #F8FAFC, 0 5px 8px rgba(0,0,0,0.08);}
+  .sticky-bar{position:-webkit-sticky;position:sticky;top:-1px;z-index:100;background:#F8FAFC;margin-left:-16px;margin-right:-16px;padding:9px 16px 8px;isolation:isolate;will-change:transform;box-shadow:0 8px 0px #F8FAFC,0 9px 10px -2px rgba(0,0,0,0.1);}
   .btn-icon{background:var(--primary-light);color:var(--primary);border:none;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s;flex-shrink:0;}
   .btn-icon:hover{background:#dbeafe;}
   .btn-icon.danger{background:var(--danger-light);color:var(--danger);}
@@ -852,7 +852,7 @@ export default function App() {
             </button>
           </div>
         </div>
-        <div className="page-content">{pages[activeNav]}</div>
+        <div className="page-content" id="page-scroll-container">{pages[activeNav]}</div>
         <div className="bottom-nav">
           {navItems.map(item=>(
             <button key={item.id} className={`nav-item ${activeNav===item.id?"active":""}`} onClick={()=>setActiveNav(item.id)}>
