@@ -131,7 +131,7 @@ const css = `
   .btn-secondary{background:var(--gray-100);color:var(--gray-700);padding:10px 16px;font-size:13px;}
   .btn-secondary:hover{background:var(--gray-200);}
   .btn-danger{background:var(--danger-light);color:var(--danger);padding:8px 12px;font-size:12px;}
-  .btn-sm{padding:6px 12px !important;font-size:12px !important;border-radius:8px;line-height:1.4;}
+  .btn-sm{padding:6px 12px !important;font-size:12px !important;border-radius:8px;line-height:1.4;width:auto !important;min-width:0 !important;display:inline-flex !important;align-items:center;}
   .sticky-bar{position:sticky;top:0;z-index:10;background:#F0F4F8;margin-left:-16px;margin-right:-16px;padding:8px 16px 6px;box-shadow:0 3px 10px rgba(0,0,0,0.1);}
   .btn-icon{background:var(--primary-light);color:var(--primary);border:none;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s;flex-shrink:0;}
   .btn-icon:hover{background:#dbeafe;}
