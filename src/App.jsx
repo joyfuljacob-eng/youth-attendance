@@ -804,7 +804,7 @@ export default function App() {
     members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} onInactivate={(id,reason)=>inactivateMember(id,reason)} onRestore={restoreMember} onPermanentDelete={permanentDeleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} noteCountMap={noteCountMap} />,
     attendance:<AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} />,
     sam:<SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} />,
-    more:<MorePage setActiveNav={setActiveNav} admin={admin} userEmail={user?.email} newMembersCount={newMembers.length} noticesCount={notices.length} prayersCount={prayers.filter(p=>!p.is_answered).length} />,
+    more:<MorePage setActiveNav={setActiveNav} admin={admin} userEmail={user?.email} newMembersCount={newMembers.length} noticesCount={notices.filter(n=>!(n.category==="schedule"&&n.event_date&&n.event_date<today())).length} prayersCount={prayers.filter(p=>!p.is_answered).length} />,
     notices:<NoticePage notices={notices} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />,
     prayers:<PrayerPage prayers={prayers} members={members} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />,
     absenceContact:<AbsenceContactPage members={members} attendanceList={attendanceList} absenceContacts={absenceContacts} admin={admin} userEmail={user?.email} onRefresh={fetchAll} />,
