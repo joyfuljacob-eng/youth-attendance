@@ -1214,8 +1214,8 @@ function MembersPage({members,sams,setModal,onDelete,onInactivate,onRestore,onPe
 
   const militaryInSam = activeTab==="active" && filterSam!=="all"
     ? filtered.filter(m=>m.military) : [];
-  const normalInSam = activeTab==="active"
-    ? filtered.filter(m=>!m.military) : filtered;
+  const normalInSam = sortByName(activeTab==="active"
+    ? filtered.filter(m=>!m.military) : filtered);
 
   const getSamName=samId=>sams.find(s=>s.id===samId)?.name||"";
   const getSamCount=samId=>members.filter(m=>m.sam_id===samId&&m.is_active!==false).length;
@@ -1290,46 +1290,49 @@ function MembersPage({members,sams,setModal,onDelete,onInactivate,onRestore,onPe
     <div>
       <div className="search-bar"><span className="search-icon"><Icon name="users" size={16}/></span><input placeholder="이름 또는 전화번호 검색..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
 
-      {/* 탭 3개 */}
-      <div className="tab-bar" style={{marginBottom:12}}>
-        <button className={`tab-item ${activeTab==="active"?"active":""}`} onClick={()=>setActiveTab("active")}>
-          일반 ({activeMembers.length}명)
-        </button>
-        <button className={`tab-item ${activeTab==="military"?"active":""}`} onClick={()=>setActiveTab("military")}>
-          🪖 군복무 ({militaryList.length}명)
-        </button>
-        <button className={`tab-item ${activeTab==="inactive"?"active":""}`} onClick={()=>setActiveTab("inactive")}>
-          🚪 비활성 ({inactiveList.length}명)
-        </button>
-      </div>
-
-      {/* 샘 필터 (일반 탭만) */}
-      {activeTab==="active"&&(
-        <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>
-          <button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam("all")}>
-            전체 ({activeMembers.length}명)
+      {/* 탭 + 샘 필터 — sticky 고정 */}
+      <div style={{position:"sticky",top:0,zIndex:10,background:"var(--bg)",paddingBottom:6,marginLeft:-16,marginRight:-16,paddingLeft:16,paddingRight:16,boxShadow:"0 2px 8px rgba(0,0,0,0.06)"}}>
+        {/* 탭 3개 */}
+        <div className="tab-bar" style={{marginBottom:activeTab==="active"?8:0}}>
+          <button className={`tab-item ${activeTab==="active"?"active":""}`} onClick={()=>setActiveTab("active")}>
+            일반 ({activeMembers.length}명)
           </button>
-          {sams.map(s=>{
-            const total=getSamCount(s.id);
-            const mil=getSamMilitaryCount(s.id);
-            return(
-              <button key={s.id} className={`btn btn-sm ${filterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam(s.id)}>
-                {s.name}샘 ({total}명{mil>0?` 🪖${mil}`:""})
-              </button>
-            );
-          })}
-          {unassignedCount>0&&(
-            <button className={`btn btn-sm ${filterSam==="unassigned"?"btn-primary":"btn-secondary"}`}
-              style={{whiteSpace:"nowrap",padding:"6px 14px",
-                background:filterSam==="unassigned"?"#EA580C":"",
-                borderColor:filterSam!=="unassigned"?"#FED7AA":"",
-                color:filterSam==="unassigned"?"white":"#C2410C"}}
-              onClick={()=>setFilterSam("unassigned")}>
-              ⚠️ 미지정 ({unassignedCount}명)
-            </button>
-          )}
+          <button className={`tab-item ${activeTab==="military"?"active":""}`} onClick={()=>setActiveTab("military")}>
+            🪖 군복무 ({militaryList.length}명)
+          </button>
+          <button className={`tab-item ${activeTab==="inactive"?"active":""}`} onClick={()=>setActiveTab("inactive")}>
+            🚪 비활성 ({inactiveList.length}명)
+          </button>
         </div>
-      )}
+
+        {/* 샘 필터 (일반 탭만) */}
+        {activeTab==="active"&&(
+          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:2}}>
+            <button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px",flexShrink:0}} onClick={()=>setFilterSam("all")}>
+              전체 ({activeMembers.length}명)
+            </button>
+            {sams.map(s=>{
+              const total=getSamCount(s.id);
+              const mil=getSamMilitaryCount(s.id);
+              return(
+                <button key={s.id} className={`btn btn-sm ${filterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px",flexShrink:0}} onClick={()=>setFilterSam(s.id)}>
+                  {s.name}샘 ({total}명{mil>0?` 🪖${mil}`:""})
+                </button>
+              );
+            })}
+            {unassignedCount>0&&(
+              <button className={`btn btn-sm ${filterSam==="unassigned"?"btn-primary":"btn-secondary"}`}
+                style={{whiteSpace:"nowrap",padding:"6px 14px",flexShrink:0,
+                  background:filterSam==="unassigned"?"#EA580C":"",
+                  borderColor:filterSam!=="unassigned"?"#FED7AA":"",
+                  color:filterSam==="unassigned"?"white":"#C2410C"}}
+                onClick={()=>setFilterSam("unassigned")}>
+                ⚠️ 미지정 ({unassignedCount}명)
+              </button>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* 비활성 탭 안내 */}
       {activeTab==="inactive"&&inactiveList.length>0&&(
@@ -1389,20 +1392,28 @@ function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin}){
   const getSamName=samId=>sams.find(s=>s.id===samId)?.name||"";
   return(
     <div>
-      <div className="tab-bar">
-        <button className={`tab-item ${tab==="check"?"active":""}`} onClick={()=>setTab("check")}>출석 체크</button>
-        <button className={`tab-item ${tab==="summary"?"active":""}`} onClick={()=>setTab("summary")}>출석 현황</button>
+      {/* sticky 고정 영역 */}
+      <div style={{position:"sticky",top:0,zIndex:10,background:"var(--bg)",marginLeft:-16,marginRight:-16,paddingLeft:16,paddingRight:16,paddingBottom:6,boxShadow:"0 2px 8px rgba(0,0,0,0.06)"}}>
+        <div className="tab-bar" style={{marginBottom:tab==="check"?8:0}}>
+          <button className={`tab-item ${tab==="check"?"active":""}`} onClick={()=>setTab("check")}>출석 체크</button>
+          <button className={`tab-item ${tab==="summary"?"active":""}`} onClick={()=>setTab("summary")}>출석 현황</button>
+        </div>
+        {tab==="check"&&(
+          <>
+            <div className="date-row" style={{marginBottom:6}}>
+              <input type="date" className="date-input-styled" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)}/>
+              <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:18,fontWeight:700,color:"#10B981"}}>{presentCount}</div><div style={{fontSize:11,color:"#94A3B8"}}>/ {filteredMembers.length}명</div></div>
+            </div>
+            <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:2}}>
+              <button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px",flexShrink:0}} onClick={()=>setFilterSam("all")}>전체</button>
+              {sams.map(s=><button key={s.id} className={`btn btn-sm ${filterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px",flexShrink:0}} onClick={()=>setFilterSam(s.id)}>{s.name}샘</button>)}
+            </div>
+          </>
+        )}
       </div>
       {tab==="check"?(
         <>
-          <div className="date-row">
-            <input type="date" className="date-input-styled" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)}/>
-            <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:18,fontWeight:700,color:"#10B981"}}>{presentCount}</div><div style={{fontSize:11,color:"#94A3B8"}}>/ {filteredMembers.length}명</div></div>
-          </div>
-          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>
-            <button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam("all")}>전체</button>
-            {sams.map(s=><button key={s.id} className={`btn btn-sm ${filterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam(s.id)}>{s.name}샘</button>)}
-          </div>
+          <div style={{height:8}}/>
           {admin&&(<div style={{marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,color:"#64748B"}}>{formatDate(selectedDate)} ({getDayLabel(selectedDate)})</span><div style={{display:"flex",gap:8}}><button className="btn btn-secondary btn-sm" onClick={()=>onSetAll(filteredMembers.map(m=>m.id),selectedDate,true)}>전체 출석</button><button className="btn btn-danger btn-sm" onClick={()=>onSetAll(filteredMembers.map(m=>m.id),selectedDate,false)}>전체 결석</button></div></div>)}
           {!admin&&(<div style={{marginBottom:8}}><span style={{fontSize:13,color:"#64748B"}}>{formatDate(selectedDate)} ({getDayLabel(selectedDate)})</span></div>)}
           {filteredMembers.length===0?(<div className="empty-state"><div className="empty-state-icon">📋</div><div className="empty-state-text">등록된 청년이 없습니다</div></div>):(
@@ -1461,17 +1472,27 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,
     <div>
       {sams.length===0?(<div className="empty-state"><div className="empty-state-icon">🌱</div><div className="empty-state-text">샘 그룹이 없습니다</div></div>):(
         <>
-          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>{sams.map(s=><button key={s.id} className={`btn btn-sm ${selectedSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setSelectedSam(s.id)}>{s.name}샘</button>)}</div>
+          {/* sticky 고정 영역 */}
+          <div style={{position:"sticky",top:0,zIndex:10,background:"var(--bg)",marginLeft:-16,marginRight:-16,paddingLeft:16,paddingRight:16,paddingBottom:6,boxShadow:"0 2px 8px rgba(0,0,0,0.06)"}}>
+            {/* 샘 선택 가로 탭 */}
+            <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:6,marginBottom:0}}>
+              {sams.map(s=><button key={s.id} className={`btn btn-sm ${selectedSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px",flexShrink:0}} onClick={()=>setSelectedSam(s.id)}>{s.name}샘</button>)}
+            </div>
+            {/* 체크/현황 탭 */}
+            {selectedSam&&(
+              <div className="tab-bar" style={{marginBottom:0}}>
+                <button className={`tab-item ${tab==="check"?"active":""}`} onClick={()=>setTab("check")}>출석 체크</button>
+                <button className={`tab-item ${tab==="summary"?"active":""}`} onClick={()=>setTab("summary")}>출석 현황</button>
+              </div>
+            )}
+          </div>
+
           {selectedSam&&(
             <>
-              <div className="sam-card">
+              <div className="sam-card" style={{marginTop:8}}>
                 <div className="sam-icon"><Icon name="group" size={20} color="white"/></div>
                 <div className="sam-info"><div className="sam-name">{sams.find(s=>s.id===selectedSam)?.name}샘</div><div className="sam-count">구성원 {activeMembers.length}명{militaryMembers.length>0&&<span style={{marginLeft:6,color:"#6B7280"}}>· 군복무 {militaryMembers.length}명</span>}</div></div>
                 {admin&&<button className="btn-icon danger" onClick={()=>onDeleteSam(selectedSam)}><Icon name="trash" size={14}/></button>}
-              </div>
-              <div className="tab-bar">
-                <button className={`tab-item ${tab==="check"?"active":""}`} onClick={()=>setTab("check")}>출석 체크</button>
-                <button className={`tab-item ${tab==="summary"?"active":""}`} onClick={()=>setTab("summary")}>출석 현황</button>
               </div>
               {tab==="check"?(
                 <>
