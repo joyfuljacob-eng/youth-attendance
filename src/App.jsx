@@ -122,7 +122,7 @@ const css = `
   .bottom-nav{background:var(--white);border-top:1px solid var(--gray-100);display:flex;padding:8px 0 max(8px,env(safe-area-inset-bottom));flex-shrink:0;z-index:50;}
   .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;cursor:pointer;background:none;border:none;color:var(--gray-400);font-size:10px;font-family:'Noto Sans KR',sans-serif;transition:color 0.15s;}
   .nav-item.active{color:var(--primary);}
-  .page-content{flex:1;overflow-y:auto;padding:16px;padding-bottom:24px;-webkit-overflow-scrolling:touch;}
+  .page-content{flex:1;overflow-y:auto;padding:16px;padding-bottom:24px;-webkit-overflow-scrolling:touch;background:var(--gray-50);}
   .card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);}
   .btn{border:none;border-radius:var(--radius);font-family:'Noto Sans KR',sans-serif;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;white-space:nowrap;}
   .btn-primary{background:var(--primary);color:var(--white);padding:12px 20px;font-size:14px;width:100%;}
@@ -132,7 +132,7 @@ const css = `
   .btn-secondary:hover{background:var(--gray-200);}
   .btn-danger{background:var(--danger-light);color:var(--danger);padding:8px 12px;font-size:12px;}
   .btn-sm{padding:6px 12px !important;font-size:12px !important;border-radius:8px;line-height:1.4;width:auto !important;min-width:0 !important;display:inline-flex !important;align-items:center;}
-  .sticky-bar{position:sticky;top:0;z-index:10;background:#F0F4F8;margin-left:-16px;margin-right:-16px;padding:8px 16px 6px;box-shadow:0 3px 10px rgba(0,0,0,0.1);}
+  .sticky-bar{position:sticky;top:0;z-index:20;background:#F8FAFC;margin-left:-16px;margin-right:-16px;padding:8px 16px 6px;box-shadow:0 4px 0 0 #F8FAFC, 0 5px 8px rgba(0,0,0,0.08);}
   .btn-icon{background:var(--primary-light);color:var(--primary);border:none;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s;flex-shrink:0;}
   .btn-icon:hover{background:#dbeafe;}
   .btn-icon.danger{background:var(--danger-light);color:var(--danger);}
@@ -3059,13 +3059,14 @@ function EventDetailPage({event,participants,guests,members,sams,userEmail,admin
       </div>
 
       {/* 탭 — 스크롤 시 고정 */}
-      <div style={{
-        position:"sticky", top:0, zIndex:10,
-        background:"var(--bg)", paddingBottom:4,
-        marginBottom:10, marginLeft:-16, marginRight:-16,
-        paddingLeft:16, paddingRight:16,
-        boxShadow:"0 2px 8px rgba(0,0,0,0.06)",
-      }}>
+      <div style={{position:"sticky",top:0,zIndex:20,background:"#F8FAFC",paddingBottom:6,marginBottom:10,marginLeft:-16,marginRight:-16,paddingLeft:16,paddingRight:16,boxShadow:"0 4px 0 0 #F8FAFC, 0 5px 8px rgba(0,0,0,0.08)"}}>
+
+
+
+
+
+
+
         <div className="tab-bar" style={{marginBottom:0}}>
           <button className={`tab-item ${tab==="summary"?"active":""}`} onClick={()=>setTab("summary")}>📊 현황</button>
           <button className={`tab-item ${tab==="check"?"active":""}`} onClick={()=>setTab("check")}>✅ 체크</button>
