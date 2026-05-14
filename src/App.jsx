@@ -114,15 +114,16 @@ const css = `
   :root{--primary:#2563EB;--primary-light:#EFF6FF;--primary-dark:#1D4ED8;--danger:#EF4444;--danger-light:#FEF2F2;--success:#10B981;--success-light:#ECFDF5;--warning:#F59E0B;--warning-light:#FFFBEB;--military:#6B7280;--military-light:#F3F4F6;--gray-50:#F8FAFC;--gray-100:#F1F5F9;--gray-200:#E2E8F0;--gray-300:#CBD5E1;--gray-400:#94A3B8;--gray-500:#64748B;--gray-600:#475569;--gray-700:#334155;--gray-800:#1E293B;--gray-900:#0F172A;--white:#FFFFFF;--radius:12px;--radius-lg:16px;--shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.06);--shadow-md:0 4px 6px rgba(0,0,0,0.07),0 2px 4px rgba(0,0,0,0.06);}
   html,body,#root{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--gray-50);color:var(--gray-800);-webkit-font-smoothing:antialiased;}
   .app-wrapper{max-width:430px;margin:0 auto;height:100vh;background:var(--white);display:flex;flex-direction:column;overflow:hidden;position:relative;}
-  .app-header{background:var(--white);padding:16px 20px 12px;border-bottom:1px solid var(--gray-100);position:sticky;top:0;z-index:50;flex-shrink:0;}
+  .app-header{background:var(--white);padding:16px 20px 10px;border-bottom:1px solid var(--gray-100);position:sticky;top:0;z-index:50;flex-shrink:0;}
   .header-top{display:flex;align-items:center;gap:10px;}
+  .header-filter{padding:8px 0 4px;}
   .header-title-block{flex:1;}
   .header-title{font-family:'Montserrat',sans-serif;font-size:18px;font-weight:700;color:var(--gray-900);letter-spacing:-0.3px;}
   .header-sub{font-size:12px;color:var(--gray-400);margin-top:1px;}
   .bottom-nav{background:var(--white);border-top:1px solid var(--gray-100);display:flex;padding:8px 0 max(8px,env(safe-area-inset-bottom));flex-shrink:0;z-index:50;}
   .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;cursor:pointer;background:none;border:none;color:var(--gray-400);font-size:10px;font-family:'Noto Sans KR',sans-serif;transition:color 0.15s;}
   .nav-item.active{color:var(--primary);}
-  .page-content{flex:1;overflow-y:auto;padding:16px;padding-bottom:80px;-webkit-overflow-scrolling:touch;background:#F8FAFC;}
+  .page-content{flex:1;overflow-y:auto;padding:16px;padding-bottom:24px;-webkit-overflow-scrolling:touch;}
   .card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);}
   .btn{border:none;border-radius:var(--radius);font-family:'Noto Sans KR',sans-serif;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;white-space:nowrap;}
   .btn-primary{background:var(--primary);color:var(--white);padding:12px 20px;font-size:14px;width:100%;}
@@ -131,8 +132,7 @@ const css = `
   .btn-secondary{background:var(--gray-100);color:var(--gray-700);padding:10px 16px;font-size:13px;}
   .btn-secondary:hover{background:var(--gray-200);}
   .btn-danger{background:var(--danger-light);color:var(--danger);padding:8px 12px;font-size:12px;}
-  .btn-sm{padding:6px 12px !important;font-size:12px !important;border-radius:8px;line-height:1.4;width:auto !important;min-width:0 !important;display:inline-flex !important;align-items:center;}
-  .sticky-bar{position:-webkit-sticky;position:sticky;top:0;z-index:100;background:#F8FAFC;margin-left:-16px;margin-right:-16px;padding:9px 16px 10px;box-shadow:0 12px 0 6px #F8FAFC;}
+  .btn-sm{padding:6px 12px;font-size:12px;border-radius:8px;}
   .btn-icon{background:var(--primary-light);color:var(--primary);border:none;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s;flex-shrink:0;}
   .btn-icon:hover{background:#dbeafe;}
   .btn-icon.danger{background:var(--danger-light);color:var(--danger);}
@@ -624,6 +624,7 @@ export default function App() {
   const [events, setEvents] = useState([]);
   const [eventParticipants, setEventParticipants] = useState([]);
   const [eventGuests, setEventGuests] = useState([]);
+  const [filterBar, setFilterBar] = useState(null); // 헤더에 표시할 필터바
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -691,7 +692,11 @@ export default function App() {
     await supabase.auth.signOut();
   };
 
-  const closeModal = () => setModal(null);
+  // nav 변경 시 filterBar 초기화
+  const handleNavChange = (nav) => {
+    setFilterBar(null);
+    setActiveNav(nav);
+  };
   const todayBirthdays = getTodayBirthdays([...members,...newMembers]);
 
   const saveMember = async (m) => { setSaving(true); await supabase.from("members").insert([{name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,sam_id:m.samId||null,military:m.military||false,is_active:true}]); await fetchAll(); setSaving(false); closeModal(); };
@@ -801,10 +806,10 @@ export default function App() {
   };
 
   const pages = {
-    home:<HomePage members={members} newMembers={newMembers} sams={sams} attendanceList={attendanceList} samAttendanceList={samAttendanceList} setActiveNav={setActiveNav} todayBirthdays={todayBirthdays} userEmail={user?.email} recentNotes={recentNotes} onSelectMember={setSelectedMember} notices={notices} />,
-    members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} onInactivate={(id,reason)=>inactivateMember(id,reason)} onRestore={restoreMember} onPermanentDelete={permanentDeleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} noteCountMap={noteCountMap} />,
-    attendance:<AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} />,
-    sam:<SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} />,
+    home:<HomePage members={members} newMembers={newMembers} sams={sams} attendanceList={attendanceList} samAttendanceList={samAttendanceList} setActiveNav={handleNavChange} todayBirthdays={todayBirthdays} userEmail={user?.email} recentNotes={recentNotes} onSelectMember={setSelectedMember} notices={notices} />,
+    members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} onInactivate={(id,reason)=>inactivateMember(id,reason)} onRestore={restoreMember} onPermanentDelete={permanentDeleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} noteCountMap={noteCountMap} setFilterBar={setFilterBar} />,
+    attendance:<AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} setFilterBar={setFilterBar} />,
+    sam:<SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} setFilterBar={setFilterBar} />,
     more:<MorePage setActiveNav={setActiveNav} admin={admin} userEmail={user?.email} newMembersCount={newMembers.length} noticesCount={notices.filter(n=>!(n.category==="schedule"&&n.event_date&&n.event_date<today())).length} prayersCount={prayers.filter(p=>!p.is_answered).length} />,
     notices:<NoticePage notices={notices} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />,
     prayers:<PrayerPage prayers={prayers} members={members} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />,
@@ -827,35 +832,35 @@ export default function App() {
               <div className="header-sub">{pageTitles[activeNav]?.sub}</div>
             </div>
             {todayBirthdays.length>0 && (
-              <div style={{position:"relative",marginRight:4,cursor:"pointer"}} onClick={()=>setActiveNav("home")}>
+              <div style={{position:"relative",marginRight:4,cursor:"pointer"}} onClick={()=>handleNavChange("home")}>
                 <Icon name="cake" size={22} color="#F97316"/>
                 <div style={{position:"absolute",top:-4,right:-4,width:16,height:16,background:"#EF4444",borderRadius:"50%",fontSize:10,fontWeight:700,color:"white",display:"flex",alignItems:"center",justifyContent:"center"}}>{todayBirthdays.length}</div>
               </div>
             )}
             <button className="btn-icon" style={{background:"transparent"}} onClick={fetchAll}><Icon name="refresh" size={16} color="#94A3B8"/></button>
-            {/* 관리자만 + 버튼 표시 */}
             {admin && activeNav==="members" && <button className="btn-icon" onClick={()=>setModal({type:"addMember"})}><Icon name="plus" size={16}/></button>}
             {admin && activeNav==="newmembers" && <button className="btn-icon" onClick={()=>setModal({type:"addNewMember"})}><Icon name="plus" size={16}/></button>}
             {admin && activeNav==="sam" && <button className="btn-icon" onClick={()=>setModal({type:"addSam"})}><Icon name="plus" size={16}/></button>}
             {admin && activeNav==="notices" && <button className="btn-icon" onClick={()=>setModal({type:"addNotice"})}><Icon name="plus" size={16}/></button>}
             {admin && activeNav==="prayers" && <button className="btn-icon" onClick={()=>setModal({type:"addPrayer"})}><Icon name="plus" size={16}/></button>}
             {(activeNav==="notices"||activeNav==="prayers"||activeNav==="absenceContact"||activeNav==="newmembers"||activeNav==="allNotes"||activeNav==="excel"||activeNav==="events") && (
-              <button className="btn-icon" style={{background:"var(--gray-100)",color:"var(--gray-600)"}} onClick={()=>setActiveNav(activeNav==="allNotes"?"home":"more")}>
+              <button className="btn-icon" style={{background:"var(--gray-100)",color:"var(--gray-600)"}} onClick={()=>handleNavChange(activeNav==="allNotes"?"home":"more")}>
                 <Icon name="back" size={16}/>
               </button>
             )}
-            {/* 내 계정 메뉴 */}
             <button className="btn-icon" style={{background:"transparent"}} onClick={()=>setModal({type:"myAccount"})} title={userId}>
               <div style={{width:28,height:28,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:admin?"#1D4ED8":"#166534"}}>
                 {userId.charAt(0).toUpperCase()}
               </div>
             </button>
           </div>
+          {/* 헤더 하단 필터바 — 청년명단/예배참석/샘별참석에서 사용 */}
+          {filterBar&&<div className="header-filter">{filterBar}</div>}
         </div>
         <div className="page-content">{pages[activeNav]}</div>
         <div className="bottom-nav">
           {navItems.map(item=>(
-            <button key={item.id} className={`nav-item ${activeNav===item.id?"active":""}`} onClick={()=>setActiveNav(item.id)}>
+            <button key={item.id} className={`nav-item ${activeNav===item.id?"active":""}`} onClick={()=>handleNavChange(item.id)}>
               <Icon name={item.icon} size={22}/>{item.label}
             </button>
           ))}
@@ -1189,17 +1194,45 @@ function HomePage({members,newMembers,sams,attendanceList,samAttendanceList,setA
 }
 
 // ==================== MEMBERS PAGE ====================
-function MembersPage({members,sams,setModal,onDelete,onInactivate,onRestore,onPermanentDelete,admin,userEmail,onSelectMember,noteCountMap}){
+function MembersPage({members,sams,setModal,onDelete,onInactivate,onRestore,onPermanentDelete,admin,userEmail,onSelectMember,noteCountMap,setFilterBar}){
   const [search,setSearch]=useState("");
   const [filterSam,setFilterSam]=useState("all");
-  const [activeTab,setActiveTab]=useState("active"); // active | military | inactive
+  const [activeTab,setActiveTab]=useState("active");
 
-  // 활성 청년 (is_active=true, 군복무 제외)
   const activeMembers = sortByName(members.filter(m=>(m.is_active!==false)&&!m.military));
-  // 군복무 청년
   const militaryList = sortByName(members.filter(m=>(m.is_active!==false)&&m.military));
-  // 비활성 청년
   const inactiveList = sortByName(members.filter(m=>m.is_active===false));
+  const getSamCount=samId=>members.filter(m=>m.sam_id===samId&&m.is_active!==false).length;
+  const getSamMilitaryCount=samId=>members.filter(m=>m.sam_id===samId&&m.military&&m.is_active!==false).length;
+  const unassignedCount=members.filter(m=>!m.sam_id&&m.is_active!==false&&!m.military).length;
+
+  // 헤더 필터바 업데이트
+  useEffect(()=>{
+    setFilterBar(
+      <div>
+        <div className="tab-bar" style={{marginBottom:activeTab==="active"?6:0}}>
+          <button className={`tab-item ${activeTab==="active"?"active":""}`} onClick={()=>setActiveTab("active")}>일반 ({activeMembers.length}명)</button>
+          <button className={`tab-item ${activeTab==="military"?"active":""}`} onClick={()=>setActiveTab("military")}>🪖 군복무 ({militaryList.length}명)</button>
+          <button className={`tab-item ${activeTab==="inactive"?"active":""}`} onClick={()=>setActiveTab("inactive")}>🚪 비활성 ({inactiveList.length}명)</button>
+        </div>
+        {activeTab==="active"&&(
+          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:2}}>
+            <button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",flexShrink:0}} onClick={()=>setFilterSam("all")}>전체 ({activeMembers.length}명)</button>
+            {sams.map(s=>{
+              const total=getSamCount(s.id); const mil=getSamMilitaryCount(s.id);
+              return(<button key={s.id} className={`btn btn-sm ${filterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",flexShrink:0}} onClick={()=>setFilterSam(s.id)}>{s.name}샘 ({total}명{mil>0?` 🪖${mil}`:""})</button>);
+            })}
+            {unassignedCount>0&&(
+              <button className={`btn btn-sm ${filterSam==="unassigned"?"btn-primary":"btn-secondary"}`}
+                style={{whiteSpace:"nowrap",flexShrink:0,background:filterSam==="unassigned"?"#EA580C":"var(--gray-100)",color:filterSam==="unassigned"?"white":"#C2410C"}}
+                onClick={()=>setFilterSam("unassigned")}>⚠️ 미지정 ({unassignedCount}명)</button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+    return ()=>setFilterBar(null);
+  },[activeTab,filterSam,members,sams]);
 
   const filtered = (() => {
     const ms = (m) => m.name.includes(search)||(m.phone||"").includes(search);
@@ -1215,8 +1248,8 @@ function MembersPage({members,sams,setModal,onDelete,onInactivate,onRestore,onPe
 
   const militaryInSam = activeTab==="active" && filterSam!=="all"
     ? filtered.filter(m=>m.military) : [];
-  const normalInSam = sortByName(activeTab==="active"
-    ? filtered.filter(m=>!m.military) : filtered);
+  const normalInSam = activeTab==="active"
+    ? filtered.filter(m=>!m.military) : filtered;
 
   const getSamName=samId=>sams.find(s=>s.id===samId)?.name||"";
   const getSamCount=samId=>members.filter(m=>m.sam_id===samId&&m.is_active!==false).length;
@@ -1289,60 +1322,16 @@ function MembersPage({members,sams,setModal,onDelete,onInactivate,onRestore,onPe
 
   return(
     <div>
-      <div className="search-bar" style={{marginBottom:0}}><span className="search-icon"><Icon name="users" size={16}/></span><input placeholder="이름 또는 전화번호 검색..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
-
-      {/* 탭 + 샘 필터 — sticky 고정 */}
-      <div className="sticky-bar">
-        {/* 탭 3개 */}
-        <div className="tab-bar" style={{marginBottom:activeTab==="active"?6:0}}>
-          <button className={`tab-item ${activeTab==="active"?"active":""}`} onClick={()=>setActiveTab("active")}>
-            일반 ({activeMembers.length}명)
-          </button>
-          <button className={`tab-item ${activeTab==="military"?"active":""}`} onClick={()=>setActiveTab("military")}>
-            🪖 군복무 ({militaryList.length}명)
-          </button>
-          <button className={`tab-item ${activeTab==="inactive"?"active":""}`} onClick={()=>setActiveTab("inactive")}>
-            🚪 비활성 ({inactiveList.length}명)
-          </button>
-        </div>
-        {/* 샘 필터 (일반 탭만) */}
-        {activeTab==="active"&&(
-          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:2}}>
-            <button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",flexShrink:0}} onClick={()=>setFilterSam("all")}>
-              전체 ({activeMembers.length}명)
-            </button>
-            {sams.map(s=>{
-              const total=getSamCount(s.id);
-              const mil=getSamMilitaryCount(s.id);
-              return(
-                <button key={s.id} className={`btn btn-sm ${filterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",flexShrink:0}} onClick={()=>setFilterSam(s.id)}>
-                  {s.name}샘 ({total}명{mil>0?` 🪖${mil}`:""})
-                </button>
-              );
-            })}
-            {unassignedCount>0&&(
-              <button className={`btn btn-sm ${filterSam==="unassigned"?"btn-primary":"btn-secondary"}`}
-                style={{whiteSpace:"nowrap",flexShrink:0,
-                  background:filterSam==="unassigned"?"#EA580C":"var(--gray-100)",
-                  borderColor:filterSam!=="unassigned"?"#FED7AA":"transparent",
-                  color:filterSam==="unassigned"?"white":"#C2410C"}}
-                onClick={()=>setFilterSam("unassigned")}>
-                ⚠️ 미지정 ({unassignedCount}명)
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+      <div className="search-bar" style={{marginBottom:8}}><span className="search-icon"><Icon name="users" size={16}/></span><input placeholder="이름 또는 전화번호 검색..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
 
       {/* 비활성 탭 안내 */}
       {activeTab==="inactive"&&inactiveList.length>0&&(
-        <div className="info-hint" style={{marginBottom:12,marginTop:8}}>
+        <div className="info-hint" style={{marginBottom:12}}>
           🚪 비활성 청년은 출석/통계에서 제외됩니다. 복구하거나 완전 삭제할 수 있어요.
         </div>
       )}
 
-      {/* 목록 — sticky-bar 아래 여백 */}
-      <div style={{height:8}}/>
+      {/* 목록 */}
       {filtered.length===0?(
         <div className="empty-state">
           <div className="empty-state-icon">{activeTab==="inactive"?"🚪":activeTab==="military"?"🪖":"👥"}</div>
@@ -1377,7 +1366,7 @@ function MembersPage({members,sams,setModal,onDelete,onInactivate,onRestore,onPe
 }
 
 // ==================== ATTENDANCE PAGE ====================
-function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin}){
+function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin,setFilterBar}){
   const [selectedDate,setSelectedDate]=useState(today());
   const [tab,setTab]=useState("check");
   const [filterSam,setFilterSam]=useState("all");
@@ -1393,28 +1382,20 @@ function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin}){
   const getSamName=samId=>sams.find(s=>s.id===samId)?.name||"";
   return(
     <div>
-      {/* sticky 고정 영역 */}
-      <div className="sticky-bar">
-        <div className="tab-bar" style={{marginBottom:tab==="check"?6:0}}>
-          <button className={`tab-item ${tab==="check"?"active":""}`} onClick={()=>setTab("check")}>출석 체크</button>
-          <button className={`tab-item ${tab==="summary"?"active":""}`} onClick={()=>setTab("summary")}>출석 현황</button>
-        </div>
-        {tab==="check"&&(
-          <>
-            <div className="date-row" style={{marginBottom:6}}>
-              <input type="date" className="date-input-styled" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)}/>
-              <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:18,fontWeight:700,color:"#10B981"}}>{presentCount}</div><div style={{fontSize:11,color:"#94A3B8"}}>/ {filteredMembers.length}명</div></div>
-            </div>
-            <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:2}}>
-              <button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",flexShrink:0}} onClick={()=>setFilterSam("all")}>전체</button>
-              {sams.map(s=><button key={s.id} className={`btn btn-sm ${filterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",flexShrink:0}} onClick={()=>setFilterSam(s.id)}>{s.name}샘</button>)}
-            </div>
-          </>
-        )}
+      <div className="tab-bar">
+        <button className={`tab-item ${tab==="check"?"active":""}`} onClick={()=>setTab("check")}>출석 체크</button>
+        <button className={`tab-item ${tab==="summary"?"active":""}`} onClick={()=>setTab("summary")}>출석 현황</button>
       </div>
       {tab==="check"?(
         <>
-          <div style={{height:8}}/>
+          <div className="date-row">
+            <input type="date" className="date-input-styled" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)}/>
+            <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:18,fontWeight:700,color:"#10B981"}}>{presentCount}</div><div style={{fontSize:11,color:"#94A3B8"}}>/ {filteredMembers.length}명</div></div>
+          </div>
+          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>
+            <button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam("all")}>전체</button>
+            {sams.map(s=><button key={s.id} className={`btn btn-sm ${filterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam(s.id)}>{s.name}샘</button>)}
+          </div>
           {admin&&(<div style={{marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,color:"#64748B"}}>{formatDate(selectedDate)} ({getDayLabel(selectedDate)})</span><div style={{display:"flex",gap:8}}><button className="btn btn-secondary btn-sm" onClick={()=>onSetAll(filteredMembers.map(m=>m.id),selectedDate,true)}>전체 출석</button><button className="btn btn-danger btn-sm" onClick={()=>onSetAll(filteredMembers.map(m=>m.id),selectedDate,false)}>전체 결석</button></div></div>)}
           {!admin&&(<div style={{marginBottom:8}}><span style={{fontSize:13,color:"#64748B"}}>{formatDate(selectedDate)} ({getDayLabel(selectedDate)})</span></div>)}
           {filteredMembers.length===0?(<div className="empty-state"><div className="empty-state-icon">📋</div><div className="empty-state-text">등록된 청년이 없습니다</div></div>):(
@@ -1454,7 +1435,7 @@ function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin}){
 }
 
 // ==================== SAM ATTENDANCE PAGE ====================
-function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,admin}){
+function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,admin,setFilterBar}){
   const [selectedDate,setSelectedDate]=useState(today());
   const [selectedSam,setSelectedSam]=useState(null);
   const [tab,setTab]=useState("check");
@@ -1473,27 +1454,17 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,
     <div>
       {sams.length===0?(<div className="empty-state"><div className="empty-state-icon">🌱</div><div className="empty-state-text">샘 그룹이 없습니다</div></div>):(
         <>
-          {/* sticky 고정 영역 */}
-          <div className="sticky-bar">
-            {/* 샘 선택 가로 탭 */}
-            <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:6}}>
-              {sams.map(s=><button key={s.id} className={`btn btn-sm ${selectedSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",flexShrink:0}} onClick={()=>setSelectedSam(s.id)}>{s.name}샘</button>)}
-            </div>
-            {/* 체크/현황 탭 */}
-            {selectedSam&&(
-              <div className="tab-bar" style={{marginBottom:0}}>
-                <button className={`tab-item ${tab==="check"?"active":""}`} onClick={()=>setTab("check")}>출석 체크</button>
-                <button className={`tab-item ${tab==="summary"?"active":""}`} onClick={()=>setTab("summary")}>출석 현황</button>
-              </div>
-            )}
-          </div>
-
+          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>{sams.map(s=><button key={s.id} className={`btn btn-sm ${selectedSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setSelectedSam(s.id)}>{s.name}샘</button>)}</div>
           {selectedSam&&(
             <>
-              <div className="sam-card" style={{marginTop:8}}>
+              <div className="sam-card">
                 <div className="sam-icon"><Icon name="group" size={20} color="white"/></div>
                 <div className="sam-info"><div className="sam-name">{sams.find(s=>s.id===selectedSam)?.name}샘</div><div className="sam-count">구성원 {activeMembers.length}명{militaryMembers.length>0&&<span style={{marginLeft:6,color:"#6B7280"}}>· 군복무 {militaryMembers.length}명</span>}</div></div>
                 {admin&&<button className="btn-icon danger" onClick={()=>onDeleteSam(selectedSam)}><Icon name="trash" size={14}/></button>}
+              </div>
+              <div className="tab-bar">
+                <button className={`tab-item ${tab==="check"?"active":""}`} onClick={()=>setTab("check")}>출석 체크</button>
+                <button className={`tab-item ${tab==="summary"?"active":""}`} onClick={()=>setTab("summary")}>출석 현황</button>
               </div>
               {tab==="check"?(
                 <>
@@ -3060,14 +3031,13 @@ function EventDetailPage({event,participants,guests,members,sams,userEmail,admin
       </div>
 
       {/* 탭 — 스크롤 시 고정 */}
-      <div style={{position:"sticky",top:0,zIndex:20,background:"#F8FAFC",paddingBottom:6,marginBottom:10,marginLeft:-16,marginRight:-16,paddingLeft:16,paddingRight:16,boxShadow:"0 4px 0 0 #F8FAFC, 0 5px 8px rgba(0,0,0,0.08)"}}>
-
-
-
-
-
-
-
+      <div style={{
+        position:"sticky", top:0, zIndex:10,
+        background:"var(--bg)", paddingBottom:4,
+        marginBottom:10, marginLeft:-16, marginRight:-16,
+        paddingLeft:16, paddingRight:16,
+        boxShadow:"0 2px 8px rgba(0,0,0,0.06)",
+      }}>
         <div className="tab-bar" style={{marginBottom:0}}>
           <button className={`tab-item ${tab==="summary"?"active":""}`} onClick={()=>setTab("summary")}>📊 현황</button>
           <button className={`tab-item ${tab==="check"?"active":""}`} onClick={()=>setTab("check")}>✅ 체크</button>
