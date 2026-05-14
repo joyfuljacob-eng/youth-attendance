@@ -1447,43 +1447,6 @@ function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin,tab
     </div>
   );
 }
-          {admin&&(<div style={{marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,color:"#64748B"}}>{formatDate(selectedDate)} ({getDayLabel(selectedDate)})</span><div style={{display:"flex",gap:8}}><button className="btn btn-secondary btn-sm" onClick={()=>onSetAll(filteredMembers.map(m=>m.id),selectedDate,true)}>전체 출석</button><button className="btn btn-danger btn-sm" onClick={()=>onSetAll(filteredMembers.map(m=>m.id),selectedDate,false)}>전체 결석</button></div></div>)}
-          {!admin&&(<div style={{marginBottom:8}}><span style={{fontSize:13,color:"#64748B"}}>{formatDate(selectedDate)} ({getDayLabel(selectedDate)})</span></div>)}
-          {filteredMembers.length===0?(<div className="empty-state"><div className="empty-state-icon">📋</div><div className="empty-state-text">등록된 청년이 없습니다</div></div>):(
-            filteredMembers.map(m=>{
-              const present=isPresent(m.id);
-              const absentWeeks=getAbsentWeeks(m.id,attendanceList);
-              return(
-                <div key={m.id} className="member-item" style={{cursor:admin?"pointer":"default"}} onClick={()=>admin&&onToggle(m.id,selectedDate)}>
-                  <div className={`member-avatar ${m.gender}`}>{m.name.charAt(0)}</div>
-                  <div className="member-info">
-                    <div className="member-name">{m.name}</div>
-                    <div className="member-meta">
-                      {getSamName(m.sam_id)&&<span className="badge badge-green" style={{marginRight:4}}>{getSamName(m.sam_id)}샘</span>}
-                      {absentWeeks!==null&&absentWeeks>=4&&!present&&<span className={`badge ${absentWeeks>=8?"badge-red":"badge-yellow"}`}>{absentWeeks}주 결석</span>}
-                    </div>
-                  </div>
-                  <button className={`attendance-check-btn ${present?"checked":""}`}
-                    style={{cursor:admin?"pointer":"default"}}
-                    onClick={e=>{e.stopPropagation();admin&&onToggle(m.id,selectedDate);}}>
-                    {present&&<Icon name="check" size={14}/>}
-                  </button>
-                </div>
-              );
-            })
-          )}
-        </>
-      ):(
-        <>
-          <div style={{fontSize:13,color:"#64748B",marginBottom:12}}>최근 5주 참석 현황 (군복무 제외)</div>
-          {allDates.length===0?(<div className="empty-state"><div className="empty-state-icon">📊</div><div className="empty-state-text">참석 기록이 없습니다</div></div>):(
-            <div style={{overflowX:"auto"}}><table className="summary-table"><thead><tr><th>이름</th>{allDates.map(d=><th key={d}>{formatDate(d).slice(5)}<br/><span style={{fontWeight:400}}>({getDayLabel(d)})</span></th>)}</tr></thead><tbody>{sortByName(members.filter(m=>!m.military)).map(m=><tr key={m.id}><td>{m.name}</td>{allDates.map(d=>{const rec=attendanceList.find(a=>a.member_id===m.id&&a.date===d);return<td key={d}>{rec?.status?<span className="dot-present">✓</span>:<span className="dot-absent"/>}</td>;})}</tr>)}</tbody></table></div>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
 
 // ==================== SAM ATTENDANCE PAGE ====================
 function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,admin,selectedSam,setSelectedSam,tab}){
