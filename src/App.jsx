@@ -1528,67 +1528,6 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,
       )}
     </div>
   );
-}
-                <>
-                  <div className="date-row">
-                    <input type="date" className="date-input-styled" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)}/>
-                    <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:18,fontWeight:700,color:"#10B981"}}>{presentCount}</div><div style={{fontSize:11,color:"#94A3B8"}}>/ {activeMembers.length}명</div></div>
-                  </div>
-                  {allSamMembers.length===0?(<div className="empty-state"><div className="empty-state-icon">👤</div><div className="empty-state-text">배정된 청년이 없습니다</div></div>):(
-                    <>
-                      {activeMembers.map(m=>{
-                        const present=isPresent(m.id);
-                        return(
-                          <div key={m.id} className="member-item" style={{cursor:admin?"pointer":"default"}} onClick={()=>admin&&onToggle(m.id,selectedSam,selectedDate)}>
-                            <div className={`member-avatar ${m.gender}`}>{m.name.charAt(0)}</div>
-                            <div className="member-info">
-                              <div className="member-name">{m.name}</div>
-                              <div className="member-meta">
-                                <span className="badge badge-green">{sams.find(s=>s.id===selectedSam)?.name}샘</span>
-                              </div>
-                            </div>
-                            <button className={`attendance-check-btn ${present?"checked":""}`} style={{cursor:admin?"pointer":"default"}} onClick={e=>{e.stopPropagation();admin&&onToggle(m.id,selectedSam,selectedDate);}}>
-                              {present&&<Icon name="check" size={14}/>}
-                            </button>
-                          </div>
-                        );
-                      })}
-                      {militaryMembers.length>0&&(
-                        <>
-                          <div className="military-divider"><div className="military-divider-line"/><div className="military-divider-text">🪖 군복무 중</div><div className="military-divider-line"/></div>
-                          {militaryMembers.map(m=>(
-                            <div key={m.id} className="member-item military-item">
-                              <div className="member-avatar military-av">🪖</div>
-                              <div className="member-info">
-                                <div className="member-name military-name">{m.name}</div>
-                                <div className="member-meta">
-                                  <span className="badge badge-green">{sams.find(s=>s.id===selectedSam)?.name}샘</span>
-                                </div>
-                              </div>
-                              <div className="attendance-check-btn military-skip">🪖</div>
-                            </div>
-                          ))}
-                        </>
-                      )}
-                    </>
-                  )}
-                </>
-              ):(
-                <>
-                  <div style={{fontSize:13,color:"#64748B",marginBottom:12}}>최근 5회 참석 현황 (군복무 제외)</div>
-                  {allDates.length===0?(<div className="empty-state"><div className="empty-state-icon">📊</div><div className="empty-state-text">참석 기록이 없습니다</div></div>):(
-                    <div style={{overflowX:"auto"}}><table className="summary-table"><thead><tr><th>이름</th>{allDates.map(d=><th key={d}>{formatDate(d).slice(5)}</th>)}</tr></thead><tbody>{activeMembers.map(m=>(<tr key={m.id}><td>{m.name}</td>{allDates.map(d=>{const rec=samAttendanceList.find(a=>a.member_id===m.id&&a.sam_id===selectedSam&&a.date===d);return<td key={d}>{rec?.status?<span className="dot-present">✓</span>:<span className="dot-absent"/>}</td>;})}</tr>))}{militaryMembers.length>0&&militaryMembers.map(m=>(<tr key={m.id} style={{opacity:0.5}}><td><span style={{fontSize:11}}>🪖</span> {m.name}</td>{allDates.map(d=><td key={d}><span className="dot-military">🪖</span></td>)}</tr>))}</tbody></table></div>
-                  )}
-                </>
-              )}
-            </>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
 // ==================== NEW MEMBERS PAGE ====================
 function NewMembersPage({newMembers,sams,setModal,onDelete,onToggleEdu,onAssign,admin,userEmail,newMemberMemos,onRefresh}){
   const [search,setSearch]=useState("");
