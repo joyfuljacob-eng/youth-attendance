@@ -132,7 +132,7 @@ const css = `
   .btn-secondary{background:var(--gray-100);color:var(--gray-700);padding:10px 16px;font-size:13px;}
   .btn-secondary:hover{background:var(--gray-200);}
   .btn-danger{background:var(--danger-light);color:var(--danger);padding:8px 12px;font-size:12px;}
-  .btn-sm{padding:6px 12px;font-size:12px;border-radius:8px;}
+  .btn-sm{padding:6px 12px !important;font-size:12px !important;border-radius:8px;width:auto !important;min-width:0 !important;line-height:1.4;}
   .btn-icon{background:var(--primary-light);color:var(--primary);border:none;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s;flex-shrink:0;}
   .btn-icon:hover{background:#dbeafe;}
   .btn-icon.danger{background:var(--danger-light);color:var(--danger);}
@@ -625,6 +625,14 @@ export default function App() {
   const [eventParticipants, setEventParticipants] = useState([]);
   const [eventGuests, setEventGuests] = useState([]);
   const [filterBar, setFilterBar] = useState(null); // 헤더에 표시할 필터바
+  // 청년명단/예배참석/샘별참석 필터 상태 — App 레벨에서 관리해야 헤더에 안정적으로 반영
+  const [membersTab, setMembersTab] = useState("active");
+  const [membersFilterSam, setMembersFilterSam] = useState("all");
+  const [attendanceTab, setAttendanceTab] = useState("check");
+  const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [attendanceFilterSam, setAttendanceFilterSam] = useState("all");
+  const [samSelected, setSamSelected] = useState(null);
+  const [samTab, setSamTab] = useState("check");
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -807,9 +815,9 @@ export default function App() {
 
   const pages = {
     home:<HomePage members={members} newMembers={newMembers} sams={sams} attendanceList={attendanceList} samAttendanceList={samAttendanceList} setActiveNav={handleNavChange} todayBirthdays={todayBirthdays} userEmail={user?.email} recentNotes={recentNotes} onSelectMember={setSelectedMember} notices={notices} />,
-    members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} onInactivate={(id,reason)=>inactivateMember(id,reason)} onRestore={restoreMember} onPermanentDelete={permanentDeleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} noteCountMap={noteCountMap} setFilterBar={setFilterBar} />,
-    attendance:<AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} setFilterBar={setFilterBar} />,
-    sam:<SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} setFilterBar={setFilterBar} />,
+    members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} onInactivate={(id,reason)=>inactivateMember(id,reason)} onRestore={restoreMember} onPermanentDelete={permanentDeleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} noteCountMap={noteCountMap} activeTab={membersTab} filterSam={membersFilterSam} />,
+    attendance:<AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} tab={attendanceTab} selectedDate={attendanceDate} filterSam={attendanceFilterSam} />,
+    sam:<SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} selectedSam={samSelected} setSelectedSam={setSamSelected} tab={samTab} />,
     more:<MorePage setActiveNav={setActiveNav} admin={admin} userEmail={user?.email} newMembersCount={newMembers.length} noticesCount={notices.filter(n=>!(n.category==="schedule"&&n.event_date&&n.event_date<today())).length} prayersCount={prayers.filter(p=>!p.is_answered).length} />,
     notices:<NoticePage notices={notices} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />,
     prayers:<PrayerPage prayers={prayers} members={members} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />,
@@ -854,8 +862,67 @@ export default function App() {
               </div>
             </button>
           </div>
-          {/* 헤더 하단 필터바 — 청년명단/예배참석/샘별참석에서 사용 */}
-          {filterBar&&<div className="header-filter">{filterBar}</div>}
+          {/* 헤더 하단 필터바 — 청년명단/예배참석/샘별참석 */}
+          {activeNav==="members"&&(
+            <div className="header-filter">
+              <div className="tab-bar" style={{marginBottom:membersTab==="active"?6:0}}>
+                <button className={`tab-item ${membersTab==="active"?"active":""}`} onClick={()=>setMembersTab("active")}>일반 ({sortByName(members.filter(m=>m.is_active!==false&&!m.military)).length}명)</button>
+                <button className={`tab-item ${membersTab==="military"?"active":""}`} onClick={()=>setMembersTab("military")}>🪖 군복무 ({members.filter(m=>m.is_active!==false&&m.military).length}명)</button>
+                <button className={`tab-item ${membersTab==="inactive"?"active":""}`} onClick={()=>setMembersTab("inactive")}>🚪 비활성 ({members.filter(m=>m.is_active===false).length}명)</button>
+              </div>
+              {membersTab==="active"&&(
+                <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:2}}>
+                  <button className={`btn btn-sm ${membersFilterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",flexShrink:0}} onClick={()=>setMembersFilterSam("all")}>전체 ({members.filter(m=>m.is_active!==false&&!m.military).length}명)</button>
+                  {sams.map(s=>{
+                    const total=members.filter(m=>m.sam_id===s.id&&m.is_active!==false).length;
+                    const mil=members.filter(m=>m.sam_id===s.id&&m.military&&m.is_active!==false).length;
+                    return(<button key={s.id} className={`btn btn-sm ${membersFilterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",flexShrink:0}} onClick={()=>setMembersFilterSam(s.id)}>{s.name}샘 ({total}명{mil>0?` 🪖${mil}`:""})</button>);
+                  })}
+                  {members.filter(m=>!m.sam_id&&m.is_active!==false&&!m.military).length>0&&(
+                    <button className={`btn btn-sm ${membersFilterSam==="unassigned"?"btn-primary":"btn-secondary"}`}
+                      style={{whiteSpace:"nowrap",flexShrink:0,background:membersFilterSam==="unassigned"?"#EA580C":"var(--gray-100)",color:membersFilterSam==="unassigned"?"white":"#C2410C"}}
+                      onClick={()=>setMembersFilterSam("unassigned")}>⚠️ 미지정 ({members.filter(m=>!m.sam_id&&m.is_active!==false&&!m.military).length}명)</button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          {activeNav==="attendance"&&(
+            <div className="header-filter">
+              <div className="tab-bar" style={{marginBottom:attendanceTab==="check"?6:0}}>
+                <button className={`tab-item ${attendanceTab==="check"?"active":""}`} onClick={()=>setAttendanceTab("check")}>출석 체크</button>
+                <button className={`tab-item ${attendanceTab==="summary"?"active":""}`} onClick={()=>setAttendanceTab("summary")}>출석 현황</button>
+              </div>
+              {attendanceTab==="check"&&(
+                <>
+                  <div className="date-row" style={{marginBottom:6}}>
+                    <input type="date" className="date-input-styled" value={attendanceDate} onChange={e=>setAttendanceDate(e.target.value)}/>
+                    <div style={{textAlign:"right",flexShrink:0}}>
+                      <div style={{fontSize:18,fontWeight:700,color:"#10B981"}}>{attendanceList.filter(a=>a.date===attendanceDate&&a.status&&(attendanceFilterSam==="all"||members.find(m=>m.id===a.member_id)?.sam_id===attendanceFilterSam)).length}</div>
+                      <div style={{fontSize:11,color:"#94A3B8"}}>/ {members.filter(m=>!m.military&&m.is_active!==false&&(attendanceFilterSam==="all"||m.sam_id===attendanceFilterSam)).length}명</div>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:2}}>
+                    <button className={`btn btn-sm ${attendanceFilterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",flexShrink:0}} onClick={()=>setAttendanceFilterSam("all")}>전체</button>
+                    {sams.map(s=><button key={s.id} className={`btn btn-sm ${attendanceFilterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",flexShrink:0}} onClick={()=>setAttendanceFilterSam(s.id)}>{s.name}샘</button>)}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          {activeNav==="sam"&&sams.length>0&&(
+            <div className="header-filter">
+              <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:samSelected?6:0}}>
+                {sams.map(s=><button key={s.id} className={`btn btn-sm ${samSelected===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",flexShrink:0}} onClick={()=>setSamSelected(s.id)}>{s.name}샘</button>)}
+              </div>
+              {samSelected&&(
+                <div className="tab-bar" style={{marginBottom:0}}>
+                  <button className={`tab-item ${samTab==="check"?"active":""}`} onClick={()=>setSamTab("check")}>출석 체크</button>
+                  <button className={`tab-item ${samTab==="summary"?"active":""}`} onClick={()=>setSamTab("summary")}>출석 현황</button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <div className="page-content">{pages[activeNav]}</div>
         <div className="bottom-nav">
@@ -1194,45 +1261,12 @@ function HomePage({members,newMembers,sams,attendanceList,samAttendanceList,setA
 }
 
 // ==================== MEMBERS PAGE ====================
-function MembersPage({members,sams,setModal,onDelete,onInactivate,onRestore,onPermanentDelete,admin,userEmail,onSelectMember,noteCountMap,setFilterBar}){
+function MembersPage({members,sams,setModal,onDelete,onInactivate,onRestore,onPermanentDelete,admin,userEmail,onSelectMember,noteCountMap,activeTab,filterSam}){
   const [search,setSearch]=useState("");
-  const [filterSam,setFilterSam]=useState("all");
-  const [activeTab,setActiveTab]=useState("active");
 
   const activeMembers = sortByName(members.filter(m=>(m.is_active!==false)&&!m.military));
   const militaryList = sortByName(members.filter(m=>(m.is_active!==false)&&m.military));
   const inactiveList = sortByName(members.filter(m=>m.is_active===false));
-  const getSamCount=samId=>members.filter(m=>m.sam_id===samId&&m.is_active!==false).length;
-  const getSamMilitaryCount=samId=>members.filter(m=>m.sam_id===samId&&m.military&&m.is_active!==false).length;
-  const unassignedCount=members.filter(m=>!m.sam_id&&m.is_active!==false&&!m.military).length;
-
-  // 헤더 필터바 업데이트
-  useEffect(()=>{
-    setFilterBar(
-      <div>
-        <div className="tab-bar" style={{marginBottom:activeTab==="active"?6:0}}>
-          <button className={`tab-item ${activeTab==="active"?"active":""}`} onClick={()=>setActiveTab("active")}>일반 ({activeMembers.length}명)</button>
-          <button className={`tab-item ${activeTab==="military"?"active":""}`} onClick={()=>setActiveTab("military")}>🪖 군복무 ({militaryList.length}명)</button>
-          <button className={`tab-item ${activeTab==="inactive"?"active":""}`} onClick={()=>setActiveTab("inactive")}>🚪 비활성 ({inactiveList.length}명)</button>
-        </div>
-        {activeTab==="active"&&(
-          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:2}}>
-            <button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",flexShrink:0}} onClick={()=>setFilterSam("all")}>전체 ({activeMembers.length}명)</button>
-            {sams.map(s=>{
-              const total=getSamCount(s.id); const mil=getSamMilitaryCount(s.id);
-              return(<button key={s.id} className={`btn btn-sm ${filterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",flexShrink:0}} onClick={()=>setFilterSam(s.id)}>{s.name}샘 ({total}명{mil>0?` 🪖${mil}`:""})</button>);
-            })}
-            {unassignedCount>0&&(
-              <button className={`btn btn-sm ${filterSam==="unassigned"?"btn-primary":"btn-secondary"}`}
-                style={{whiteSpace:"nowrap",flexShrink:0,background:filterSam==="unassigned"?"#EA580C":"var(--gray-100)",color:filterSam==="unassigned"?"white":"#C2410C"}}
-                onClick={()=>setFilterSam("unassigned")}>⚠️ 미지정 ({unassignedCount}명)</button>
-            )}
-          </div>
-        )}
-      </div>
-    );
-    return ()=>setFilterBar(null);
-  },[activeTab,filterSam,members,sams]);
 
   const filtered = (() => {
     const ms = (m) => m.name.includes(search)||(m.phone||"").includes(search);
@@ -1363,10 +1397,7 @@ function MembersPage({members,sams,setModal,onDelete,onInactivate,onRestore,onPe
 }
 
 // ==================== ATTENDANCE PAGE ====================
-function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin,setFilterBar}){
-  const [selectedDate,setSelectedDate]=useState(today());
-  const [tab,setTab]=useState("check");
-  const [filterSam,setFilterSam]=useState("all");
+function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin,tab,selectedDate,filterSam}){
   const activeMembers=sortByName(members.filter(m=>!m.military&&m.is_active!==false));
   const filteredMembers=filterSam==="all"?activeMembers:activeMembers.filter(m=>m.sam_id===filterSam);
   const isPresent=memberId=>!!attendanceList.find(a=>a.member_id===memberId&&a.date===selectedDate&&a.status);
@@ -1379,20 +1410,43 @@ function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin,set
   const getSamName=samId=>sams.find(s=>s.id===samId)?.name||"";
   return(
     <div>
-      <div className="tab-bar">
-        <button className={`tab-item ${tab==="check"?"active":""}`} onClick={()=>setTab("check")}>출석 체크</button>
-        <button className={`tab-item ${tab==="summary"?"active":""}`} onClick={()=>setTab("summary")}>출석 현황</button>
-      </div>
       {tab==="check"?(
         <>
-          <div className="date-row">
-            <input type="date" className="date-input-styled" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)}/>
-            <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:18,fontWeight:700,color:"#10B981"}}>{presentCount}</div><div style={{fontSize:11,color:"#94A3B8"}}>/ {filteredMembers.length}명</div></div>
-          </div>
-          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>
-            <button className={`btn btn-sm ${filterSam==="all"?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam("all")}>전체</button>
-            {sams.map(s=><button key={s.id} className={`btn btn-sm ${filterSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setFilterSam(s.id)}>{s.name}샘</button>)}
-          </div>
+          {admin&&(<div style={{marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,color:"#64748B"}}>{formatDate(selectedDate)} ({getDayLabel(selectedDate)})</span><div style={{display:"flex",gap:8}}><button className="btn btn-secondary btn-sm" onClick={()=>onSetAll(filteredMembers.map(m=>m.id),selectedDate,true)}>전체 출석</button><button className="btn btn-danger btn-sm" onClick={()=>onSetAll(filteredMembers.map(m=>m.id),selectedDate,false)}>전체 결석</button></div></div>)}
+          {!admin&&(<div style={{marginBottom:8}}><span style={{fontSize:13,color:"#64748B"}}>{formatDate(selectedDate)} ({getDayLabel(selectedDate)})</span></div>)}
+          {filteredMembers.length===0?(<div className="empty-state"><div className="empty-state-icon">📋</div><div className="empty-state-text">등록된 청년이 없습니다</div></div>):(
+            filteredMembers.map(m=>{
+              const present=isPresent(m.id);
+              const absentWeeks=getAbsentWeeks(m.id,attendanceList);
+              return(
+                <div key={m.id} className="member-item" style={{cursor:admin?"pointer":"default"}} onClick={()=>admin&&onToggle(m.id,selectedDate)}>
+                  <div className={`member-avatar ${m.gender}`}>{m.name.charAt(0)}</div>
+                  <div className="member-info">
+                    <div className="member-name">{m.name}</div>
+                    <div className="member-meta">
+                      {getSamName(m.sam_id)&&<span className="badge badge-green" style={{marginRight:4}}>{getSamName(m.sam_id)}샘</span>}
+                      {absentWeeks!==null&&absentWeeks>=4&&!present&&<span className={`badge ${absentWeeks>=8?"badge-red":"badge-yellow"}`}>{absentWeeks}주 결석</span>}
+                    </div>
+                  </div>
+                  <button className={`attendance-check-btn ${present?"checked":""}`} style={{cursor:admin?"pointer":"default"}} onClick={e=>{e.stopPropagation();admin&&onToggle(m.id,selectedDate);}}>
+                    {present&&<Icon name="check" size={14}/>}
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </>
+      ):(
+        <>
+          <div style={{fontSize:13,color:"#64748B",marginBottom:12}}>최근 5주 참석 현황 (군복무 제외)</div>
+          {allDates.length===0?(<div className="empty-state"><div className="empty-state-icon">📊</div><div className="empty-state-text">참석 기록이 없습니다</div></div>):(
+            <div style={{overflowX:"auto"}}><table className="summary-table"><thead><tr><th>이름</th>{allDates.map(d=><th key={d}>{formatDate(d).slice(5)}<br/><span style={{fontWeight:400}}>({getDayLabel(d)})</span></th>)}</tr></thead><tbody>{sortByName(members.filter(m=>!m.military)).map(m=><tr key={m.id}><td>{m.name}</td>{allDates.map(d=>{const rec=attendanceList.find(a=>a.member_id===m.id&&a.date===d);return<td key={d}>{rec?.status?<span className="dot-present">✓</span>:<span className="dot-absent"/>}</td>;})}</tr>)}</tbody></table></div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
           {admin&&(<div style={{marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,color:"#64748B"}}>{formatDate(selectedDate)} ({getDayLabel(selectedDate)})</span><div style={{display:"flex",gap:8}}><button className="btn btn-secondary btn-sm" onClick={()=>onSetAll(filteredMembers.map(m=>m.id),selectedDate,true)}>전체 출석</button><button className="btn btn-danger btn-sm" onClick={()=>onSetAll(filteredMembers.map(m=>m.id),selectedDate,false)}>전체 결석</button></div></div>)}
           {!admin&&(<div style={{marginBottom:8}}><span style={{fontSize:13,color:"#64748B"}}>{formatDate(selectedDate)} ({getDayLabel(selectedDate)})</span></div>)}
           {filteredMembers.length===0?(<div className="empty-state"><div className="empty-state-icon">📋</div><div className="empty-state-text">등록된 청년이 없습니다</div></div>):(
@@ -1432,10 +1486,8 @@ function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin,set
 }
 
 // ==================== SAM ATTENDANCE PAGE ====================
-function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,admin,setFilterBar}){
+function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,admin,selectedSam,setSelectedSam,tab}){
   const [selectedDate,setSelectedDate]=useState(today());
-  const [selectedSam,setSelectedSam]=useState(null);
-  const [tab,setTab]=useState("check");
   useEffect(()=>{if(sams.length>0&&!selectedSam)setSelectedSam(sams[0].id);},[sams]);
   const allSamMembers=members.filter(m=>m.sam_id===selectedSam);
   const activeMembers=sortByName(allSamMembers.filter(m=>!m.military&&m.is_active!==false));
@@ -1451,7 +1503,6 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,
     <div>
       {sams.length===0?(<div className="empty-state"><div className="empty-state-icon">🌱</div><div className="empty-state-text">샘 그룹이 없습니다</div></div>):(
         <>
-          <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:14}}>{sams.map(s=><button key={s.id} className={`btn btn-sm ${selectedSam===s.id?"btn-primary":"btn-secondary"}`} style={{whiteSpace:"nowrap",padding:"6px 14px"}} onClick={()=>setSelectedSam(s.id)}>{s.name}샘</button>)}</div>
           {selectedSam&&(
             <>
               <div className="sam-card">
@@ -1459,11 +1510,62 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,
                 <div className="sam-info"><div className="sam-name">{sams.find(s=>s.id===selectedSam)?.name}샘</div><div className="sam-count">구성원 {activeMembers.length}명{militaryMembers.length>0&&<span style={{marginLeft:6,color:"#6B7280"}}>· 군복무 {militaryMembers.length}명</span>}</div></div>
                 {admin&&<button className="btn-icon danger" onClick={()=>onDeleteSam(selectedSam)}><Icon name="trash" size={14}/></button>}
               </div>
-              <div className="tab-bar">
-                <button className={`tab-item ${tab==="check"?"active":""}`} onClick={()=>setTab("check")}>출석 체크</button>
-                <button className={`tab-item ${tab==="summary"?"active":""}`} onClick={()=>setTab("summary")}>출석 현황</button>
-              </div>
               {tab==="check"?(
+                <>
+                  <div className="date-row">
+                    <input type="date" className="date-input-styled" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)}/>
+                    <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:18,fontWeight:700,color:"#10B981"}}>{presentCount}</div><div style={{fontSize:11,color:"#94A3B8"}}>/ {activeMembers.length}명</div></div>
+                  </div>
+                  {allSamMembers.length===0?(<div className="empty-state"><div className="empty-state-icon">👤</div><div className="empty-state-text">배정된 청년이 없습니다</div></div>):(
+                    <>
+                      {activeMembers.map(m=>{
+                        const present=isPresent(m.id);
+                        return(
+                          <div key={m.id} className="member-item" style={{cursor:admin?"pointer":"default"}} onClick={()=>admin&&onToggle(m.id,selectedSam,selectedDate)}>
+                            <div className={`member-avatar ${m.gender}`}>{m.name.charAt(0)}</div>
+                            <div className="member-info">
+                              <div className="member-name">{m.name}</div>
+                              <div className="member-meta"><span className="badge badge-green">{sams.find(s=>s.id===selectedSam)?.name}샘</span></div>
+                            </div>
+                            <button className={`attendance-check-btn ${present?"checked":""}`} style={{cursor:admin?"pointer":"default"}} onClick={e=>{e.stopPropagation();admin&&onToggle(m.id,selectedSam,selectedDate);}}>
+                              {present&&<Icon name="check" size={14}/>}
+                            </button>
+                          </div>
+                        );
+                      })}
+                      {militaryMembers.length>0&&(
+                        <>
+                          <div className="military-divider"><div className="military-divider-line"/><div className="military-divider-text">🪖 군복무 중</div><div className="military-divider-line"/></div>
+                          {militaryMembers.map(m=>(
+                            <div key={m.id} className="member-item military-item">
+                              <div className="member-avatar military-av">🪖</div>
+                              <div className="member-info">
+                                <div className="member-name military-name">{m.name}</div>
+                                <div className="member-meta"><span className="badge badge-green">{sams.find(s=>s.id===selectedSam)?.name}샘</span></div>
+                              </div>
+                              <div className="attendance-check-btn military-skip">🪖</div>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </>
+                  )}
+                </>
+              ):(
+                <>
+                  <div style={{fontSize:13,color:"#64748B",marginBottom:12}}>최근 5회 참석 현황 (군복무 제외)</div>
+                  {allDates.length===0?(<div className="empty-state"><div className="empty-state-icon">📊</div><div className="empty-state-text">참석 기록이 없습니다</div></div>):(
+                    <div style={{overflowX:"auto"}}><table className="summary-table"><thead><tr><th>이름</th>{allDates.map(d=><th key={d}>{formatDate(d).slice(5)}</th>)}</tr></thead><tbody>{activeMembers.map(m=>(<tr key={m.id}><td>{m.name}</td>{allDates.map(d=>{const rec=samAttendanceList.find(a=>a.member_id===m.id&&a.sam_id===selectedSam&&a.date===d);return<td key={d}>{rec?.status?<span className="dot-present">✓</span>:<span className="dot-absent"/>}</td>;})}</tr>))}{militaryMembers.length>0&&militaryMembers.map(m=>(<tr key={m.id} style={{opacity:0.5}}><td><span style={{fontSize:11}}>🪖</span> {m.name}</td>{allDates.map(d=><td key={d}><span className="dot-military">🪖</span></td>)}</tr>))}</tbody></table></div>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
                 <>
                   <div className="date-row">
                     <input type="date" className="date-input-styled" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)}/>
