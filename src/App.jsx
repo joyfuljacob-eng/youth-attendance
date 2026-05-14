@@ -1252,9 +1252,6 @@ function MembersPage({members,sams,setModal,onDelete,onInactivate,onRestore,onPe
     ? filtered.filter(m=>!m.military) : filtered;
 
   const getSamName=samId=>sams.find(s=>s.id===samId)?.name||"";
-  const getSamCount=samId=>members.filter(m=>m.sam_id===samId&&m.is_active!==false).length;
-  const getSamMilitaryCount=samId=>members.filter(m=>m.sam_id===samId&&m.military&&m.is_active!==false).length;
-  const unassignedCount=members.filter(m=>!m.sam_id&&m.is_active!==false&&!m.military).length;
 
   const renderMemberCard = (m, isInactive=false) => {
     const noteAccess = canWriteNotes(userEmail);
