@@ -1282,8 +1282,8 @@ function MembersPage({members,sams,setModal,onDelete,onInactivate,onRestore,onPe
 
   const militaryInSam = activeTab==="active" && filterSam!=="all"
     ? filtered.filter(m=>m.military) : [];
-  const normalInSam = activeTab==="active"
-    ? filtered.filter(m=>!m.military) : filtered;
+  const normalInSam = sortByName(activeTab==="active"
+    ? filtered.filter(m=>!m.military) : filtered);
 
   const getSamName=samId=>sams.find(s=>s.id===samId)?.name||"";
 
