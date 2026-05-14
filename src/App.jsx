@@ -1528,6 +1528,8 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,
       )}
     </div>
   );
+}
+
 // ==================== NEW MEMBERS PAGE ====================
 function NewMembersPage({newMembers,sams,setModal,onDelete,onToggleEdu,onAssign,admin,userEmail,newMemberMemos,onRefresh}){
   const [search,setSearch]=useState("");
