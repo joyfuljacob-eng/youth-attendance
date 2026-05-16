@@ -3000,8 +3000,8 @@ function EventDetailPage({event,participants,guests,members,sams,userEmail,admin
   const [showGuestForm,setShowGuestForm]=useState(false);
 
   const userId = userEmail?.replace("@hiyouth.com","");
-  const userSam = members.find(m=>m.name===userId||sams.find(s=>s.id===m.sam_id)?.name===userId);
-  const canCheckAll = canManage || ["leader0","leader1","leader2"].includes(userId);
+  // leader0,1,2 = 전체관리 / leader3~7 = 샘장 (체크 가능) / youth = 조회만
+  const canCheckAll = admin; // 모든 관리자(leader0~7)는 체크 가능
 
   const activeMembers = sortByName(members.filter(m=>m.is_active!==false&&!m.military));
   const guestTotal = guests.reduce((a,g)=>a+g.count,0);
@@ -3312,11 +3312,8 @@ function SamStatusView({sams, activeMembers, participants}){
 function CheckBySam({sams,activeMembers,participants,userEmail,canCheckAll,userId,updateParticipant}){
   const [selectedSam,setSelectedSam]=useState(null);
 
-  // 접근 가능한 샘 목록
-  const accessibleSams = sams.filter(s=>{
-    if(canCheckAll) return true;
-    return s.name===userId; // 샘장은 본인 샘만
-  });
+  // 접근 가능한 샘 목록 — 모든 관리자는 전체 샘 접근 가능
+  const accessibleSams = sams;
 
   // 초기 선택 샘
   useEffect(()=>{
