@@ -666,6 +666,7 @@ export default function App() {
     if(sa.data) setSamAttendanceList(sa.data);
 
     // 나눔 기록 건수 및 최근 기록 fetch
+    // noteCountMap은 전체 건수 (명단 뱃지용)
     const { data: notesData } = await supabase
       .from("pastoral_notes")
       .select("id, member_id, date, author_email")
@@ -674,7 +675,17 @@ export default function App() {
       const countMap = {};
       notesData.forEach(n => { countMap[n.member_id] = (countMap[n.member_id]||0)+1; });
       setNoteCountMap(countMap);
-      setRecentNotes(notesData.slice(0,5));
+
+      // recentNotes는 권한에 따라 필터링
+      // leader0, leader1 → 전체 / leader3~7 → 본인 작성만
+      const userEmailNow = (await supabase.auth.getUser()).data.user?.email || "";
+      if(canViewAllNotes(userEmailNow)) {
+        setRecentNotes(notesData.slice(0,5));
+      } else if(canViewOwnNotes(userEmailNow)) {
+        setRecentNotes(notesData.filter(n=>n.author_email===userEmailNow).slice(0,5));
+      } else {
+        setRecentNotes([]);
+      }
     }
     const [noticesRes,prayersRes,absenceRes,memosRes,eventsRes,participantsRes,guestsRes] = await Promise.all([
       supabase.from("notices").select("*").order("created_at",{ascending:false}),
