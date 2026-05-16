@@ -973,10 +973,9 @@ export default function App() {
           onClose={()=>setSelectedMember(null)}
         />
       )}
-      {/* 내 계정 — app-wrapper 완전히 밖에서 렌더링 */}
       {modal?.type==="myAccount" && (
-        <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"flex-end",justifyContent:"center",background:"rgba(0,0,0,0.5)"}} onClick={closeModal}>
-          <div style={{background:"#fff",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:430,padding:"20px 20px 40px",animation:"slideUp 0.25s ease"}} onClick={e=>e.stopPropagation()}>
+        <div style={{position:"fixed",inset:0,zIndex:99999,display:"flex",alignItems:"flex-end",justifyContent:"center",background:"rgba(0,0,0,0.6)"}} onClick={closeModal}>
+          <div style={{background:"#fff",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:430,padding:"20px 20px 40px"}} onClick={e=>e.stopPropagation()}>
             <div style={{width:40,height:4,background:"#E2E8F0",borderRadius:2,margin:"0 auto 20px"}}/>
             <div style={{textAlign:"center",marginBottom:20}}>
               <div style={{width:56,height:56,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,color:admin?"#1D4ED8":"#166534",margin:"0 auto 10px"}}>
