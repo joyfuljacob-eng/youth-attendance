@@ -845,7 +845,7 @@ export default function App() {
   return (
     <>
       <style>{css}</style>
-      {(loading||saving) && <div className="loading-overlay"><div className="spinner"/><div className="loading-text">{loading?"데이터 불러오는 중...":"저장 중..."}</div></div>}
+      {(loading||saving) && !modal && <div className="loading-overlay"><div className="spinner"/><div className="loading-text">{loading?"데이터 불러오는 중...":"저장 중..."}</div></div>}
       <div className="app-wrapper">
         <div className="app-header">
           <div className="header-top">
