@@ -976,15 +976,21 @@ export default function App() {
 // ==================== 내 계정 모달 ====================
 function MyAccountModal({ userId, admin, onChangePw, onLogout, onClose }) {
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
-        <div className="modal-handle"/>
-        <div style={{textAlign:"center",marginBottom:20}}>
-          <div style={{width:64,height:64,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,fontWeight:700,color:admin?"#1D4ED8":"#166534",margin:"0 auto 10px"}}>
+    <>
+      <div style={{position:"fixed",inset:0,zIndex:190}} onClick={onClose}/>
+      <div style={{
+        position:"fixed",top:60,right:8,zIndex:200,
+        background:"var(--white)",borderRadius:"var(--radius-lg)",
+        boxShadow:"0 8px 24px rgba(0,0,0,0.15)",
+        padding:"16px",minWidth:200,
+        border:"1px solid var(--gray-200)",
+      }}>
+        <div style={{textAlign:"center",marginBottom:16}}>
+          <div style={{width:52,height:52,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,fontWeight:700,color:admin?"#1D4ED8":"#166534",margin:"0 auto 8px"}}>
             {userId.charAt(0).toUpperCase()}
           </div>
-          <div style={{fontSize:18,fontWeight:700,color:"#1E293B"}}>{userId}</div>
-          <div style={{marginTop:6}}>
+          <div style={{fontSize:15,fontWeight:700,color:"#1E293B"}}>{userId}</div>
+          <div style={{marginTop:4}}>
             <span className={`badge ${admin?"badge-blue":"badge-viewer"}`}>
               {admin?"👑 관리자":"👀 조회 전용"}
             </span>
@@ -995,11 +1001,11 @@ function MyAccountModal({ userId, admin, onChangePw, onLogout, onClose }) {
             <Icon name="key" size={16}/>비밀번호 변경
           </button>
         )}
-        <button className="btn" style={{width:"100%",background:"#FEF2F2",color:"#EF4444",padding:"11px",fontSize:14,justifyContent:"center",gap:8}} onClick={()=>{onClose();onLogout();}}>
+        <button className="btn" style={{width:"100%",background:"#FEF2F2",color:"#EF4444",padding:"10px",fontSize:14,justifyContent:"center",gap:8}} onClick={()=>{onClose();onLogout();}}>
           <Icon name="logout" size={16} color="#EF4444"/>로그아웃
         </button>
       </div>
-    </div>
+    </>
   );
 }
 
