@@ -959,32 +959,6 @@ export default function App() {
         {admin && modal?.type==="addPrayer" && <PrayerFormModal members={members} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").insert([d]);await fetchAll();closeModal();}} onClose={closeModal}/>}
         {admin && modal?.type==="editPrayer" && <PrayerFormModal members={members} initial={modal.prayer} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").update({content:d.content,member_id:d.member_id}).eq("id",modal.prayer.id);await fetchAll();closeModal();}} onClose={closeModal}/>}
         {modal?.type==="changePw" && <ChangePasswordModal onClose={closeModal}/>}
-        {modal?.type==="myAccount" && (
-          <div className="modal-overlay" onClick={closeModal}>
-            <div className="modal-sheet" onClick={e=>e.stopPropagation()} style={{maxHeight:"50vh"}}>
-              <div className="modal-handle"/>
-              <div style={{textAlign:"center",marginBottom:20}}>
-                <div style={{width:56,height:56,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,color:admin?"#1D4ED8":"#166534",margin:"0 auto 10px"}}>
-                  {userId.charAt(0).toUpperCase()}
-                </div>
-                <div style={{fontSize:17,fontWeight:700,color:"#1E293B"}}>{userId}</div>
-                <div style={{marginTop:6}}>
-                  <span style={{display:"inline-flex",alignItems:"center",padding:"2px 12px",borderRadius:20,fontSize:12,fontWeight:600,background:admin?"#EFF6FF":"#F0FDF4",color:admin?"#2563EB":"#166534"}}>
-                    {admin?"👑 관리자":"👀 조회 전용"}
-                  </span>
-                </div>
-              </div>
-              {admin&&(
-                <button onClick={()=>setModal({type:"changePw"})} style={{width:"100%",marginBottom:10,padding:"12px",borderRadius:12,border:"1px solid #E2E8F0",background:"#F8FAFC",color:"#374151",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                  <Icon name="key" size={16}/>비밀번호 변경
-                </button>
-              )}
-              <button onClick={()=>{closeModal();handleLogout();}} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:"#FEF2F2",color:"#EF4444",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                <Icon name="logout" size={16} color="#EF4444"/>로그아웃
-              </button>
-            </div>
-          </div>
-        )}
       </div>
       {/* 청년 상세 페이지 (나눔 기록) */}
       {selectedMember && (
@@ -994,6 +968,33 @@ export default function App() {
           userEmail={user?.email}
           onClose={()=>setSelectedMember(null)}
         />
+      )}
+      {/* 내 계정 — app-wrapper 완전히 밖에서 렌더링 */}
+      {modal?.type==="myAccount" && (
+        <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"flex-end",justifyContent:"center",background:"rgba(0,0,0,0.5)"}} onClick={closeModal}>
+          <div style={{background:"#fff",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:430,padding:"20px 20px 40px",animation:"slideUp 0.25s ease"}} onClick={e=>e.stopPropagation()}>
+            <div style={{width:40,height:4,background:"#E2E8F0",borderRadius:2,margin:"0 auto 20px"}}/>
+            <div style={{textAlign:"center",marginBottom:20}}>
+              <div style={{width:56,height:56,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,color:admin?"#1D4ED8":"#166534",margin:"0 auto 10px"}}>
+                {userId.charAt(0).toUpperCase()}
+              </div>
+              <div style={{fontSize:17,fontWeight:700,color:"#1E293B"}}>{userId}</div>
+              <div style={{marginTop:6}}>
+                <span style={{display:"inline-flex",padding:"2px 12px",borderRadius:20,fontSize:12,fontWeight:600,background:admin?"#EFF6FF":"#F0FDF4",color:admin?"#2563EB":"#166534"}}>
+                  {admin?"👑 관리자":"👀 조회 전용"}
+                </span>
+              </div>
+            </div>
+            {admin&&(
+              <button onClick={()=>setModal({type:"changePw"})} style={{width:"100%",marginBottom:10,padding:"13px",borderRadius:12,border:"1px solid #E2E8F0",background:"#F8FAFC",color:"#374151",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                <Icon name="key" size={16}/>비밀번호 변경
+              </button>
+            )}
+            <button onClick={()=>{closeModal();handleLogout();}} style={{width:"100%",padding:"13px",borderRadius:12,border:"none",background:"#FEF2F2",color:"#EF4444",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              <Icon name="logout" size={16} color="#EF4444"/>로그아웃
+            </button>
+          </div>
+        </div>
       )}
     </>
   );
