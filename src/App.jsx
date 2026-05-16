@@ -114,8 +114,9 @@ const css = `
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   :root{--primary:#2563EB;--primary-light:#EFF6FF;--primary-dark:#1D4ED8;--danger:#EF4444;--danger-light:#FEF2F2;--success:#10B981;--success-light:#ECFDF5;--warning:#F59E0B;--warning-light:#FFFBEB;--military:#6B7280;--military-light:#F3F4F6;--gray-50:#F8FAFC;--gray-100:#F1F5F9;--gray-200:#E2E8F0;--gray-300:#CBD5E1;--gray-400:#94A3B8;--gray-500:#64748B;--gray-600:#475569;--gray-700:#334155;--gray-800:#1E293B;--gray-900:#0F172A;--white:#FFFFFF;--radius:12px;--radius-lg:16px;--shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.06);--shadow-md:0 4px 6px rgba(0,0,0,0.07),0 2px 4px rgba(0,0,0,0.06);}
   html,body,#root{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--gray-50);color:var(--gray-800);-webkit-font-smoothing:antialiased;}
-  .app-wrapper{max-width:430px;margin:0 auto;height:100vh;background:var(--white);display:flex;flex-direction:column;overflow:hidden;position:relative;}
-  .app-header{background:var(--white);padding:16px 20px 10px;border-bottom:1px solid var(--gray-100);position:sticky;top:0;z-index:50;flex-shrink:0;}
+  .app-wrapper{max-width:430px;margin:0 auto;height:100vh;background:var(--white);display:flex;flex-direction:column;overflow:visible;position:relative;}
+  .app-header{background:var(--white);padding:16px 20px 10px;border-bottom:1px solid var(--gray-100);position:sticky;top:0;z-index:50;flex-shrink:0;overflow:visible;}
+  .page-content-wrap{flex:1;overflow:hidden;position:relative;}
   .header-top{display:flex;align-items:center;gap:10px;}
   .header-filter{padding:8px 0 4px;}
   .header-title-block{flex:1;}
@@ -869,39 +870,11 @@ export default function App() {
                 <Icon name="back" size={16}/>
               </button>
             )}
-            <div style={{position:"relative"}}>
-              <button className="btn-icon" style={{background:"transparent"}} onClick={()=>setModal(modal?.type==="myAccount"?null:{type:"myAccount"})} title={userId}>
-                <div style={{width:28,height:28,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:admin?"#1D4ED8":"#166534"}}>
-                  {userId.charAt(0).toUpperCase()}
-                </div>
-              </button>
-              {modal?.type==="myAccount"&&(
-                <>
-                  <div style={{position:"fixed",inset:0,zIndex:9998}} onClick={closeModal}/>
-                  <div style={{position:"absolute",top:36,right:0,zIndex:9999,background:"#fff",borderRadius:16,boxShadow:"0 8px 32px rgba(0,0,0,0.18)",padding:"20px 16px 16px",width:220,border:"1px solid #E2E8F0"}}>
-                    <div style={{textAlign:"center",marginBottom:16}}>
-                      <div style={{width:52,height:52,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,fontWeight:700,color:admin?"#1D4ED8":"#166534",margin:"0 auto 8px"}}>
-                        {userId.charAt(0).toUpperCase()}
-                      </div>
-                      <div style={{fontSize:15,fontWeight:700,color:"#1E293B"}}>{userId}</div>
-                      <div style={{marginTop:6}}>
-                        <span style={{display:"inline-flex",alignItems:"center",padding:"2px 10px",borderRadius:20,fontSize:11,fontWeight:600,background:admin?"#EFF6FF":"#F0FDF4",color:admin?"#2563EB":"#166534"}}>
-                          {admin?"👑 관리자":"👀 조회 전용"}
-                        </span>
-                      </div>
-                    </div>
-                    {admin&&(
-                      <button onClick={()=>setModal({type:"changePw"})} style={{width:"100%",marginBottom:8,padding:"10px",borderRadius:10,border:"1px solid #E2E8F0",background:"#F8FAFC",color:"#374151",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                        <Icon name="key" size={15}/>비밀번호 변경
-                      </button>
-                    )}
-                    <button onClick={()=>{closeModal();handleLogout();}} style={{width:"100%",padding:"10px",borderRadius:10,border:"none",background:"#FEF2F2",color:"#EF4444",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                      <Icon name="logout" size={15} color="#EF4444"/>로그아웃
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+            <button className="btn-icon" style={{background:"transparent"}} onClick={()=>setModal(modal?.type==="myAccount"?null:{type:"myAccount"})} title={userId}>
+              <div style={{width:28,height:28,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:admin?"#1D4ED8":"#166534"}}>
+                {userId.charAt(0).toUpperCase()}
+              </div>
+            </button>
           </div>
           {/* 헤더 하단 필터바 — 청년명단/예배참석/샘별참석 */}
           {activeNav==="members"&&(
@@ -966,6 +939,33 @@ export default function App() {
           )}
         </div>
         <div className="page-content">{pages[activeNav]}</div>
+        {/* 내 계정 드롭다운 — app-wrapper 직속, position:absolute로 헤더 아래 표시 */}
+        {modal?.type==="myAccount"&&(
+          <>
+            <div style={{position:"fixed",inset:0,zIndex:9998}} onClick={closeModal}/>
+            <div style={{position:"absolute",top:64,right:8,zIndex:9999,background:"#fff",borderRadius:16,boxShadow:"0 8px 32px rgba(0,0,0,0.18)",padding:"20px 16px 16px",width:220,border:"1px solid #E2E8F0"}}>
+              <div style={{textAlign:"center",marginBottom:16}}>
+                <div style={{width:52,height:52,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,fontWeight:700,color:admin?"#1D4ED8":"#166534",margin:"0 auto 8px"}}>
+                  {userId.charAt(0).toUpperCase()}
+                </div>
+                <div style={{fontSize:15,fontWeight:700,color:"#1E293B"}}>{userId}</div>
+                <div style={{marginTop:6}}>
+                  <span style={{display:"inline-flex",alignItems:"center",padding:"2px 10px",borderRadius:20,fontSize:11,fontWeight:600,background:admin?"#EFF6FF":"#F0FDF4",color:admin?"#2563EB":"#166534"}}>
+                    {admin?"👑 관리자":"👀 조회 전용"}
+                  </span>
+                </div>
+              </div>
+              {admin&&(
+                <button onClick={()=>setModal({type:"changePw"})} style={{width:"100%",marginBottom:8,padding:"10px",borderRadius:10,border:"1px solid #E2E8F0",background:"#F8FAFC",color:"#374151",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                  <Icon name="key" size={15}/>비밀번호 변경
+                </button>
+              )}
+              <button onClick={()=>{closeModal();handleLogout();}} style={{width:"100%",padding:"10px",borderRadius:10,border:"none",background:"#FEF2F2",color:"#EF4444",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                <Icon name="logout" size={15} color="#EF4444"/>로그아웃
+              </button>
+            </div>
+          </>
+        )}
         <div className="bottom-nav">
           {navItems.map(item=>(
             <button key={item.id} className={`nav-item ${activeNav===item.id?"active":""}`} onClick={()=>handleNavChange(item.id)}>
