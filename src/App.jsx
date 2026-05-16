@@ -955,9 +955,6 @@ export default function App() {
         {admin && modal?.type==="editNotice" && <NoticeFormModal initial={modal.notice} userEmail={user?.email} onSave={async(d)=>{await supabase.from("notices").update(d).eq("id",modal.notice.id);await fetchAll();closeModal();}} onClose={closeModal}/>}
         {admin && modal?.type==="addPrayer" && <PrayerFormModal members={members} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").insert([d]);await fetchAll();closeModal();}} onClose={closeModal}/>}
         {admin && modal?.type==="editPrayer" && <PrayerFormModal members={members} initial={modal.prayer} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").update({content:d.content,member_id:d.member_id}).eq("id",modal.prayer.id);await fetchAll();closeModal();}} onClose={closeModal}/>}
-        {modal?.type==="myAccount" && (
-          <MyAccountModal userId={userId} admin={admin} onChangePw={()=>setModal({type:"changePw"})} onLogout={handleLogout} onClose={closeModal}/>
-        )}
         {modal?.type==="changePw" && <ChangePasswordModal onClose={closeModal}/>}
       </div>
       {/* 청년 상세 페이지 (나눔 기록) */}
@@ -968,6 +965,10 @@ export default function App() {
           userEmail={user?.email}
           onClose={()=>setSelectedMember(null)}
         />
+      )}
+      {/* 내 계정 모달 — app-wrapper 밖에서 렌더링 (overflow:hidden 영향 제거) */}
+      {modal?.type==="myAccount" && (
+        <MyAccountModal userId={userId} admin={admin} onChangePw={()=>setModal({type:"changePw"})} onLogout={handleLogout} onClose={closeModal}/>
       )}
     </>
   );
