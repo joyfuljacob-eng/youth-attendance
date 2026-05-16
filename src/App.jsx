@@ -823,7 +823,8 @@ export default function App() {
     absenceContact:{title:"결석자 연락",sub:"장기결석 연락 관리"},
     newmembers:{title:"새가족",sub:`등록 ${newMembers.length}명`},
     allNotes:{title:"나눔 기록 전체",sub:"전체 나눔 기록 목록"},
-    excel:{title:"엑셀 내보내기",sub:"데이터 다운로드"},
+    myAccount:{title:"내 계정",sub:userId},
+    changePw:{title:"비밀번호 변경",sub:""},
     events:{title:"수련회 · 행사",sub:"행사 참가 관리"},
   };
 
@@ -838,7 +839,8 @@ export default function App() {
     absenceContact:<AbsenceContactPage members={members} attendanceList={attendanceList} absenceContacts={absenceContacts} admin={admin} userEmail={user?.email} onRefresh={fetchAll} />,
     newmembers:<NewMembersPage newMembers={newMembers} sams={sams} setModal={setModal} onDelete={deleteNewMember} onToggleEdu={toggleEdu} onAssign={(nm)=>setModal({type:"assignSam",newMember:nm})} admin={admin} userEmail={user?.email} newMemberMemos={newMemberMemos} onRefresh={fetchAll} />,
     allNotes:<AllNotesPage members={members} sams={sams} userEmail={user?.email} onSelectMember={setSelectedMember} />,
-    excel:<ExcelExportPage members={members} sams={sams} attendanceList={attendanceList} samAttendanceList={samAttendanceList} newMembers={newMembers} admin={admin} />,
+    myAccount:<MyAccountPage userId={userId} admin={admin} onChangePw={()=>handleNavChange("changePw")} onLogout={handleLogout} />,
+    changePw:<ChangePasswordPage onBack={()=>handleNavChange("myAccount")} />,
     events:<EventsPage events={events} eventParticipants={eventParticipants} eventGuests={eventGuests} members={members} sams={sams} userEmail={user?.email} admin={admin} onRefresh={fetchAll} setActiveNav={setActiveNav} />,
   };
 
@@ -869,12 +871,12 @@ export default function App() {
             {admin && activeNav==="sam" && <button className="btn-icon" onClick={()=>setModal({type:"addSam"})}><Icon name="plus" size={16}/></button>}
             {admin && activeNav==="notices" && <button className="btn-icon" onClick={()=>setModal({type:"addNotice"})}><Icon name="plus" size={16}/></button>}
             {admin && activeNav==="prayers" && <button className="btn-icon" onClick={()=>setModal({type:"addPrayer"})}><Icon name="plus" size={16}/></button>}
-            {(activeNav==="notices"||activeNav==="prayers"||activeNav==="absenceContact"||activeNav==="newmembers"||activeNav==="allNotes"||activeNav==="excel"||activeNav==="events") && (
-              <button className="btn-icon" style={{background:"var(--gray-100)",color:"var(--gray-600)"}} onClick={()=>handleNavChange(activeNav==="allNotes"?"home":"more")}>
+            {(activeNav==="notices"||activeNav==="prayers"||activeNav==="absenceContact"||activeNav==="newmembers"||activeNav==="allNotes"||activeNav==="excel"||activeNav==="events"||activeNav==="myAccount"||activeNav==="changePw") && (
+              <button className="btn-icon" style={{background:"var(--gray-100)",color:"var(--gray-600)"}} onClick={()=>handleNavChange(activeNav==="allNotes"?"home":activeNav==="myAccount"?"home":activeNav==="changePw"?"myAccount":"more")}>
                 <Icon name="back" size={16}/>
               </button>
             )}
-            <button className="btn-icon" style={{background:"transparent"}} onClick={()=>setModal(modal?.type==="myAccount"?null:{type:"myAccount"})} title={userId}>
+            <button className="btn-icon" style={{background:"transparent"}} onClick={()=>handleNavChange("myAccount")} title={userId}>
               <div style={{width:28,height:28,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:admin?"#1D4ED8":"#166534"}}>
                 {userId.charAt(0).toUpperCase()}
               </div>
@@ -973,33 +975,108 @@ export default function App() {
           onClose={()=>setSelectedMember(null)}
         />
       )}
-      {modal?.type==="myAccount" && (
-        <div style={{position:"fixed",inset:0,zIndex:99999,display:"flex",alignItems:"flex-end",justifyContent:"center",background:"rgba(0,0,0,0.6)"}} onClick={closeModal}>
-          <div style={{background:"#fff",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:430,padding:"20px 20px 40px"}} onClick={e=>e.stopPropagation()}>
-            <div style={{width:40,height:4,background:"#E2E8F0",borderRadius:2,margin:"0 auto 20px"}}/>
-            <div style={{textAlign:"center",marginBottom:20}}>
-              <div style={{width:56,height:56,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,color:admin?"#1D4ED8":"#166534",margin:"0 auto 10px"}}>
-                {userId.charAt(0).toUpperCase()}
-              </div>
-              <div style={{fontSize:17,fontWeight:700,color:"#1E293B"}}>{userId}</div>
-              <div style={{marginTop:6}}>
-                <span style={{display:"inline-flex",padding:"2px 12px",borderRadius:20,fontSize:12,fontWeight:600,background:admin?"#EFF6FF":"#F0FDF4",color:admin?"#2563EB":"#166534"}}>
-                  {admin?"👑 관리자":"👀 조회 전용"}
-                </span>
-              </div>
-            </div>
-            {admin&&(
-              <button onClick={()=>setModal({type:"changePw"})} style={{width:"100%",marginBottom:10,padding:"13px",borderRadius:12,border:"1px solid #E2E8F0",background:"#F8FAFC",color:"#374151",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                <Icon name="key" size={16}/>비밀번호 변경
-              </button>
-            )}
-            <button onClick={()=>{closeModal();handleLogout();}} style={{width:"100%",padding:"13px",borderRadius:12,border:"none",background:"#FEF2F2",color:"#EF4444",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-              <Icon name="logout" size={16} color="#EF4444"/>로그아웃
-            </button>
-          </div>
-        </div>
-      )}
     </>
+  );
+}
+
+// ==================== 내 계정 페이지 ====================
+function MyAccountPage({ userId, admin, onChangePw, onLogout }) {
+  return (
+    <div>
+      <div style={{textAlign:"center",padding:"32px 20px 24px"}}>
+        <div style={{width:72,height:72,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,fontWeight:700,color:admin?"#1D4ED8":"#166534",margin:"0 auto 14px"}}>
+          {userId.charAt(0).toUpperCase()}
+        </div>
+        <div style={{fontSize:20,fontWeight:700,color:"#1E293B",marginBottom:8}}>{userId}</div>
+        <span style={{display:"inline-flex",alignItems:"center",padding:"4px 14px",borderRadius:20,fontSize:13,fontWeight:600,background:admin?"#EFF6FF":"#F0FDF4",color:admin?"#2563EB":"#166534"}}>
+          {admin?"👑 관리자":"👀 조회 전용"}
+        </span>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:10,padding:"0 4px"}}>
+        {admin&&(
+          <button onClick={onChangePw} style={{width:"100%",padding:"14px",borderRadius:12,border:"1px solid #E2E8F0",background:"#fff",color:"#374151",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:"0 1px 3px rgba(0,0,0,0.06)"}}>
+            <Icon name="key" size={18}/>비밀번호 변경
+          </button>
+        )}
+        <button onClick={onLogout} style={{width:"100%",padding:"14px",borderRadius:12,border:"none",background:"#FEF2F2",color:"#EF4444",fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+          <Icon name="logout" size={18} color="#EF4444"/>로그아웃
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ==================== 비밀번호 변경 페이지 ====================
+function ChangePasswordPage({ onBack }) {
+  const [current, setCurrent] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = async () => {
+    setError("");
+    if (!current || !newPw || !confirm) { setError("모든 항목을 입력해주세요"); return; }
+    if (newPw.length < 6) { setError("새 비밀번호는 6자리 이상이어야 합니다"); return; }
+    if (newPw !== confirm) { setError("새 비밀번호가 일치하지 않습니다"); return; }
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error: signInErr } = await supabase.auth.signInWithPassword({ email: user.email, password: current });
+    if (signInErr) { setError("현재 비밀번호가 올바르지 않습니다"); setLoading(false); return; }
+    const { error: updateErr } = await supabase.auth.updateUser({ password: newPw });
+    setLoading(false);
+    if (updateErr) { setError("비밀번호 변경에 실패했습니다"); }
+    else { setSuccess(true); setTimeout(()=>onBack(), 1500); }
+  };
+
+  if (success) return (
+    <div style={{textAlign:"center",padding:"60px 20px"}}>
+      <div style={{fontSize:56,marginBottom:16}}>✅</div>
+      <div style={{fontSize:18,fontWeight:600,color:"#10B981"}}>비밀번호가 변경되었습니다!</div>
+    </div>
+  );
+
+  return (
+    <div style={{padding:"8px 4px"}}>
+      {error && <div className="login-error" style={{marginBottom:16}}>{error}</div>}
+      <div className="form-group">
+        <label className="form-label">현재 비밀번호</label>
+        <div className="input-with-icon">
+          <span className="input-icon"><Icon name="lock" size={15}/></span>
+          <input className="form-input has-right-icon" type={showCurrent?"text":"password"}
+            placeholder="현재 비밀번호" value={current} onChange={e=>setCurrent(e.target.value)} style={{paddingLeft:38}}/>
+          <button className="input-icon-right" onClick={()=>setShowCurrent(!showCurrent)} type="button">
+            <Icon name={showCurrent?"eyeoff":"eye"} size={16}/>
+          </button>
+        </div>
+      </div>
+      <div className="form-group">
+        <label className="form-label">새 비밀번호 <span className="optional">(6자리 이상)</span></label>
+        <div className="input-with-icon">
+          <span className="input-icon"><Icon name="key" size={15}/></span>
+          <input className="form-input has-right-icon" type={showNew?"text":"password"}
+            placeholder="새 비밀번호" value={newPw} onChange={e=>setNewPw(e.target.value)} style={{paddingLeft:38}}/>
+          <button className="input-icon-right" onClick={()=>setShowNew(!showNew)} type="button">
+            <Icon name={showNew?"eyeoff":"eye"} size={16}/>
+          </button>
+        </div>
+      </div>
+      <div className="form-group">
+        <label className="form-label">새 비밀번호 확인</label>
+        <div className="input-with-icon">
+          <span className="input-icon"><Icon name="key" size={15}/></span>
+          <input className="form-input" type="password" placeholder="새 비밀번호 재입력"
+            value={confirm} onChange={e=>setConfirm(e.target.value)} style={{paddingLeft:38}}/>
+        </div>
+      </div>
+      <button className="btn btn-primary" onClick={handleChange} disabled={loading}>
+        <Icon name="check" size={16} color="white"/>
+        {loading ? "변경 중..." : "비밀번호 변경"}
+      </button>
+    </div>
   );
 }
 
