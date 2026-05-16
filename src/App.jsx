@@ -845,7 +845,6 @@ export default function App() {
   return (
     <>
       <style>{css}</style>
-      {(loading||saving) && !modal && <div className="loading-overlay"><div className="spinner"/><div className="loading-text">{loading?"데이터 불러오는 중...":"저장 중..."}</div></div>}
       <div className="app-wrapper">
         <div className="app-header">
           <div className="header-top">
@@ -859,7 +858,12 @@ export default function App() {
                 <div style={{position:"absolute",top:-4,right:-4,width:16,height:16,background:"#EF4444",borderRadius:"50%",fontSize:10,fontWeight:700,color:"white",display:"flex",alignItems:"center",justifyContent:"center"}}>{todayBirthdays.length}</div>
               </div>
             )}
-            <button className="btn-icon" style={{background:"transparent"}} onClick={fetchAll}><Icon name="refresh" size={16} color="#94A3B8"/></button>
+            <button className="btn-icon" style={{background:"transparent"}} onClick={fetchAll}>
+              {(loading||saving)
+                ? <div className="spinner" style={{width:16,height:16,borderWidth:2}}/>
+                : <Icon name="refresh" size={16} color="#94A3B8"/>
+              }
+            </button>
             {admin && activeNav==="members" && <button className="btn-icon" onClick={()=>setModal({type:"addMember"})}><Icon name="plus" size={16}/></button>}
             {admin && activeNav==="newmembers" && <button className="btn-icon" onClick={()=>setModal({type:"addNewMember"})}><Icon name="plus" size={16}/></button>}
             {admin && activeNav==="sam" && <button className="btn-icon" onClick={()=>setModal({type:"addSam"})}><Icon name="plus" size={16}/></button>}
