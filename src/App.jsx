@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "./supabaseClient";
 
 // ==================== ICONS ====================
@@ -976,37 +977,38 @@ export default function App() {
 
 // ==================== 내 계정 모달 ====================
 function MyAccountModal({ userId, admin, onChangePw, onLogout, onClose }) {
-  return (
+  return createPortal(
     <>
-      <div style={{position:"fixed",inset:0,zIndex:190}} onClick={onClose}/>
+      <div style={{position:"fixed",inset:0,zIndex:9998}} onClick={onClose}/>
       <div style={{
-        position:"fixed",top:60,right:8,zIndex:200,
-        background:"var(--white)",borderRadius:"var(--radius-lg)",
-        boxShadow:"0 8px 24px rgba(0,0,0,0.15)",
-        padding:"16px",minWidth:200,
-        border:"1px solid var(--gray-200)",
+        position:"fixed",top:64,right:12,zIndex:9999,
+        background:"#ffffff",borderRadius:16,
+        boxShadow:"0 8px 32px rgba(0,0,0,0.18)",
+        padding:"20px 16px 16px",width:220,
+        border:"1px solid #E2E8F0",
       }}>
         <div style={{textAlign:"center",marginBottom:16}}>
           <div style={{width:52,height:52,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,fontWeight:700,color:admin?"#1D4ED8":"#166534",margin:"0 auto 8px"}}>
             {userId.charAt(0).toUpperCase()}
           </div>
           <div style={{fontSize:15,fontWeight:700,color:"#1E293B"}}>{userId}</div>
-          <div style={{marginTop:4}}>
-            <span className={`badge ${admin?"badge-blue":"badge-viewer"}`}>
+          <div style={{marginTop:6}}>
+            <span style={{display:"inline-flex",alignItems:"center",padding:"2px 10px",borderRadius:20,fontSize:11,fontWeight:600,background:admin?"#EFF6FF":"#F0FDF4",color:admin?"#2563EB":"#166534"}}>
               {admin?"👑 관리자":"👀 조회 전용"}
             </span>
           </div>
         </div>
         {admin && (
-          <button className="btn btn-secondary" style={{width:"100%",marginBottom:8,justifyContent:"center",gap:8}} onClick={onChangePw}>
-            <Icon name="key" size={16}/>비밀번호 변경
+          <button onClick={onChangePw} style={{width:"100%",marginBottom:8,padding:"10px",borderRadius:10,border:"1px solid #E2E8F0",background:"#F8FAFC",color:"#374151",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            <Icon name="key" size={15}/>비밀번호 변경
           </button>
         )}
-        <button className="btn" style={{width:"100%",background:"#FEF2F2",color:"#EF4444",padding:"10px",fontSize:14,justifyContent:"center",gap:8}} onClick={()=>{onClose();onLogout();}}>
-          <Icon name="logout" size={16} color="#EF4444"/>로그아웃
+        <button onClick={()=>{onClose();onLogout();}} style={{width:"100%",padding:"10px",borderRadius:10,border:"none",background:"#FEF2F2",color:"#EF4444",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+          <Icon name="logout" size={15} color="#EF4444"/>로그아웃
         </button>
       </div>
-    </>
+    </>,
+    document.body
   );
 }
 
