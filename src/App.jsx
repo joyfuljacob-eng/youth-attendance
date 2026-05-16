@@ -266,7 +266,7 @@ const css = `
   .military-divider-text{font-size:11px;color:var(--gray-400);font-weight:500;white-space:nowrap;}
   .assign-btn{background:linear-gradient(135deg,#059669,#10B981);color:white;border:none;border-radius:var(--radius);padding:10px 14px;font-size:13px;font-weight:600;font-family:'Noto Sans KR',sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s;width:100%;justify-content:center;margin-top:10px;}
   .assign-btn:hover{opacity:0.9;}
-  .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:12px;}
+  .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:500;gap:12px;}
   .spinner{width:36px;height:36px;border:3px solid var(--gray-200);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
   .loading-text{font-size:14px;color:var(--gray-500);}
@@ -653,58 +653,59 @@ export default function App() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [m,nm,s,a,sa] = await Promise.all([
-      supabase.from("members").select("*").order("created_at"),
-      supabase.from("new_members").select("*").order("created_at"),
-      supabase.from("sams").select("*").order("created_at"),
-      supabase.from("attendance").select("*"),
-      supabase.from("sam_attendance").select("*"),
-    ]);
-    if(m.data) setMembers(m.data);
-    if(nm.data) setNewMembers(nm.data);
-    if(s.data) setSams(s.data);
-    if(a.data) setAttendanceList(a.data);
-    if(sa.data) setSamAttendanceList(sa.data);
+    try {
+      const [m,nm,s,a,sa] = await Promise.all([
+        supabase.from("members").select("*").order("created_at"),
+        supabase.from("new_members").select("*").order("created_at"),
+        supabase.from("sams").select("*").order("created_at"),
+        supabase.from("attendance").select("*"),
+        supabase.from("sam_attendance").select("*"),
+      ]);
+      if(m.data) setMembers(m.data);
+      if(nm.data) setNewMembers(nm.data);
+      if(s.data) setSams(s.data);
+      if(a.data) setAttendanceList(a.data);
+      if(sa.data) setSamAttendanceList(sa.data);
 
-    // 나눔 기록 건수 및 최근 기록 fetch
-    // noteCountMap은 전체 건수 (명단 뱃지용)
-    const { data: notesData } = await supabase
-      .from("pastoral_notes")
-      .select("id, member_id, date, author_email")
-      .order("date", { ascending: false });
-    if(notesData) {
-      const countMap = {};
-      notesData.forEach(n => { countMap[n.member_id] = (countMap[n.member_id]||0)+1; });
-      setNoteCountMap(countMap);
-
-      // recentNotes는 권한에 따라 필터링
-      // leader0, leader1 → 전체 / leader3~7 → 본인 작성만
-      const userEmailNow = (await supabase.auth.getUser()).data.user?.email || "";
-      if(canViewAllNotes(userEmailNow)) {
-        setRecentNotes(notesData.slice(0,5));
-      } else if(canViewOwnNotes(userEmailNow)) {
-        setRecentNotes(notesData.filter(n=>n.author_email===userEmailNow).slice(0,5));
-      } else {
-        setRecentNotes([]);
+      // 나눔 기록 건수 및 최근 기록 fetch
+      const { data: notesData } = await supabase
+        .from("pastoral_notes")
+        .select("id, member_id, date, author_email")
+        .order("date", { ascending: false });
+      if(notesData) {
+        const countMap = {};
+        notesData.forEach(n => { countMap[n.member_id] = (countMap[n.member_id]||0)+1; });
+        setNoteCountMap(countMap);
+        const userEmailNow = (await supabase.auth.getUser()).data.user?.email || "";
+        if(canViewAllNotes(userEmailNow)) {
+          setRecentNotes(notesData.slice(0,5));
+        } else if(canViewOwnNotes(userEmailNow)) {
+          setRecentNotes(notesData.filter(n=>n.author_email===userEmailNow).slice(0,5));
+        } else {
+          setRecentNotes([]);
+        }
       }
+      const [noticesRes,prayersRes,absenceRes,memosRes,eventsRes,participantsRes,guestsRes] = await Promise.all([
+        supabase.from("notices").select("*").order("created_at",{ascending:false}),
+        supabase.from("prayers").select("*").order("created_at",{ascending:false}),
+        supabase.from("absence_contacts").select("*").order("contact_date",{ascending:false}),
+        supabase.from("new_member_memos").select("*").order("date",{ascending:false}),
+        supabase.from("events").select("*").order("event_date",{ascending:false}),
+        supabase.from("event_participants").select("*"),
+        supabase.from("event_guests").select("*"),
+      ]);
+      if(noticesRes.data) setNotices(noticesRes.data);
+      if(prayersRes.data) setPrayers(prayersRes.data);
+      if(absenceRes.data) setAbsenceContacts(absenceRes.data);
+      if(memosRes.data) setNewMemberMemos(memosRes.data);
+      if(eventsRes.data) setEvents(eventsRes.data);
+      if(participantsRes.data) setEventParticipants(participantsRes.data);
+      if(guestsRes.data) setEventGuests(guestsRes.data);
+    } catch(e) {
+      console.error("fetchAll error:", e);
+    } finally {
+      setLoading(false);
     }
-    const [noticesRes,prayersRes,absenceRes,memosRes,eventsRes,participantsRes,guestsRes] = await Promise.all([
-      supabase.from("notices").select("*").order("created_at",{ascending:false}),
-      supabase.from("prayers").select("*").order("created_at",{ascending:false}),
-      supabase.from("absence_contacts").select("*").order("contact_date",{ascending:false}),
-      supabase.from("new_member_memos").select("*").order("date",{ascending:false}),
-      supabase.from("events").select("*").order("event_date",{ascending:false}),
-      supabase.from("event_participants").select("*"),
-      supabase.from("event_guests").select("*"),
-    ]);
-    if(noticesRes.data) setNotices(noticesRes.data);
-    if(prayersRes.data) setPrayers(prayersRes.data);
-    if(absenceRes.data) setAbsenceContacts(absenceRes.data);
-    if(memosRes.data) setNewMemberMemos(memosRes.data);
-    if(eventsRes.data) setEvents(eventsRes.data);
-    if(participantsRes.data) setEventParticipants(participantsRes.data);
-    if(guestsRes.data) setEventGuests(guestsRes.data);
-    setLoading(false);
   };
 
   const handleLogout = async () => {
@@ -868,11 +869,39 @@ export default function App() {
                 <Icon name="back" size={16}/>
               </button>
             )}
-            <button className="btn-icon" style={{background:"transparent"}} onClick={()=>setModal({type:"myAccount"})} title={userId}>
-              <div style={{width:28,height:28,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:admin?"#1D4ED8":"#166534"}}>
-                {userId.charAt(0).toUpperCase()}
-              </div>
-            </button>
+            <div style={{position:"relative"}}>
+              <button className="btn-icon" style={{background:"transparent"}} onClick={()=>setModal(modal?.type==="myAccount"?null:{type:"myAccount"})} title={userId}>
+                <div style={{width:28,height:28,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:admin?"#1D4ED8":"#166534"}}>
+                  {userId.charAt(0).toUpperCase()}
+                </div>
+              </button>
+              {modal?.type==="myAccount"&&(
+                <>
+                  <div style={{position:"fixed",inset:0,zIndex:9998}} onClick={closeModal}/>
+                  <div style={{position:"absolute",top:36,right:0,zIndex:9999,background:"#fff",borderRadius:16,boxShadow:"0 8px 32px rgba(0,0,0,0.18)",padding:"20px 16px 16px",width:220,border:"1px solid #E2E8F0"}}>
+                    <div style={{textAlign:"center",marginBottom:16}}>
+                      <div style={{width:52,height:52,borderRadius:"50%",background:admin?"#DBEAFE":"#DCFCE7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,fontWeight:700,color:admin?"#1D4ED8":"#166534",margin:"0 auto 8px"}}>
+                        {userId.charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{fontSize:15,fontWeight:700,color:"#1E293B"}}>{userId}</div>
+                      <div style={{marginTop:6}}>
+                        <span style={{display:"inline-flex",alignItems:"center",padding:"2px 10px",borderRadius:20,fontSize:11,fontWeight:600,background:admin?"#EFF6FF":"#F0FDF4",color:admin?"#2563EB":"#166534"}}>
+                          {admin?"👑 관리자":"👀 조회 전용"}
+                        </span>
+                      </div>
+                    </div>
+                    {admin&&(
+                      <button onClick={()=>setModal({type:"changePw"})} style={{width:"100%",marginBottom:8,padding:"10px",borderRadius:10,border:"1px solid #E2E8F0",background:"#F8FAFC",color:"#374151",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                        <Icon name="key" size={15}/>비밀번호 변경
+                      </button>
+                    )}
+                    <button onClick={()=>{closeModal();handleLogout();}} style={{width:"100%",padding:"10px",borderRadius:10,border:"none",background:"#FEF2F2",color:"#EF4444",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                      <Icon name="logout" size={15} color="#EF4444"/>로그아웃
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           {/* 헤더 하단 필터바 — 청년명단/예배참석/샘별참석 */}
           {activeNav==="members"&&(
@@ -967,10 +996,6 @@ export default function App() {
           onClose={()=>setSelectedMember(null)}
         />
       )}
-      {/* 내 계정 모달 — app-wrapper 밖에서 렌더링 (overflow:hidden 영향 제거) */}
-      {modal?.type==="myAccount" && (
-        <MyAccountModal userId={userId} admin={admin} onChangePw={()=>setModal({type:"changePw"})} onLogout={handleLogout} onClose={closeModal}/>
-      )}
     </>
   );
 }
@@ -979,7 +1004,7 @@ export default function App() {
 function MyAccountModal({ userId, admin, onChangePw, onLogout, onClose }) {
   return createPortal(
     <>
-      <div style={{position:"fixed",inset:0,zIndex:9998}} onClick={onClose}/>
+      <div style={{position:"fixed",inset:0,zIndex:9998,background:"transparent"}} onClick={onClose}/>
       <div style={{
         position:"fixed",top:64,right:12,zIndex:9999,
         background:"#ffffff",borderRadius:16,
