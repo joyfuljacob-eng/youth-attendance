@@ -3243,7 +3243,7 @@ function EventsPage({events,eventParticipants,eventGuests,members,sams,userEmail
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
 
-  const canManage = admin && ["leader0","leader1","leader2"].includes(userEmail?.replace("@hiyouth.com",""));
+  const canManage = admin; // 모든 관리자(leader0~7) 행사 관리 가능
 
   const deleteEvent = async (id) => {
     if(!window.confirm("행사를 삭제하시겠습니까?\n참가 기록도 모두 삭제됩니다.")) return;
