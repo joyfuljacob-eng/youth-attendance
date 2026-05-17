@@ -956,6 +956,8 @@ export default function App() {
           )}
         </div>
         <div className="page-content">
+          {/* DEBUG: modal state 확인 */}
+          {modal && <div style={{background:"red",color:"white",padding:"4px 8px",fontSize:12,position:"sticky",top:0,zIndex:999}}>modal: {modal?.type}</div>}
           {modal?.type==="addMember" && admin
             ? <FormPage title="청년 등록" onBack={closeModal}><MemberForm sams={sams} onSave={async(m)=>{await saveMember(m);}} onClose={closeModal}/></FormPage>
             : modal?.type==="editMember" && admin
