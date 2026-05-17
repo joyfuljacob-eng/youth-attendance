@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
 import { supabase } from "./supabaseClient";
 
 // ==================== ICONS ====================
@@ -114,9 +113,9 @@ const css = `
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   :root{--primary:#2563EB;--primary-light:#EFF6FF;--primary-dark:#1D4ED8;--danger:#EF4444;--danger-light:#FEF2F2;--success:#10B981;--success-light:#ECFDF5;--warning:#F59E0B;--warning-light:#FFFBEB;--military:#6B7280;--military-light:#F3F4F6;--gray-50:#F8FAFC;--gray-100:#F1F5F9;--gray-200:#E2E8F0;--gray-300:#CBD5E1;--gray-400:#94A3B8;--gray-500:#64748B;--gray-600:#475569;--gray-700:#334155;--gray-800:#1E293B;--gray-900:#0F172A;--white:#FFFFFF;--radius:12px;--radius-lg:16px;--shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.06);--shadow-md:0 4px 6px rgba(0,0,0,0.07),0 2px 4px rgba(0,0,0,0.06);}
   html,body,#root{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--gray-50);color:var(--gray-800);-webkit-font-smoothing:antialiased;}
-  .app-wrapper{max-width:430px;margin:0 auto;height:100vh;background:var(--white);display:flex;flex-direction:column;overflow:hidden;position:relative;}
+  .app-wrapper{max-width:430px;margin:0 auto;height:100vh;background:var(--white);display:flex;flex-direction:column;overflow:hidden;}
   .app-header{background:var(--white);padding:16px 20px 10px;border-bottom:1px solid var(--gray-100);position:sticky;top:0;z-index:50;flex-shrink:0;}
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center;}
   .page-content-wrap{flex:1;overflow:hidden;position:relative;}
   .header-top{display:flex;align-items:center;gap:10px;}
   .header-filter{padding:8px 0 4px;}
@@ -376,8 +375,7 @@ function GenderToggle({ gender, setGender }) {
           <Icon name="female" size={16} color={gender==="female"?"#DB2777":"#94A3B8"} />여
         </button>
       </div>
-    </div>,
-    modalRoot
+    </div>
   );
 }
 
@@ -452,8 +450,7 @@ function BirthdayInput({ value, onChange }) {
           style={{textAlign:"center",paddingLeft:8,paddingRight:8}}
         />
       </div>
-    </div>,
-    modalRoot
+    </div>
   );
 }
 
@@ -520,8 +517,7 @@ function LoginPage({ onLogin }) {
           👀 조회 전용 계정: <strong>youth</strong> / hiyouth2026
         </div>
       </div>
-    </div>,
-    modalRoot
+    </div>
   );
 }
 
@@ -552,8 +548,7 @@ function ChangePasswordModal({ onClose }) {
     else { setSuccess(true); setTimeout(()=>onClose(), 1500); }
   };
 
-  const modalRoot = document.getElementById('modal-root') || document.body;
-  return createPortal(
+  return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
         <div className="modal-handle"/>
@@ -603,8 +598,7 @@ function ChangePasswordModal({ onClose }) {
           </>
         )}
       </div>
-    </div>,
-    modalRoot
+    </div>
   );
 }
 
@@ -1013,8 +1007,7 @@ function MyAccountPage({ userId, admin, onChangePw, onLogout }) {
           <Icon name="logout" size={18} color="#EF4444"/>로그아웃
         </button>
       </div>
-    </div>,
-    modalRoot
+    </div>
   );
 }
 
@@ -1737,8 +1730,7 @@ function MemberFormModal({sams,initial,onSave,onClose}){
 function AddSamModal({onSave,onClose}){
   const [name,setName]=useState("");
   const submit=()=>{if(!name.trim()){alert("샘 이름을 입력해주세요");return;}onSave(name.trim());};
-  const modalRoot = document.getElementById('modal-root') || document.body;
-  return createPortal(<div className="modal-overlay" onClick={onClose}><div className="modal-sheet" onClick={e=>e.stopPropagation()}><div className="modal-handle"/><div className="modal-title">새 샘 추가</div><div className="form-group"><label className="form-label">샘 이름</label><input className="form-input" placeholder="예) 한나, 다윗, 요셉..." value={name} onChange={e=>setName(e.target.value)}/></div><button className="btn btn-primary" onClick={submit}><Icon name="plus" size={16} color="white"/>샘 추가하기</button></div></div>, modalRoot);
+  return (<div className="modal-overlay" onClick={onClose}><div className="modal-sheet" onClick={e=>e.stopPropagation()}><div className="modal-handle"/><div className="modal-title">새 샘 추가</div><div className="form-group"><label className="form-label">샘 이름</label><input className="form-input" placeholder="예) 한나, 다윗, 요셉..." value={name} onChange={e=>setName(e.target.value)}/></div><button className="btn btn-primary" onClick={submit}><Icon name="plus" size={16} color="white"/>샘 추가하기</button></div></div>);
 }
 function NewMemberFormModal({initial,onSave,onClose}){
   const [name,setName]=useState(initial?.name||"");
@@ -1769,14 +1761,12 @@ function NewMemberFormModal({initial,onSave,onClose}){
         <div className="info-hint">💡 새가족 교육 4주 이수 체크는 등록 후 명단에서 직접 체크할 수 있습니다</div>
         <button className="btn btn-primary" onClick={submit}><Icon name="check" size={16} color="white"/>{initial?"수정 완료":"등록하기"}</button>
       </div>
-    </div>,
-    modalRoot
+    </div>
   );
 }
 function AssignSamModal({sams,newMember,onAssign,onClose}){
   const [samId,setSamId]=useState("");
-  const modalRoot = document.getElementById('modal-root') || document.body;
-  return createPortal(<div className="modal-overlay" onClick={onClose}><div className="modal-sheet" onClick={e=>e.stopPropagation()}><div className="modal-handle"/><div className="modal-title">🎉 샘 배정</div><div style={{background:"#ECFDF5",border:"1px solid #A7F3D0",borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:13,color:"#065F46"}}><strong>{newMember.name}</strong> 님이 4주 교육을 모두 마쳤습니다!<br/>샘을 배정하면 청년 명단으로 이동됩니다.</div><div className="form-group"><label className="form-label">배정할 샘 선택</label><select className="form-select" value={samId} onChange={e=>setSamId(e.target.value)}><option value="">샘을 선택하세요</option>{sams.map(s=><option key={s.id} value={s.id}>{s.name}샘</option>)}</select></div><button className="assign-btn" style={{marginTop:0}} onClick={()=>{if(!samId){alert("샘을 선택해주세요");return;}onAssign(newMember,samId);}}><Icon name="assign" size={16} color="white"/>샘 배정 완료</button><button className="btn btn-secondary" style={{width:"100%",marginTop:8}} onClick={()=>onAssign(newMember,"")}>샘 미배정으로 이동</button></div></div>, modalRoot);
+  return (<div className="modal-overlay" onClick={onClose}><div className="modal-sheet" onClick={e=>e.stopPropagation()}><div className="modal-handle"/><div className="modal-title">🎉 샘 배정</div><div style={{background:"#ECFDF5",border:"1px solid #A7F3D0",borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:13,color:"#065F46"}}><strong>{newMember.name}</strong> 님이 4주 교육을 모두 마쳤습니다!<br/>샘을 배정하면 청년 명단으로 이동됩니다.</div><div className="form-group"><label className="form-label">배정할 샘 선택</label><select className="form-select" value={samId} onChange={e=>setSamId(e.target.value)}><option value="">샘을 선택하세요</option>{sams.map(s=><option key={s.id} value={s.id}>{s.name}샘</option>)}</select></div><button className="assign-btn" style={{marginTop:0}} onClick={()=>{if(!samId){alert("샘을 선택해주세요");return;}onAssign(newMember,samId);}}><Icon name="assign" size={16} color="white"/>샘 배정 완료</button><button className="btn btn-secondary" style={{width:"100%",marginTop:8}} onClick={()=>onAssign(newMember,"")}>샘 미배정으로 이동</button></div></div>);
 }
 
 // ==================== 청년 상세 페이지 (나눔 기록) ====================
@@ -1983,8 +1973,7 @@ function PastoralNoteForm({ memberId, userEmail, initial, onSave, onClose }) {
     { value: "chat", label: "카톡" },
   ];
 
-  const modalRoot = document.getElementById('modal-root') || document.body;
-  return createPortal(
+  return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-sheet" onClick={e => e.stopPropagation()}>
         <div className="modal-handle" />
@@ -2033,8 +2022,7 @@ function PastoralNoteForm({ memberId, userEmail, initial, onSave, onClose }) {
           {saving ? "저장 중..." : isEdit ? "수정 완료" : "기록 저장"}
         </button>
       </div>
-    </div>,
-    modalRoot
+    </div>
   );
 }
 
@@ -2298,8 +2286,7 @@ function ContactMemoModal({member,onSave,onClose}){
           <Icon name="check" size={16} color="white"/>연락 완료 저장
         </button>
       </div>
-    </div>,
-    modalRoot
+    </div>
   );
 }
 
@@ -2349,8 +2336,7 @@ function NoticeFormModal({initial,userEmail,onSave,onClose}){
           <Icon name="check" size={16} color="white"/>{saving?"저장 중...":initial?"수정 완료":"등록하기"}
         </button>
       </div>
-    </div>,
-    modalRoot
+    </div>
   );
 }
 
@@ -2495,8 +2481,7 @@ function PrayerFormModal({members,initial,userEmail,onSave,onClose}){
           <Icon name="check" size={16} color="white"/>{saving?"저장 중...":initial?"수정 완료":"등록하기"}
         </button>
       </div>
-    </div>,
-    modalRoot
+    </div>
   );
 }
 
@@ -2628,8 +2613,7 @@ function NewMemberMemoSheet({newMember, memos, userEmail, canWrite, onClose, onR
           ))
         )}
       </div>
-    </div>,
-    modalRoot
+    </div>
   );
 }
 
@@ -2665,8 +2649,7 @@ function InactivateModal({member, onSave, onClose}){
         </button>
         <button className="btn btn-secondary" style={{width:"100%",marginTop:8}} onClick={onClose}>취소</button>
       </div>
-    </div>,
-    modalRoot
+    </div>
   );
 }
 
@@ -2950,8 +2933,7 @@ function ExcelExportPage({members, sams, attendanceList, samAttendanceList, newM
       <div style={{fontSize:11,color:"var(--gray-400)",textAlign:"center",marginTop:8}}>
         파일명: 학익청년부_날짜.xlsx
       </div>
-    </div>,
-    modalRoot
+    </div>
   );
 }
 
@@ -3543,8 +3525,7 @@ function EventFormModal({initial,userEmail,onSave,onClose}){
           <textarea className="form-input" placeholder="행사에 대한 간단한 설명" value={description} onChange={e=>setDescription(e.target.value)} rows={3} style={{resize:"none"}}/>
         </div>
       </div>
-    </div>,
-    modalRoot
+    </div>
   );
 }
 
@@ -3585,7 +3566,6 @@ function GuestFormModal({eventId,userEmail,onSave,onClose}){
           <input className="form-input" placeholder="예) 목사님, 부장님 / 둘째날 저녁만" value={memo} onChange={e=>setMemo(e.target.value)}/>
         </div>
       </div>
-    </div>,
-    modalRoot
+    </div>
   );
 }
