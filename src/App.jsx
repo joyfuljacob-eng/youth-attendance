@@ -1,5 +1,23 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabaseClient";
+
+// ==================== MODAL PORTAL ====================
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{padding:20,background:"#FEF2F2",borderRadius:12,margin:8}}>
+          <div style={{fontSize:14,fontWeight:700,color:"#EF4444",marginBottom:8}}>렌더링 오류 발생</div>
+          <div style={{fontSize:12,color:"#7F1D1D",wordBreak:"break-all"}}>{this.state.error.message}</div>
+          <button onClick={()=>this.setState({error:null})} style={{marginTop:12,padding:"8px 16px",background:"#EF4444",color:"white",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif"}}>닫기</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // ==================== ICONS ====================
 const Icon = ({ name, size = 20, color = "currentColor" }) => {
@@ -987,7 +1005,9 @@ export default function App() {
           )}
         </div>
         <div className="page-content">
-          {renderPage()}
+          <ErrorBoundary>
+            {renderPage()}
+          </ErrorBoundary>
         </div>
         <div className="bottom-nav">
           {navItems.map(item=>(
