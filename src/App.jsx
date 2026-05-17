@@ -749,6 +749,7 @@ export default function App() {
     setActiveNav(nav);
   };
   const todayBirthdays = getTodayBirthdays([...members,...newMembers]);
+  const closeModal = () => setModal(null);
 
   const saveMember = async (m) => { setSaving(true); await supabase.from("members").insert([{name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,sam_id:m.samId||null,military:m.military||false,is_active:true}]); await fetchAll(); setSaving(false); closeModal(); };
   const updateMember = async (id,m) => { setSaving(true); await supabase.from("members").update({name:m.name,gender:m.gender,phone:m.phone,birth_year:m.birthYear,birthday:m.birthday,sam_id:m.samId||null,military:m.military||false}).eq("id",id); await fetchAll(); setSaving(false); closeModal(); };
@@ -858,6 +859,7 @@ export default function App() {
   };
 
   const renderPage = () => {
+    try {
     // 편집/등록 폼이 열려있으면 폼 페이지 표시
     if (modal?.type==="addMember" && admin)
       return <FormPage title="청년 등록" onBack={closeModal}><MemberForm sams={sams} onSave={async(m)=>{await saveMember(m);}} onClose={closeModal}/></FormPage>;
@@ -901,6 +903,16 @@ export default function App() {
       case "excel": return <ExcelExportPage members={members} sams={sams} attendanceList={attendanceList} samAttendanceList={samAttendanceList} newMembers={newMembers} admin={admin} />;
       case "events": return <EventsPage events={events} eventParticipants={eventParticipants} eventGuests={eventGuests} members={members} sams={sams} userEmail={user?.email} admin={admin} onRefresh={fetchAll} setActiveNav={setActiveNav} />;
       default: return null;
+    }
+    } catch(err) {
+      return (
+        <div style={{padding:20,background:"#FEF2F2",borderRadius:12,margin:8}}>
+          <div style={{fontSize:14,fontWeight:700,color:"#EF4444",marginBottom:8}}>에러 발생!</div>
+          <div style={{fontSize:12,color:"#7F1D1D",wordBreak:"break-all",whiteSpace:"pre-wrap"}}>{err?.message || String(err)}</div>
+          <div style={{fontSize:11,color:"#9CA3AF",marginTop:8}}>modal: {JSON.stringify(modal?.type)}</div>
+          <button onClick={closeModal} style={{marginTop:12,padding:"8px 16px",background:"#EF4444",color:"white",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"'Noto Sans KR',sans-serif"}}>닫기</button>
+        </div>
+      );
     }
   };
 
