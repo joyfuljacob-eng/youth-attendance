@@ -674,10 +674,22 @@ export default function App() {
         .select("id, member_id, date, author_email")
         .order("date", { ascending: false });
       if(notesData) {
-        const countMap = {};
-        notesData.forEach(n => { countMap[n.member_id] = (countMap[n.member_id]||0)+1; });
-        setNoteCountMap(countMap);
         const userEmailNow = (await supabase.auth.getUser()).data.user?.email || "";
+        
+        // noteCountMap — 권한별로 다르게 계산
+        // leader0, leader1 → 전체 건수
+        // leader3~7 (샘장) → 본인 작성 건수만
+        // 그 외 → 0 (표시 안 함)
+        const countMap = {};
+        const notesForCount = canViewAllNotes(userEmailNow)
+          ? notesData
+          : canViewOwnNotes(userEmailNow)
+            ? notesData.filter(n => n.author_email === userEmailNow)
+            : [];
+        notesForCount.forEach(n => { countMap[n.member_id] = (countMap[n.member_id]||0)+1; });
+        setNoteCountMap(countMap);
+
+        // recentNotes도 동일하게 권한별 필터링
         if(canViewAllNotes(userEmailNow)) {
           setRecentNotes(notesData.slice(0,5));
         } else if(canViewOwnNotes(userEmailNow)) {
