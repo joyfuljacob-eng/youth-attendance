@@ -964,20 +964,20 @@ export default function App() {
             </button>
           ))}
         </div>
-        {/* 모달들 */}
-        {admin && modal?.type==="addMember" && <MemberFormModal sams={sams} onSave={saveMember} onClose={closeModal}/>}
-        {admin && modal?.type==="editMember" && <MemberFormModal sams={sams} initial={modal.member} onSave={m=>updateMember(modal.member.id,m)} onClose={closeModal}/>}
-        {admin && modal?.type==="inactivateMember" && <InactivateModal member={modal.member} onSave={(reason)=>inactivateMember(modal.member.id,reason)} onClose={closeModal}/>}
-        {admin && modal?.type==="addSam" && <AddSamModal onSave={saveSam} onClose={closeModal}/>}
-        {admin && modal?.type==="addNewMember" && <NewMemberFormModal onSave={saveNewMember} onClose={closeModal}/>}
-        {admin && modal?.type==="editNewMember" && <NewMemberFormModal initial={modal.member} onSave={m=>updateNewMember(modal.member.id,m)} onClose={closeModal}/>}
-        {admin && modal?.type==="assignSam" && <AssignSamModal sams={sams} newMember={modal.newMember} onAssign={assignNewMemberToSam} onClose={closeModal}/>}
-        {admin && modal?.type==="addNotice" && <NoticeFormModal userEmail={user?.email} onSave={async(d)=>{await supabase.from("notices").insert([d]);await fetchAll();closeModal();}} onClose={closeModal}/>}
-        {admin && modal?.type==="editNotice" && <NoticeFormModal initial={modal.notice} userEmail={user?.email} onSave={async(d)=>{await supabase.from("notices").update(d).eq("id",modal.notice.id);await fetchAll();closeModal();}} onClose={closeModal}/>}
-        {admin && modal?.type==="addPrayer" && <PrayerFormModal members={members} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").insert([d]);await fetchAll();closeModal();}} onClose={closeModal}/>}
-        {admin && modal?.type==="editPrayer" && <PrayerFormModal members={members} initial={modal.prayer} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").update({content:d.content,member_id:d.member_id}).eq("id",modal.prayer.id);await fetchAll();closeModal();}} onClose={closeModal}/>}
         {modal?.type==="changePw" && <ChangePasswordModal onClose={closeModal}/>}
       </div>
+      {/* 모달들 — app-wrapper 밖에서 렌더링 */}
+      {admin && modal?.type==="addMember" && <MemberFormModal sams={sams} onSave={saveMember} onClose={closeModal}/>}
+      {admin && modal?.type==="editMember" && <MemberFormModal sams={sams} initial={modal.member} onSave={m=>updateMember(modal.member.id,m)} onClose={closeModal}/>}
+      {admin && modal?.type==="inactivateMember" && <InactivateModal member={modal.member} onSave={(reason)=>inactivateMember(modal.member.id,reason)} onClose={closeModal}/>}
+      {admin && modal?.type==="addSam" && <AddSamModal onSave={saveSam} onClose={closeModal}/>}
+      {admin && modal?.type==="addNewMember" && <NewMemberFormModal onSave={saveNewMember} onClose={closeModal}/>}
+      {admin && modal?.type==="editNewMember" && <NewMemberFormModal initial={modal.member} onSave={m=>updateNewMember(modal.member.id,m)} onClose={closeModal}/>}
+      {admin && modal?.type==="assignSam" && <AssignSamModal sams={sams} newMember={modal.newMember} onAssign={assignNewMemberToSam} onClose={closeModal}/>}
+      {admin && modal?.type==="addNotice" && <NoticeFormModal userEmail={user?.email} onSave={async(d)=>{await supabase.from("notices").insert([d]);await fetchAll();closeModal();}} onClose={closeModal}/>}
+      {admin && modal?.type==="editNotice" && <NoticeFormModal initial={modal.notice} userEmail={user?.email} onSave={async(d)=>{await supabase.from("notices").update(d).eq("id",modal.notice.id);await fetchAll();closeModal();}} onClose={closeModal}/>}
+      {admin && modal?.type==="addPrayer" && <PrayerFormModal members={members} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").insert([d]);await fetchAll();closeModal();}} onClose={closeModal}/>}
+      {admin && modal?.type==="editPrayer" && <PrayerFormModal members={members} initial={modal.prayer} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").update({content:d.content,member_id:d.member_id}).eq("id",modal.prayer.id);await fetchAll();closeModal();}} onClose={closeModal}/>}
       {/* 청년 상세 페이지 (나눔 기록) */}
       {selectedMember && (
         <MemberDetailPage
