@@ -115,7 +115,7 @@ const css = `
   html,body,#root{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--gray-50);color:var(--gray-800);-webkit-font-smoothing:antialiased;}
   .app-wrapper{max-width:430px;margin:0 auto;height:100vh;background:var(--white);display:flex;flex-direction:column;}
   .app-header{background:var(--white);padding:16px 20px 10px;border-bottom:1px solid var(--gray-100);position:sticky;top:0;z-index:50;flex-shrink:0;}
-  .modal-overlay{position:fixed;inset:0;background:rgba(255,0,0,0.8);z-index:9999;display:flex;align-items:flex-end;justify-content:center;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center;}
   .page-content-wrap{flex:1;overflow:hidden;position:relative;}
   .header-top{display:flex;align-items:center;gap:10px;}
   .header-filter{padding:8px 0 4px;}
@@ -955,7 +955,34 @@ export default function App() {
             </div>
           )}
         </div>
-        <div className="page-content">{pages[activeNav]}</div>
+        <div className="page-content">
+          {modal?.type==="addMember" && admin
+            ? <FormPage title="청년 등록" onBack={closeModal}><MemberForm sams={sams} onSave={async(m)=>{await saveMember(m);}} onClose={closeModal}/></FormPage>
+            : modal?.type==="editMember" && admin
+            ? <FormPage title="청년 정보 수정" onBack={closeModal}><MemberForm sams={sams} initial={modal.member} onSave={async(m)=>{await updateMember(modal.member.id,m);}} onClose={closeModal}/></FormPage>
+            : modal?.type==="inactivateMember" && admin
+            ? <FormPage title="비활성 처리" onBack={closeModal}><InactivateForm member={modal.member} onSave={(reason)=>inactivateMember(modal.member.id,reason)} onClose={closeModal}/></FormPage>
+            : modal?.type==="addSam" && admin
+            ? <FormPage title="새 샘 추가" onBack={closeModal}><SamForm onSave={saveSam} onClose={closeModal}/></FormPage>
+            : modal?.type==="addNewMember" && admin
+            ? <FormPage title="새가족 등록" onBack={closeModal}><NewMemberForm onSave={saveNewMember} onClose={closeModal}/></FormPage>
+            : modal?.type==="editNewMember" && admin
+            ? <FormPage title="새가족 정보 수정" onBack={closeModal}><NewMemberForm initial={modal.member} onSave={(m)=>updateNewMember(modal.member.id,m)} onClose={closeModal}/></FormPage>
+            : modal?.type==="assignSam" && admin
+            ? <FormPage title="샘 배정" onBack={closeModal}><AssignSamForm sams={sams} newMember={modal.newMember} onAssign={assignNewMemberToSam} onClose={closeModal}/></FormPage>
+            : modal?.type==="addNotice" && admin
+            ? <FormPage title="공지·일정 등록" onBack={closeModal}><NoticeForm userEmail={user?.email} onSave={async(d)=>{await supabase.from("notices").insert([d]);await fetchAll();closeModal();}} onClose={closeModal}/></FormPage>
+            : modal?.type==="editNotice" && admin
+            ? <FormPage title="공지·일정 수정" onBack={closeModal}><NoticeForm initial={modal.notice} userEmail={user?.email} onSave={async(d)=>{await supabase.from("notices").update(d).eq("id",modal.notice.id);await fetchAll();closeModal();}} onClose={closeModal}/></FormPage>
+            : modal?.type==="addPrayer" && admin
+            ? <FormPage title="기도제목 등록" onBack={closeModal}><PrayerForm members={members} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").insert([d]);await fetchAll();closeModal();}} onClose={closeModal}/></FormPage>
+            : modal?.type==="editPrayer" && admin
+            ? <FormPage title="기도제목 수정" onBack={closeModal}><PrayerForm members={members} initial={modal.prayer} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").update({content:d.content,member_id:d.member_id}).eq("id",modal.prayer.id);await fetchAll();closeModal();}} onClose={closeModal}/></FormPage>
+            : modal?.type==="changePw"
+            ? <FormPage title="비밀번호 변경" onBack={closeModal}><ChangePasswordForm onClose={closeModal}/></FormPage>
+            : pages[activeNav]
+          }
+        </div>
         <div className="bottom-nav">
           {navItems.map(item=>(
             <button key={item.id} className={`nav-item ${activeNav===item.id?"active":""}`} onClick={()=>handleNavChange(item.id)}>
@@ -964,19 +991,6 @@ export default function App() {
           ))}
         </div>
       </div>
-      {/* 모달 전체 — app-wrapper 완전히 밖, <> 최상위 */}
-      {admin && modal?.type==="addMember" && <MemberFormModal sams={sams} onSave={saveMember} onClose={closeModal}/>}
-      {admin && modal?.type==="editMember" && <MemberFormModal sams={sams} initial={modal.member} onSave={m=>updateMember(modal.member.id,m)} onClose={closeModal}/>}
-      {admin && modal?.type==="inactivateMember" && <InactivateModal member={modal.member} onSave={(reason)=>inactivateMember(modal.member.id,reason)} onClose={closeModal}/>}
-      {admin && modal?.type==="addSam" && <AddSamModal onSave={saveSam} onClose={closeModal}/>}
-      {admin && modal?.type==="addNewMember" && <NewMemberFormModal onSave={saveNewMember} onClose={closeModal}/>}
-      {admin && modal?.type==="editNewMember" && <NewMemberFormModal initial={modal.member} onSave={m=>updateNewMember(modal.member.id,m)} onClose={closeModal}/>}
-      {admin && modal?.type==="assignSam" && <AssignSamModal sams={sams} newMember={modal.newMember} onAssign={assignNewMemberToSam} onClose={closeModal}/>}
-      {admin && modal?.type==="addNotice" && <NoticeFormModal userEmail={user?.email} onSave={async(d)=>{await supabase.from("notices").insert([d]);await fetchAll();closeModal();}} onClose={closeModal}/>}
-      {admin && modal?.type==="editNotice" && <NoticeFormModal initial={modal.notice} userEmail={user?.email} onSave={async(d)=>{await supabase.from("notices").update(d).eq("id",modal.notice.id);await fetchAll();closeModal();}} onClose={closeModal}/>}
-      {admin && modal?.type==="addPrayer" && <PrayerFormModal members={members} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").insert([d]);await fetchAll();closeModal();}} onClose={closeModal}/>}
-      {admin && modal?.type==="editPrayer" && <PrayerFormModal members={members} initial={modal.prayer} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").update({content:d.content,member_id:d.member_id}).eq("id",modal.prayer.id);await fetchAll();closeModal();}} onClose={closeModal}/>}
-      {modal?.type==="changePw" && <ChangePasswordModal onClose={closeModal}/>}
       {selectedMember && (
         <MemberDetailPage member={selectedMember} sams={sams} userEmail={user?.email} onClose={()=>setSelectedMember(null)}/>
       )}
@@ -1082,6 +1096,231 @@ function ChangePasswordPage({ onBack }) {
         {loading ? "변경 중..." : "비밀번호 변경"}
       </button>
     </div>
+  );
+}
+
+// ==================== FORM PAGE WRAPPER ====================
+// 모달 대신 페이지로 보여주는 래퍼 — position:fixed 없이 동작
+function FormPage({ title, onBack, children }) {
+  return (
+    <div style={{minHeight:"100%",background:"var(--white)"}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20,paddingTop:4}}>
+        <button onClick={onBack} style={{background:"var(--gray-100)",border:"none",borderRadius:8,width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+          <Icon name="back" size={18} color="var(--gray-600)"/>
+        </button>
+        <div style={{fontSize:17,fontWeight:700,color:"var(--gray-900)"}}>{title}</div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ==================== MEMBER FORM ====================
+function MemberForm({sams,initial,onSave,onClose}){
+  const [name,setName]=useState(initial?.name||"");
+  const [gender,setGender]=useState(initial?.gender||"male");
+  const [phone,setPhone]=useState(initial?.phone||"");
+  const [birthYear,setBirthYear]=useState(initial?.birth_year||"");
+  const [birthday,setBirthday]=useState(initial?.birthday||"");
+  const [samId,setSamId]=useState(initial?.sam_id||"");
+  const [military,setMilitary]=useState(initial?.military||false);
+  const [saving,setSaving]=useState(false);
+  const submit=async()=>{
+    if(!name.trim()){alert("이름을 입력해주세요");return;}
+    setSaving(true);
+    await onSave({name:name.trim(),gender,phone:phone.trim(),birthYear,birthday:normalizeBirthday(birthday),samId,military});
+    setSaving(false);
+  };
+  return(
+    <>
+      <div className="form-group"><label className="form-label">이름 <span style={{color:"#EF4444"}}>*</span></label><input className="form-input" placeholder="이름 입력" value={name} onChange={e=>setName(e.target.value)}/></div>
+      <GenderToggle gender={gender} setGender={setGender}/>
+      <div className="form-group"><label className="form-label">전화번호 <span className="optional">(선택)</span></label><div className="input-with-icon"><span className="input-icon"><Icon name="phone" size={15}/></span><input className="form-input" type="tel" placeholder="010-0000-0000" value={phone} onChange={e=>setPhone(e.target.value)}/></div></div>
+      <div className="form-row">
+        <div className="form-group"><label className="form-label">출생년도 <span className="optional">(선택)</span></label><input className="form-input" placeholder="예) 1998" type="number" value={birthYear} onChange={e=>setBirthYear(e.target.value)}/></div>
+        <div className="form-group"><label className="form-label">생일 <span className="optional">(선택)</span></label><BirthdayInput value={birthday} onChange={setBirthday}/></div>
+      </div>
+      <div className="form-group"><label className="form-label">샘 배정 <span className="optional">(선택)</span></label><select className="form-select" value={samId} onChange={e=>setSamId(e.target.value)}><option value="">샘 선택</option>{sams.map(s=><option key={s.id} value={s.id}>{s.name}샘</option>)}</select></div>
+      <div className={`military-toggle ${military?"active":""}`} onClick={()=>setMilitary(!military)}><div className="military-toggle-label"><Icon name="shield" size={18} color={military?"#4B5563":"#94A3B8"}/><span style={{fontSize:14,fontWeight:500,color:military?"#374151":"#94A3B8"}}>🪖 군복무 중</span></div><div className={`toggle-switch ${military?"on":""}`}><div className="toggle-knob"/></div></div>
+      <button className="btn btn-primary" onClick={submit} disabled={saving}><Icon name="check" size={16} color="white"/>{saving?"저장 중...":initial?"수정 완료":"등록하기"}</button>
+    </>
+  );
+}
+
+// ==================== SAM FORM ====================
+function SamForm({onSave,onClose}){
+  const [name,setName]=useState("");
+  const [saving,setSaving]=useState(false);
+  const submit=async()=>{if(!name.trim()){alert("샘 이름을 입력해주세요");return;}setSaving(true);await onSave(name.trim());setSaving(false);};
+  return(
+    <>
+      <div className="form-group"><label className="form-label">샘 이름</label><input className="form-input" placeholder="예) 한나, 다윗, 요셉..." value={name} onChange={e=>setName(e.target.value)}/></div>
+      <button className="btn btn-primary" onClick={submit} disabled={saving}><Icon name="plus" size={16} color="white"/>{saving?"저장 중...":"샘 추가하기"}</button>
+    </>
+  );
+}
+
+// ==================== NEW MEMBER FORM ====================
+function NewMemberForm({initial,onSave,onClose}){
+  const [name,setName]=useState(initial?.name||"");
+  const [gender,setGender]=useState(initial?.gender||"male");
+  const [phone,setPhone]=useState(initial?.phone||"");
+  const [birthYear,setBirthYear]=useState(initial?.birth_year||"");
+  const [birthday,setBirthday]=useState(initial?.birthday||"");
+  const [registeredAt,setRegisteredAt]=useState(initial?.registered_at||today());
+  const [saving,setSaving]=useState(false);
+  const submit=async()=>{
+    if(!name.trim()){alert("이름을 입력해주세요");return;}
+    setSaving(true);
+    await onSave({name:name.trim(),gender,phone:phone.trim(),birthYear,birthday:normalizeBirthday(birthday),registeredAt});
+    setSaving(false);
+  };
+  return(
+    <>
+      <div className="form-group"><label className="form-label">이름 <span style={{color:"#EF4444"}}>*</span></label><input className="form-input" placeholder="이름 입력" value={name} onChange={e=>setName(e.target.value)}/></div>
+      <GenderToggle gender={gender} setGender={setGender}/>
+      <div className="form-group"><label className="form-label">전화번호 <span className="optional">(선택)</span></label><div className="input-with-icon"><span className="input-icon"><Icon name="phone" size={15}/></span><input className="form-input" type="tel" placeholder="010-0000-0000" value={phone} onChange={e=>setPhone(e.target.value)}/></div></div>
+      <div className="form-row">
+        <div className="form-group"><label className="form-label">출생년도 <span className="optional">(선택)</span></label><input className="form-input" placeholder="예) 1998" type="number" value={birthYear} onChange={e=>setBirthYear(e.target.value)}/></div>
+        <div className="form-group"><label className="form-label">생일 <span className="optional">(선택)</span></label><BirthdayInput value={birthday} onChange={setBirthday}/></div>
+      </div>
+      <div className="form-group"><label className="form-label">등록 날짜</label><input className="form-input" type="date" value={registeredAt} onChange={e=>setRegisteredAt(e.target.value)}/><div style={{fontSize:11,color:"var(--gray-400)",marginTop:4}}>💡 실제 처음 방문한 날짜를 입력해 주세요</div></div>
+      <div className="info-hint">💡 새가족 교육 4주 이수 체크는 등록 후 명단에서 직접 체크할 수 있습니다</div>
+      <button className="btn btn-primary" onClick={submit} disabled={saving}><Icon name="check" size={16} color="white"/>{saving?"저장 중...":initial?"수정 완료":"등록하기"}</button>
+    </>
+  );
+}
+
+// ==================== ASSIGN SAM FORM ====================
+function AssignSamForm({sams,newMember,onAssign,onClose}){
+  const [samId,setSamId]=useState("");
+  return(
+    <>
+      <div style={{background:"#ECFDF5",border:"1px solid #A7F3D0",borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:13,color:"#065F46"}}><strong>{newMember.name}</strong> 님이 4주 교육을 모두 마쳤습니다!<br/>샘을 배정하면 청년 명단으로 이동됩니다.</div>
+      <div className="form-group"><label className="form-label">배정할 샘 선택</label><select className="form-select" value={samId} onChange={e=>setSamId(e.target.value)}><option value="">샘을 선택하세요</option>{sams.map(s=><option key={s.id} value={s.id}>{s.name}샘</option>)}</select></div>
+      <button className="assign-btn" style={{marginTop:0}} onClick={()=>{if(!samId){alert("샘을 선택해주세요");return;}onAssign(newMember,samId);}}><Icon name="assign" size={16} color="white"/>샘 배정 완료</button>
+      <button className="btn btn-secondary" style={{width:"100%",marginTop:8}} onClick={()=>onAssign(newMember,"")}>샘 미배정으로 이동</button>
+    </>
+  );
+}
+
+// ==================== NOTICE FORM ====================
+function NoticeForm({initial,userEmail,onSave,onClose}){
+  const [title,setTitle]=useState(initial?.title||"");
+  const [content,setContent]=useState(initial?.content||"");
+  const [category,setCategory]=useState(initial?.category||"notice");
+  const [eventDate,setEventDate]=useState(initial?.event_date||"");
+  const [saving,setSaving]=useState(false);
+  const submit=async()=>{
+    if(!title.trim()){alert("제목을 입력해주세요");return;}
+    setSaving(true);
+    await onSave({title:title.trim(),content:content.trim(),category,event_date:eventDate||null,author_email:userEmail});
+    setSaving(false);
+  };
+  return(
+    <>
+      <div className="form-group"><label className="form-label">유형</label><div style={{display:"flex",gap:8}}>{[{v:"notice",l:"📢 공지"},{v:"schedule",l:"📅 일정"}].map(c=>(<button key={c.v} className="btn" style={{flex:1,padding:"10px",background:category===c.v?"var(--primary)":"var(--gray-100)",color:category===c.v?"white":"var(--gray-600)",fontSize:14,fontWeight:600}} onClick={()=>setCategory(c.v)}>{c.l}</button>))}</div></div>
+      <div className="form-group"><label className="form-label">제목 <span style={{color:"#EF4444"}}>*</span></label><input className="form-input" placeholder="제목 입력" value={title} onChange={e=>setTitle(e.target.value)}/></div>
+      {category==="schedule"&&(<div className="form-group"><label className="form-label">일정 날짜 <span className="optional">(선택)</span></label><input className="form-input" type="date" value={eventDate} onChange={e=>setEventDate(e.target.value)}/></div>)}
+      <div className="form-group"><label className="form-label">내용 <span className="optional">(선택)</span></label><textarea className="form-input" placeholder="내용 입력" value={content} onChange={e=>setContent(e.target.value)} rows={4} style={{resize:"none",lineHeight:1.6}}/></div>
+      <button className="btn btn-primary" onClick={submit} disabled={saving}><Icon name="check" size={16} color="white"/>{saving?"저장 중...":initial?"수정 완료":"등록하기"}</button>
+    </>
+  );
+}
+
+// ==================== PRAYER FORM ====================
+function PrayerForm({members,initial,userEmail,onSave,onClose}){
+  const [memberId,setMemberId]=useState(initial?.member_id||"");
+  const [searchText,setSearchText]=useState(()=>{if(initial?.member_id){const m=members.find(m=>m.id===initial.member_id);return m?m.name:"";}return "";});
+  const [showList,setShowList]=useState(false);
+  const [content,setContent]=useState(initial?.content||"");
+  const [saving,setSaving]=useState(false);
+  const activeMembers=sortByName(members.filter(m=>!m.military&&m.is_active!==false));
+  const filtered=searchText.trim()?activeMembers.filter(m=>m.name.includes(searchText.trim())):activeMembers;
+  const selectedMember=members.find(m=>m.id===memberId);
+  const handleSelect=(m)=>{setMemberId(m.id);setSearchText(m.name);setShowList(false);};
+  const submit=async()=>{
+    if(!memberId){alert("청년을 선택해주세요");return;}
+    if(!content.trim()){alert("기도제목을 입력해주세요");return;}
+    setSaving(true);
+    await onSave({member_id:memberId,content:content.trim(),author_email:userEmail,is_answered:false});
+    setSaving(false);
+  };
+  return(
+    <>
+      <div className="form-group" style={{position:"relative"}}>
+        <label className="form-label">청년 이름 검색 <span style={{color:"#EF4444"}}>*</span></label>
+        <div className="input-with-icon">
+          <span className="input-icon"><Icon name="users" size={15}/></span>
+          <input className="form-input" style={{paddingLeft:38}} placeholder="이름 입력 후 선택..." value={searchText} onChange={e=>{setSearchText(e.target.value);setMemberId("");setShowList(true);}} onFocus={()=>setShowList(true)} autoComplete="off"/>
+          {memberId&&<span style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",color:"#10B981",fontSize:14}}>✓</span>}
+        </div>
+        {showList&&searchText.trim()&&(
+          <div style={{position:"absolute",top:"100%",left:0,right:0,background:"var(--white)",border:"1.5px solid var(--primary)",borderRadius:"var(--radius)",boxShadow:"var(--shadow-md)",zIndex:10,maxHeight:200,overflowY:"auto",marginTop:2}}>
+            {filtered.length===0?(<div style={{padding:"12px 14px",fontSize:13,color:"var(--gray-400)",textAlign:"center"}}>일치하는 청년이 없습니다</div>):(
+              filtered.map(m=>(<div key={m.id} onClick={()=>handleSelect(m)} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",cursor:"pointer",borderBottom:"1px solid var(--gray-100)"}} onMouseEnter={e=>e.currentTarget.style.background="var(--primary-light)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}><div className={`member-avatar ${m.gender}`} style={{width:30,height:30,fontSize:12,flexShrink:0}}>{m.name.charAt(0)}</div><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{m.name}</div></div>{memberId===m.id&&<span style={{color:"#10B981"}}>✓</span>}</div>))
+            )}
+          </div>
+        )}
+      </div>
+      {selectedMember&&(<div style={{background:"var(--primary-light)",border:"1px solid #BFDBFE",borderRadius:"var(--radius)",padding:"10px 14px",marginBottom:16,display:"flex",alignItems:"center",gap:10}}><div className={`member-avatar ${selectedMember.gender}`} style={{width:34,height:34,fontSize:13}}>{selectedMember.name.charAt(0)}</div><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:"var(--primary)"}}>{selectedMember.name}</div><div style={{fontSize:12,color:"var(--gray-500)"}}>선택됨 ✓</div></div><button style={{background:"none",border:"none",color:"var(--gray-400)",cursor:"pointer",fontSize:16}} onClick={()=>{setMemberId("");setSearchText("");setShowList(false);}}>✕</button></div>)}
+      <div className="form-group"><label className="form-label">기도제목 <span style={{color:"#EF4444"}}>*</span></label><textarea className="form-input" placeholder="기도제목을 입력하세요" value={content} onChange={e=>setContent(e.target.value)} rows={4} style={{resize:"none",lineHeight:1.6}}/></div>
+      <button className="btn btn-primary" onClick={submit} disabled={saving}><Icon name="check" size={16} color="white"/>{saving?"저장 중...":initial?"수정 완료":"등록하기"}</button>
+    </>
+  );
+}
+
+// ==================== INACTIVATE FORM ====================
+function InactivateForm({member,onSave,onClose}){
+  const [reason,setReason]=useState("");
+  const reasons=["타 교회 이적","장로부 이동","지역 이동","개인 사정","기타"];
+  return(
+    <>
+      <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:10,padding:"12px 14px",marginBottom:16,fontSize:13,color:"#92400E"}}><strong>{member.name}</strong> 님을 비활성 처리합니다.<br/>출석/통계에서 제외되지만 데이터는 보존됩니다.</div>
+      <div className="form-group">
+        <label className="form-label">비활성 사유</label>
+        <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>{reasons.map(r=>(<button key={r} className="btn btn-sm" style={{background:reason===r?"#F97316":"var(--gray-100)",color:reason===r?"white":"var(--gray-600)",padding:"6px 12px",fontSize:12}} onClick={()=>setReason(r)}>{r}</button>))}</div>
+        <input className="form-input" placeholder="직접 입력 또는 위에서 선택" value={reason} onChange={e=>setReason(e.target.value)}/>
+      </div>
+      <button className="btn btn-primary" style={{background:"#F97316"}} onClick={()=>{if(!reason.trim()){alert("사유를 입력해주세요");return;}onSave(reason.trim());}}><Icon name="logout" size={16} color="white"/>비활성 처리</button>
+      <button className="btn btn-secondary" style={{width:"100%",marginTop:8}} onClick={onClose}>취소</button>
+    </>
+  );
+}
+
+// ==================== CHANGE PASSWORD FORM ====================
+function ChangePasswordForm({onClose}){
+  const [current,setCurrent]=useState("");
+  const [newPw,setNewPw]=useState("");
+  const [confirm,setConfirm]=useState("");
+  const [showCurrent,setShowCurrent]=useState(false);
+  const [showNew,setShowNew]=useState(false);
+  const [error,setError]=useState("");
+  const [success,setSuccess]=useState(false);
+  const [saving,setSaving]=useState(false);
+  const handleChange=async()=>{
+    setError("");
+    if(!current||!newPw||!confirm){setError("모든 항목을 입력해주세요");return;}
+    if(newPw.length<6){setError("새 비밀번호는 6자리 이상이어야 합니다");return;}
+    if(newPw!==confirm){setError("새 비밀번호가 일치하지 않습니다");return;}
+    setSaving(true);
+    const {data:{user}}=await supabase.auth.getUser();
+    const {error:signInErr}=await supabase.auth.signInWithPassword({email:user.email,password:current});
+    if(signInErr){setError("현재 비밀번호가 올바르지 않습니다");setSaving(false);return;}
+    const {error:updateErr}=await supabase.auth.updateUser({password:newPw});
+    setSaving(false);
+    if(updateErr){setError("비밀번호 변경에 실패했습니다");}
+    else{setSuccess(true);setTimeout(()=>onClose(),1500);}
+  };
+  if(success) return(<div style={{textAlign:"center",padding:"40px 0"}}><div style={{fontSize:48,marginBottom:12}}>✅</div><div style={{fontSize:16,fontWeight:600,color:"#10B981"}}>비밀번호가 변경되었습니다!</div></div>);
+  return(
+    <>
+      {error&&<div className="login-error" style={{marginBottom:16}}>{error}</div>}
+      <div className="form-group"><label className="form-label">현재 비밀번호</label><div className="input-with-icon"><span className="input-icon"><Icon name="lock" size={15}/></span><input className="form-input has-right-icon" type={showCurrent?"text":"password"} placeholder="현재 비밀번호" value={current} onChange={e=>setCurrent(e.target.value)} style={{paddingLeft:38}}/><button className="input-icon-right" onClick={()=>setShowCurrent(!showCurrent)} type="button"><Icon name={showCurrent?"eyeoff":"eye"} size={16}/></button></div></div>
+      <div className="form-group"><label className="form-label">새 비밀번호 <span className="optional">(6자리 이상)</span></label><div className="input-with-icon"><span className="input-icon"><Icon name="key" size={15}/></span><input className="form-input has-right-icon" type={showNew?"text":"password"} placeholder="새 비밀번호" value={newPw} onChange={e=>setNewPw(e.target.value)} style={{paddingLeft:38}}/><button className="input-icon-right" onClick={()=>setShowNew(!showNew)} type="button"><Icon name={showNew?"eyeoff":"eye"} size={16}/></button></div></div>
+      <div className="form-group"><label className="form-label">새 비밀번호 확인</label><div className="input-with-icon"><span className="input-icon"><Icon name="key" size={15}/></span><input className="form-input" type="password" placeholder="새 비밀번호 재입력" value={confirm} onChange={e=>setConfirm(e.target.value)} style={{paddingLeft:38}}/></div></div>
+      <button className="btn btn-primary" onClick={handleChange} disabled={saving}><Icon name="check" size={16} color="white"/>{saving?"변경 중...":"비밀번호 변경"}</button>
+    </>
   );
 }
 
