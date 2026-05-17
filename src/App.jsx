@@ -839,20 +839,51 @@ export default function App() {
     events:{title:"수련회 · 행사",sub:"행사 참가 관리"},
   };
 
-  const pages = {
-    home:<HomePage members={members} newMembers={newMembers} sams={sams} attendanceList={attendanceList} samAttendanceList={samAttendanceList} setActiveNav={handleNavChange} todayBirthdays={todayBirthdays} userEmail={user?.email} recentNotes={recentNotes} onSelectMember={setSelectedMember} notices={notices} />,
-    members:<MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} onInactivate={(id,reason)=>inactivateMember(id,reason)} onRestore={restoreMember} onPermanentDelete={permanentDeleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} noteCountMap={noteCountMap} activeTab={membersTab} filterSam={membersFilterSam} />,
-    attendance:<AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} tab={attendanceTab} selectedDate={attendanceDate} filterSam={attendanceFilterSam} />,
-    sam:<SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} selectedSam={samSelected} setSelectedSam={setSamSelected} tab={samTab} />,
-    more:<MorePage setActiveNav={setActiveNav} admin={admin} userEmail={user?.email} newMembersCount={newMembers.length} noticesCount={notices.filter(n=>!(n.category==="schedule"&&n.event_date&&n.event_date<today())).length} prayersCount={prayers.filter(p=>!p.is_answered).length} />,
-    notices:<NoticePage notices={notices} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />,
-    prayers:<PrayerPage prayers={prayers} members={members} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />,
-    absenceContact:<AbsenceContactPage members={members} attendanceList={attendanceList} absenceContacts={absenceContacts} admin={admin} userEmail={user?.email} onRefresh={fetchAll} />,
-    newmembers:<NewMembersPage newMembers={newMembers} sams={sams} setModal={setModal} onDelete={deleteNewMember} onToggleEdu={toggleEdu} onAssign={(nm)=>setModal({type:"assignSam",newMember:nm})} admin={admin} userEmail={user?.email} newMemberMemos={newMemberMemos} onRefresh={fetchAll} />,
-    allNotes:<AllNotesPage members={members} sams={sams} userEmail={user?.email} onSelectMember={setSelectedMember} />,
-    myAccount:<MyAccountPage userId={userId} admin={admin} onChangePw={()=>handleNavChange("changePw")} onLogout={handleLogout} />,
-    changePw:<ChangePasswordPage onBack={()=>handleNavChange("myAccount")} />,
-    events:<EventsPage events={events} eventParticipants={eventParticipants} eventGuests={eventGuests} members={members} sams={sams} userEmail={user?.email} admin={admin} onRefresh={fetchAll} setActiveNav={setActiveNav} />,
+  const renderPage = () => {
+    // 편집/등록 폼이 열려있으면 폼 페이지 표시
+    if (modal?.type==="addMember" && admin)
+      return <FormPage title="청년 등록" onBack={closeModal}><MemberForm sams={sams} onSave={async(m)=>{await saveMember(m);}} onClose={closeModal}/></FormPage>;
+    if (modal?.type==="editMember" && admin)
+      return <FormPage title="청년 정보 수정" onBack={closeModal}><MemberForm sams={sams} initial={modal.member} onSave={async(m)=>{await updateMember(modal.member.id,m);}} onClose={closeModal}/></FormPage>;
+    if (modal?.type==="inactivateMember" && admin)
+      return <FormPage title="비활성 처리" onBack={closeModal}><InactivateForm member={modal.member} onSave={(reason)=>inactivateMember(modal.member.id,reason)} onClose={closeModal}/></FormPage>;
+    if (modal?.type==="addSam" && admin)
+      return <FormPage title="새 샘 추가" onBack={closeModal}><SamForm onSave={saveSam} onClose={closeModal}/></FormPage>;
+    if (modal?.type==="addNewMember" && admin)
+      return <FormPage title="새가족 등록" onBack={closeModal}><NewMemberForm onSave={saveNewMember} onClose={closeModal}/></FormPage>;
+    if (modal?.type==="editNewMember" && admin)
+      return <FormPage title="새가족 정보 수정" onBack={closeModal}><NewMemberForm initial={modal.member} onSave={(m)=>updateNewMember(modal.member.id,m)} onClose={closeModal}/></FormPage>;
+    if (modal?.type==="assignSam" && admin)
+      return <FormPage title="샘 배정" onBack={closeModal}><AssignSamForm sams={sams} newMember={modal.newMember} onAssign={assignNewMemberToSam} onClose={closeModal}/></FormPage>;
+    if (modal?.type==="addNotice" && admin)
+      return <FormPage title="공지·일정 등록" onBack={closeModal}><NoticeForm userEmail={user?.email} onSave={async(d)=>{await supabase.from("notices").insert([d]);await fetchAll();closeModal();}} onClose={closeModal}/></FormPage>;
+    if (modal?.type==="editNotice" && admin)
+      return <FormPage title="공지·일정 수정" onBack={closeModal}><NoticeForm initial={modal.notice} userEmail={user?.email} onSave={async(d)=>{await supabase.from("notices").update(d).eq("id",modal.notice.id);await fetchAll();closeModal();}} onClose={closeModal}/></FormPage>;
+    if (modal?.type==="addPrayer" && admin)
+      return <FormPage title="기도제목 등록" onBack={closeModal}><PrayerForm members={members} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").insert([d]);await fetchAll();closeModal();}} onClose={closeModal}/></FormPage>;
+    if (modal?.type==="editPrayer" && admin)
+      return <FormPage title="기도제목 수정" onBack={closeModal}><PrayerForm members={members} initial={modal.prayer} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").update({content:d.content,member_id:d.member_id}).eq("id",modal.prayer.id);await fetchAll();closeModal();}} onClose={closeModal}/></FormPage>;
+    if (modal?.type==="changePw")
+      return <FormPage title="비밀번호 변경" onBack={closeModal}><ChangePasswordForm onClose={closeModal}/></FormPage>;
+
+    // 일반 페이지
+    switch(activeNav) {
+      case "home": return <HomePage members={members} newMembers={newMembers} sams={sams} attendanceList={attendanceList} samAttendanceList={samAttendanceList} setActiveNav={handleNavChange} todayBirthdays={todayBirthdays} userEmail={user?.email} recentNotes={recentNotes} onSelectMember={setSelectedMember} notices={notices} />;
+      case "members": return <MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} onInactivate={(id,reason)=>inactivateMember(id,reason)} onRestore={restoreMember} onPermanentDelete={permanentDeleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} noteCountMap={noteCountMap} activeTab={membersTab} filterSam={membersFilterSam} />;
+      case "attendance": return <AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} tab={attendanceTab} selectedDate={attendanceDate} filterSam={attendanceFilterSam} />;
+      case "sam": return <SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} selectedSam={samSelected} setSelectedSam={setSamSelected} tab={samTab} />;
+      case "more": return <MorePage setActiveNav={setActiveNav} admin={admin} userEmail={user?.email} newMembersCount={newMembers.length} noticesCount={notices.filter(n=>!(n.category==="schedule"&&n.event_date&&n.event_date<today())).length} prayersCount={prayers.filter(p=>!p.is_answered).length} />;
+      case "notices": return <NoticePage notices={notices} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />;
+      case "prayers": return <PrayerPage prayers={prayers} members={members} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />;
+      case "absenceContact": return <AbsenceContactPage members={members} attendanceList={attendanceList} absenceContacts={absenceContacts} admin={admin} userEmail={user?.email} onRefresh={fetchAll} />;
+      case "newmembers": return <NewMembersPage newMembers={newMembers} sams={sams} setModal={setModal} onDelete={deleteNewMember} onToggleEdu={toggleEdu} onAssign={(nm)=>setModal({type:"assignSam",newMember:nm})} admin={admin} userEmail={user?.email} newMemberMemos={newMemberMemos} onRefresh={fetchAll} />;
+      case "allNotes": return <AllNotesPage members={members} sams={sams} userEmail={user?.email} onSelectMember={setSelectedMember} />;
+      case "myAccount": return <MyAccountPage userId={userId} admin={admin} onChangePw={()=>setModal({type:"changePw"})} onLogout={handleLogout} />;
+      case "changePw": return <ChangePasswordPage onBack={()=>handleNavChange("myAccount")} />;
+      case "excel": return <ExcelExportPage members={members} sams={sams} attendanceList={attendanceList} samAttendanceList={samAttendanceList} newMembers={newMembers} admin={admin} />;
+      case "events": return <EventsPage events={events} eventParticipants={eventParticipants} eventGuests={eventGuests} members={members} sams={sams} userEmail={user?.email} admin={admin} onRefresh={fetchAll} setActiveNav={setActiveNav} />;
+      default: return null;
+    }
   };
 
   return (
@@ -956,34 +987,7 @@ export default function App() {
           )}
         </div>
         <div className="page-content">
-          {/* DEBUG: modal state 확인 */}
-          {modal && <div style={{background:"red",color:"white",padding:"4px 8px",fontSize:12,position:"sticky",top:0,zIndex:999}}>modal: {modal?.type}</div>}
-          {modal?.type==="addMember" && admin
-            ? <FormPage title="청년 등록" onBack={closeModal}><MemberForm sams={sams} onSave={async(m)=>{await saveMember(m);}} onClose={closeModal}/></FormPage>
-            : modal?.type==="editMember" && admin
-            ? <FormPage title="청년 정보 수정" onBack={closeModal}><MemberForm sams={sams} initial={modal.member} onSave={async(m)=>{await updateMember(modal.member.id,m);}} onClose={closeModal}/></FormPage>
-            : modal?.type==="inactivateMember" && admin
-            ? <FormPage title="비활성 처리" onBack={closeModal}><InactivateForm member={modal.member} onSave={(reason)=>inactivateMember(modal.member.id,reason)} onClose={closeModal}/></FormPage>
-            : modal?.type==="addSam" && admin
-            ? <FormPage title="새 샘 추가" onBack={closeModal}><SamForm onSave={saveSam} onClose={closeModal}/></FormPage>
-            : modal?.type==="addNewMember" && admin
-            ? <FormPage title="새가족 등록" onBack={closeModal}><NewMemberForm onSave={saveNewMember} onClose={closeModal}/></FormPage>
-            : modal?.type==="editNewMember" && admin
-            ? <FormPage title="새가족 정보 수정" onBack={closeModal}><NewMemberForm initial={modal.member} onSave={(m)=>updateNewMember(modal.member.id,m)} onClose={closeModal}/></FormPage>
-            : modal?.type==="assignSam" && admin
-            ? <FormPage title="샘 배정" onBack={closeModal}><AssignSamForm sams={sams} newMember={modal.newMember} onAssign={assignNewMemberToSam} onClose={closeModal}/></FormPage>
-            : modal?.type==="addNotice" && admin
-            ? <FormPage title="공지·일정 등록" onBack={closeModal}><NoticeForm userEmail={user?.email} onSave={async(d)=>{await supabase.from("notices").insert([d]);await fetchAll();closeModal();}} onClose={closeModal}/></FormPage>
-            : modal?.type==="editNotice" && admin
-            ? <FormPage title="공지·일정 수정" onBack={closeModal}><NoticeForm initial={modal.notice} userEmail={user?.email} onSave={async(d)=>{await supabase.from("notices").update(d).eq("id",modal.notice.id);await fetchAll();closeModal();}} onClose={closeModal}/></FormPage>
-            : modal?.type==="addPrayer" && admin
-            ? <FormPage title="기도제목 등록" onBack={closeModal}><PrayerForm members={members} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").insert([d]);await fetchAll();closeModal();}} onClose={closeModal}/></FormPage>
-            : modal?.type==="editPrayer" && admin
-            ? <FormPage title="기도제목 수정" onBack={closeModal}><PrayerForm members={members} initial={modal.prayer} userEmail={user?.email} onSave={async(d)=>{await supabase.from("prayers").update({content:d.content,member_id:d.member_id}).eq("id",modal.prayer.id);await fetchAll();closeModal();}} onClose={closeModal}/></FormPage>
-            : modal?.type==="changePw"
-            ? <FormPage title="비밀번호 변경" onBack={closeModal}><ChangePasswordForm onClose={closeModal}/></FormPage>
-            : pages[activeNav]
-          }
+          {renderPage()}
         </div>
         <div className="bottom-nav">
           {navItems.map(item=>(
