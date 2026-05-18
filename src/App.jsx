@@ -60,7 +60,7 @@ const Icon = ({ name, size = 20, color = "currentColor" }) => {
 };
 
 // ==================== UTILS ====================
-const today = () => new Date().toISOString().split("T")[0];
+const today = () => { const d = new Date(); const kst = new Date(d.getTime() + 9*60*60*1000); return kst.toISOString().split("T")[0]; };
 const formatDate = (d) => { if (!d) return ""; const dt = new Date(d + "T00:00:00"); return `${dt.getFullYear()}.${String(dt.getMonth()+1).padStart(2,"0")}.${String(dt.getDate()).padStart(2,"0")}`; };
 const getDayLabel = (d) => { const days=["일","월","화","수","목","금","토"]; return days[new Date(d+"T00:00:00").getDay()]; };
 const sortByName = (arr) => [...arr].sort((a, b) => a.name.localeCompare(b.name, "ko"));
