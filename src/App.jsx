@@ -3536,8 +3536,11 @@ function EventDetailPage({event,participants,guests,members,sams,userEmail,admin
                     <div key={m.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:isNew?"#ECFDF5":"var(--gray-50)",borderRadius:"var(--radius)",marginBottom:6,borderLeft:isNew?"3px solid #10B981":"3px solid transparent"}}>
                       <div className={`member-avatar ${m.gender}`} style={{width:30,height:30,fontSize:12}}>{m.name.charAt(0)}</div>
                       <div style={{flex:1}}>
-                        <span style={{fontSize:13,fontWeight:600}}>{m.name}</span>
-                        {isNew&&<span style={{fontSize:10,color:"#10B981",marginLeft:6,fontWeight:600}}>★ 이 세션 합류</span>}
+                        <div style={{display:"flex",alignItems:"center",gap:6}}>
+                          <span style={{fontSize:13,fontWeight:600}}>{m.name}</span>
+                          {isNew&&<span style={{fontSize:10,color:"#10B981",fontWeight:600}}>★ 이 세션 합류</span>}
+                        </div>
+                        {p?.memo&&<div style={{fontSize:11,color:"var(--gray-500)",marginTop:2}}>{p.memo}</div>}
                       </div>
                       <span style={{fontSize:11,background:EVENT_STATUS[p?.status]?.bg,color:EVENT_STATUS[p?.status]?.color,borderRadius:20,padding:"1px 7px",fontWeight:600}}>
                         {EVENT_STATUS[p?.status]?.short}
