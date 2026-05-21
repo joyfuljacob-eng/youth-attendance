@@ -892,7 +892,7 @@ export default function App() {
       case "members": return <MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} onInactivate={(id,reason)=>inactivateMember(id,reason)} onRestore={restoreMember} onPermanentDelete={permanentDeleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} noteCountMap={noteCountMap} activeTab={membersTab} filterSam={membersFilterSam} />;
       case "attendance": return <AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} tab={attendanceTab} selectedDate={attendanceDate} filterSam={attendanceFilterSam} />;
       case "sam": return <SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} selectedSam={samSelected} setSelectedSam={setSamSelected} tab={samTab} />;
-      case "more": return <MorePage setActiveNav={setActiveNav} admin={admin} userEmail={user?.email} newMembersCount={newMembers.length} noticesCount={notices.filter(n=>!(n.category==="schedule"&&n.event_date&&n.event_date<today())).length} prayersCount={prayers.filter(p=>!p.is_answered).length} />;
+      case "more": return <MorePage setActiveNav={setActiveNav} admin={admin} userEmail={user?.email} newMembersCount={newMembers.length} noticesCount={notices.filter(n=>!(n.category==="schedule"&&n.event_date&&n.event_date<today())).length} prayersCount={prayers.filter(p=>!p.is_answered).length} eventsCount={events.length} />;
       case "notices": return <NoticePage notices={notices} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />;
       case "prayers": return <PrayerPage prayers={prayers} members={members} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />;
       case "absenceContact": return <AbsenceContactPage members={members} attendanceList={attendanceList} absenceContacts={absenceContacts} admin={admin} userEmail={user?.email} onRefresh={fetchAll} />;
@@ -2304,13 +2304,13 @@ function PastoralNoteForm({ memberId, userEmail, initial, onSave, onClose }) {
 }
 
 // ==================== 더보기 페이지 ====================
-function MorePage({setActiveNav,admin,userEmail,newMembersCount,noticesCount,prayersCount}){
+function MorePage({setActiveNav,admin,userEmail,newMembersCount,noticesCount,prayersCount,eventsCount}){
   const menus=[
     {id:"newmembers",label:"새가족",sub:`등록 ${newMembersCount}명`,icon:"newuser",bg:"#FFFBEB",color:"#D97706"},
     {id:"notices",label:"공지 · 일정",sub:`${noticesCount}건`,icon:"bullhorn",bg:"#F5F3FF",color:"#7C3AED"},
     {id:"prayers",label:"기도제목",sub:`응답대기 ${prayersCount}건`,icon:"prayhand",bg:"#FDF2F8",color:"#DB2777"},
     {id:"absenceContact",label:"결석자 연락",sub:"연락 이력 관리",icon:"contact",bg:"#FFF7ED",color:"#EA580C"},
-    {id:"events",label:"수련회 · 행사",sub:"행사 참가 관리",icon:"calendar",bg:"#EFF6FF",color:"#2563EB"},
+    {id:"events",label:"수련회 · 행사",sub:`등록 ${eventsCount}건`,icon:"calendar",bg:"#EFF6FF",color:"#2563EB"},
   ];
   return(
     <div>
