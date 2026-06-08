@@ -3201,6 +3201,25 @@ function ExcelExportPage({members, sams, attendanceList, samAttendanceList, newM
       ws4["!cols"] = [{wch:12},{wch:6},{wch:14},{wch:12},{wch:14},{wch:12},{wch:10}];
       XLSX.utils.book_append_sheet(wb, ws4, "새가족 현황");
 
+      // ===== 시트 5: 비활성 명단 =====
+      const inactiveMembers = sortByName(members.filter(m=>m.is_active===false));
+      const sheet5Data = [
+        ["이름","성별","전화번호","출생년도","생일","샘","비활성사유","비활성처리일"],
+        ...inactiveMembers.map(m=>[
+          m.name,
+          m.gender==="male"?"남":"여",
+          m.phone||"",
+          m.birth_year||"",
+          m.birthday||"",
+          getSamName(m.sam_id),
+          m.inactive_reason||"",
+          m.inactive_at||"",
+        ])
+      ];
+      const ws5 = XLSX.utils.aoa_to_sheet(sheet5Data);
+      ws5["!cols"] = [{wch:10},{wch:6},{wch:14},{wch:10},{wch:8},{wch:10},{wch:14},{wch:14}];
+      XLSX.utils.book_append_sheet(wb, ws5, "비활성 명단");
+
       // 다운로드
       const now = new Date();
       const fileName = `학익청년부_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}.xlsx`;
@@ -3220,7 +3239,8 @@ function ExcelExportPage({members, sams, attendanceList, samAttendanceList, newM
           시트 1 — 청년 명단<br/>
           시트 2 — 예배참석 현황 (기간 선택)<br/>
           시트 3 — 샘별참석 현황 (기간 선택)<br/>
-          시트 4 — 새가족 현황
+          시트 4 — 새가족 현황<br/>
+          시트 5 — 비활성 명단
         </div>
       </div>
 
