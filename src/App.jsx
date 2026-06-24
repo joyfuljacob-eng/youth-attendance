@@ -2479,7 +2479,9 @@ function PrayerPage({prayers,members,admin,userEmail,onRefresh,setModal}){
 
 // ==================== 결석자 연락 페이지 ====================
 function AbsenceContactPage({members,attendanceList,absenceContacts,admin,userEmail,onRefresh}){
-  const [contactModal,setContactModal]=useState(null);
+  const [openContact,setOpenContact]=useState(null); // 열린 연락 기록 폼 (member.id)
+  const [memo,setMemo]=useState("");
+  const [saving,setSaving]=useState(false);
 
   const absentMembers=members.filter(m=>{
     if(m.military) return false;
@@ -2494,10 +2496,18 @@ function AbsenceContactPage({members,attendanceList,absenceContacts,admin,userEm
   };
   const authorLabel=(email)=>email?.replace("@hiyouth.com","")||"";
 
-  const saveContact=async(memberId,memo)=>{
+  const openForm=(m)=>{
+    setOpenContact(m.id);
+    setMemo("");
+  };
+
+  const saveContact=async(memberId)=>{
+    setSaving(true);
     await supabase.from("absence_contacts").insert([{member_id:memberId,contact_date:today(),memo:memo.trim(),author_email:userEmail}]);
-    onRefresh();
-    setContactModal(null);
+    await onRefresh();
+    setSaving(false);
+    setOpenContact(null);
+    setMemo("");
   };
 
   return(
@@ -2510,6 +2520,7 @@ function AbsenceContactPage({members,attendanceList,absenceContacts,admin,userEm
           {absentMembers.map(m=>{
             const weeks=getAbsentWeeks(m.id,attendanceList)||0;
             const lastContact=getLastContact(m.id);
+            const isOpen=openContact===m.id;
             return(
               <div key={m.id} className={`alert-item ${weeks>=8?"weekly":"warn"}`} style={{flexDirection:"column",gap:8,alignItems:"stretch"}}>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -2530,40 +2541,50 @@ function AbsenceContactPage({members,attendanceList,absenceContacts,admin,userEm
                 ):(
                   <div style={{fontSize:12,color:"var(--gray-400)"}}>연락 기록 없음</div>
                 )}
+                {/* 인라인 연락 기록 폼 */}
                 {admin&&(
-                  <button className="contact-done-btn" style={{width:"100%",justifyContent:"center"}} onClick={()=>setContactModal(m)}>
-                    <Icon name="phone" size={14}/>연락 완료 기록하기
-                  </button>
+                  isOpen?(
+                    <div style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"12px"}}>
+                      <div style={{fontSize:12,fontWeight:600,color:"var(--primary)",marginBottom:8}}>
+                        📞 {m.name} 님 연락 완료 기록
+                      </div>
+                      <textarea
+                        className="form-input"
+                        placeholder="예) 카톡으로 연락, 다음 주 출석 예정"
+                        value={memo}
+                        onChange={e=>setMemo(e.target.value)}
+                        rows={3}
+                        style={{resize:"none",lineHeight:1.6,marginBottom:8,fontSize:13}}
+                        autoFocus
+                      />
+                      <div style={{display:"flex",gap:8}}>
+                        <button
+                          className="btn btn-primary"
+                          style={{flex:1,padding:"10px"}}
+                          onClick={()=>saveContact(m.id)}
+                          disabled={saving}>
+                          <Icon name="check" size={14} color="white"/>
+                          {saving?"저장 중...":"연락 완료 저장"}
+                        </button>
+                        <button
+                          className="btn btn-secondary"
+                          style={{padding:"10px 14px"}}
+                          onClick={()=>setOpenContact(null)}>
+                          취소
+                        </button>
+                      </div>
+                    </div>
+                  ):(
+                    <button className="contact-done-btn" style={{width:"100%",justifyContent:"center"}} onClick={()=>openForm(m)}>
+                      <Icon name="phone" size={14}/>연락 완료 기록하기
+                    </button>
+                  )
                 )}
               </div>
             );
           })}
         </>
       )}
-      {contactModal&&<ContactMemoModal member={contactModal} onSave={(memo)=>saveContact(contactModal.id,memo)} onClose={()=>setContactModal(null)}/>}
-    </div>
-  );
-}
-
-// ==================== 연락 메모 모달 ====================
-function ContactMemoModal({member,onSave,onClose}){
-  const [memo,setMemo]=useState("");
-  return(
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet" onClick={e=>e.stopPropagation()}>
-        <div className="modal-handle"/>
-        <div className="modal-title">📞 연락 완료 기록</div>
-        <div style={{background:"var(--primary-light)",borderRadius:10,padding:"10px 14px",marginBottom:16,fontSize:13,color:"var(--primary)"}}>
-          <strong>{member.name}</strong> 님과 연락한 내용을 기록해 두세요
-        </div>
-        <div className="form-group">
-          <label className="form-label">메모 <span className="optional">(선택)</span></label>
-          <textarea className="form-input" placeholder="예) 카톡으로 연락, 다음 주 출석 예정" value={memo} onChange={e=>setMemo(e.target.value)} rows={3} style={{resize:"none",lineHeight:1.6}}/>
-        </div>
-        <button className="btn btn-primary" onClick={()=>onSave(memo)}>
-          <Icon name="check" size={16} color="white"/>연락 완료 저장
-        </button>
-      </div>
     </div>
   );
 }
