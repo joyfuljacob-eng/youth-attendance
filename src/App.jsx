@@ -809,23 +809,13 @@ export default function App() {
   };
   const assignNewMemberToSam = async (newMember, samId) => {
     setSaving(true);
-    // 1. 청년 명단에 추가 후 새로 생성된 member ID 가져오기
-    const { data: newMemberData } = await supabase.from("members").insert([{
+    await supabase.from("members").insert([{
       name: newMember.name, gender: newMember.gender,
       phone: newMember.phone, birth_year: newMember.birth_year,
       birthday: newMember.birthday, sam_id: samId||null, military: false,
-      assigned_at: today(),
-      new_member_registered_at: newMember.registered_at||null,
-    }]).select().single();
-
-    // 2. 새가족 메모의 member_id를 새로 생성된 member ID로 업데이트 (메모 보존)
-    if (newMemberData?.id) {
-      await supabase.from("new_member_memos")
-        .update({ member_id: newMemberData.id })
-        .eq("new_member_id", newMember.id);
-    }
-
-    // 3. 새가족 테이블에서 삭제
+      assigned_at: today(), // 샘 배정 날짜 자동 기록
+      new_member_registered_at: newMember.registered_at||null, // 새가족 등록일 이력 보존
+    }]);
     await supabase.from("new_members").delete().eq("id", newMember.id);
     await fetchAll(); setSaving(false); closeModal();
   };
@@ -1378,7 +1368,7 @@ function HomePage({members,newMembers,sams,attendanceList,samAttendanceList,setA
   const thisMonthBirthdays=getThisMonthBirthdays(allPeople);
   const now=new Date(); const mm=String(now.getMonth()+1).padStart(2,"0");
   const militaryCount=members.filter(m=>m.military).length;
-  const alerts=members.filter(m=>!m.military).map(m=>{const w=getAbsentWeeks(m.id,attendanceList);return(w!==null&&w>=4)?{member:m,weeks:w}:null;}).filter(Boolean).sort((a,b)=>b.weeks-a.weeks);
+  const alerts=members.filter(m=>!m.military&&m.is_active!==false).map(m=>{const w=getAbsentWeeks(m.id,attendanceList);return(w!==null&&w>=4)?{member:m,weeks:w}:null;}).filter(Boolean).sort((a,b)=>b.weeks-a.weeks);
   const showNotes = canWriteNotes(userEmail) || canViewAllNotes(userEmail);
   const authorLabel = (email) => email?.replace("@hiyouth.com","") || "";
 
@@ -2059,34 +2049,24 @@ function AssignSamModal({sams,newMember,onAssign,onClose}){
 // ==================== 청년 상세 페이지 (나눔 기록) ====================
 function MemberDetailPage({ member, sams, userEmail, onClose }) {
   const [notes, setNotes] = useState([]);
-  const [newMemberMemos, setNewMemberMemos] = useState([]); // 새가족 시절 메모
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editingNote, setEditingNote] = useState(null);
+  const [editingNote, setEditingNote] = useState(null); // 수정할 노트
 
   const viewAll = canViewAllNotes(userEmail);
   const viewOwn = canViewOwnNotes(userEmail);
   const canWrite = canWriteNotes(userEmail);
-  const canReadMemo = canReadNewMemberMemo(userEmail);
 
   const getSamName = (samId) => sams.find(s => s.id === samId)?.name || "";
 
   const fetchNotes = async () => {
     setLoading(true);
     let query = supabase.from("pastoral_notes").select("*").eq("member_id", member.id).order("date", { ascending: false });
-    if (viewOwn && !viewAll) query = query.eq("author_email", userEmail);
+    if (viewOwn && !viewAll) {
+      query = query.eq("author_email", userEmail);
+    }
     const { data } = await query;
     if (data) setNotes(data);
-
-    // 새가족 시절 메모 조회 (member_id로 연결된 것)
-    if (canReadMemo) {
-      const { data: memoData } = await supabase
-        .from("new_member_memos")
-        .select("*")
-        .eq("member_id", member.id)
-        .order("date", { ascending: false });
-      if (memoData) setNewMemberMemos(memoData);
-    }
     setLoading(false);
   };
 
@@ -2206,26 +2186,6 @@ function MemberDetailPage({ member, sams, userEmail, onClose }) {
           })
         )}
       </div>
-
-      {/* 새가족 시절 메모 — 배정 후에도 보존 */}
-      {canReadMemo && newMemberMemos.length > 0 && (
-        <div style={{padding:"0 16px 16px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,paddingTop:4}}>
-            <div style={{flex:1,height:1,background:"var(--gray-200)"}}/>
-            <span style={{fontSize:12,fontWeight:600,color:"var(--gray-400)",whiteSpace:"nowrap"}}>📋 새가족 시절 메모</span>
-            <div style={{flex:1,height:1,background:"var(--gray-200)"}}/>
-          </div>
-          {newMemberMemos.map(memo=>(
-            <div key={memo.id} style={{background:"#F5F3FF",border:"1px solid #DDD6FE",borderRadius:"var(--radius)",padding:"10px 12px",marginBottom:8}}>
-              <div style={{fontSize:11,fontWeight:600,color:"#7C3AED",marginBottom:4,display:"flex",justifyContent:"space-between"}}>
-                <span>📅 {formatDate(memo.date)}</span>
-                <span style={{color:"var(--gray-400)"}}>👤 {memo.author_email?.replace("@hiyouth.com","")}</span>
-              </div>
-              <div style={{fontSize:13,color:"var(--gray-700)",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{memo.content}</div>
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* 작성 버튼 (권한 있는 사람만) */}
       {canWrite && !showForm && (
@@ -2523,6 +2483,7 @@ function AbsenceContactPage({members,attendanceList,absenceContacts,admin,userEm
 
   const absentMembers=members.filter(m=>{
     if(m.military) return false;
+    if(m.is_active===false) return false;
     const w=getAbsentWeeks(m.id,attendanceList);
     return w!==null&&w>=4;
   }).sort((a,b)=>(getAbsentWeeks(b.id,attendanceList)||0)-(getAbsentWeeks(a.id,attendanceList)||0));
@@ -3201,25 +3162,6 @@ function ExcelExportPage({members, sams, attendanceList, samAttendanceList, newM
       ws4["!cols"] = [{wch:12},{wch:6},{wch:14},{wch:12},{wch:14},{wch:12},{wch:10}];
       XLSX.utils.book_append_sheet(wb, ws4, "새가족 현황");
 
-      // ===== 시트 5: 비활성 명단 =====
-      const inactiveMembers = sortByName(members.filter(m=>m.is_active===false));
-      const sheet5Data = [
-        ["이름","성별","전화번호","출생년도","생일","샘","비활성사유","비활성처리일"],
-        ...inactiveMembers.map(m=>[
-          m.name,
-          m.gender==="male"?"남":"여",
-          m.phone||"",
-          m.birth_year||"",
-          m.birthday||"",
-          getSamName(m.sam_id),
-          m.inactive_reason||"",
-          m.inactive_at||"",
-        ])
-      ];
-      const ws5 = XLSX.utils.aoa_to_sheet(sheet5Data);
-      ws5["!cols"] = [{wch:10},{wch:6},{wch:14},{wch:10},{wch:8},{wch:10},{wch:14},{wch:14}];
-      XLSX.utils.book_append_sheet(wb, ws5, "비활성 명단");
-
       // 다운로드
       const now = new Date();
       const fileName = `학익청년부_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}.xlsx`;
@@ -3239,8 +3181,7 @@ function ExcelExportPage({members, sams, attendanceList, samAttendanceList, newM
           시트 1 — 청년 명단<br/>
           시트 2 — 예배참석 현황 (기간 선택)<br/>
           시트 3 — 샘별참석 현황 (기간 선택)<br/>
-          시트 4 — 새가족 현황<br/>
-          시트 5 — 비활성 명단
+          시트 4 — 새가족 현황
         </div>
       </div>
 
