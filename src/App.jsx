@@ -778,36 +778,51 @@ export default function App() {
   const deleteSam = async (id) => { if(!window.confirm("샘을 삭제하시겠습니까?")) return; setSaving(true); await supabase.from("sams").delete().eq("id",id); await fetchAll(); setSaving(false); };
   const toggleAttendance = async (memberId, date) => {
     const ex=attendanceList.find(a=>a.member_id===memberId&&a.date===date);
-    if(ex){
-      const newStatus=!ex.status;
-      setAttendanceList(prev=>prev.map(a=>a.id===ex.id?{...a,status:newStatus}:a));
-      setSaving(true);
-      await supabase.from("attendance").update({status:newStatus}).eq("id",ex.id);
+    const newStatus = ex ? !ex.status : true;
+    setAttendanceList(prev=> ex ? prev.map(a=>a.id===ex.id?{...a,status:newStatus}:a) : [...prev,{id:`temp-${memberId}-${date}`,member_id:memberId,date,status:newStatus}]);
+    setSaving(true);
+    // 화면에 남아있는 값 대신 서버의 실제 최신 상태를 다시 확인해서 처리 (중복/오래된 데이터로 인한 오저장 방지)
+    const {data:rows}=await supabase.from("attendance").select("*").eq("member_id",memberId).eq("date",date);
+    let writeError=null;
+    if(rows&&rows.length>0){
+      const keep=rows[0];
+      if(rows.length>1){
+        await supabase.from("attendance").delete().in("id",rows.slice(1).map(r=>r.id));
+      }
+      const {error}=await supabase.from("attendance").update({status:newStatus}).eq("id",keep.id);
+      writeError=error;
     }else{
-      setAttendanceList(prev=>[...prev,{id:`temp-${memberId}-${date}`,member_id:memberId,date,status:true}]);
-      setSaving(true);
-      await supabase.from("attendance").insert([{member_id:memberId,date,status:true}]);
+      const {error}=await supabase.from("attendance").insert([{member_id:memberId,date,status:newStatus}]);
+      writeError=error;
     }
     const {data}=await supabase.from("attendance").select("*");
     if(data)setAttendanceList(data);
     setSaving(false);
+    if(writeError) alert(`출석 저장에 실패했습니다: ${writeError.message}\n다시 시도해 주세요.`);
   };
   const setAllAttendance = async (memberIds,date,status) => { setSaving(true); for(const memberId of memberIds){const ex=attendanceList.find(a=>a.member_id===memberId&&a.date===date); if(ex){await supabase.from("attendance").update({status}).eq("id",ex.id);}else{await supabase.from("attendance").insert([{member_id:memberId,date,status}]);}} const {data}=await supabase.from("attendance").select("*"); if(data)setAttendanceList(data); setSaving(false); };
   const toggleSamAttendance = async (memberId,samId,date) => {
     const ex=samAttendanceList.find(a=>a.member_id===memberId&&a.sam_id===samId&&a.date===date);
-    if(ex){
-      const newStatus=!ex.status;
-      setSamAttendanceList(prev=>prev.map(a=>a.id===ex.id?{...a,status:newStatus}:a));
-      setSaving(true);
-      await supabase.from("sam_attendance").update({status:newStatus}).eq("id",ex.id);
+    const newStatus = ex ? !ex.status : true;
+    setSamAttendanceList(prev=> ex ? prev.map(a=>a.id===ex.id?{...a,status:newStatus}:a) : [...prev,{id:`temp-${memberId}-${samId}-${date}`,member_id:memberId,sam_id:samId,date,status:newStatus}]);
+    setSaving(true);
+    const {data:rows}=await supabase.from("sam_attendance").select("*").eq("member_id",memberId).eq("sam_id",samId).eq("date",date);
+    let writeError=null;
+    if(rows&&rows.length>0){
+      const keep=rows[0];
+      if(rows.length>1){
+        await supabase.from("sam_attendance").delete().in("id",rows.slice(1).map(r=>r.id));
+      }
+      const {error}=await supabase.from("sam_attendance").update({status:newStatus}).eq("id",keep.id);
+      writeError=error;
     }else{
-      setSamAttendanceList(prev=>[...prev,{id:`temp-${memberId}-${samId}-${date}`,member_id:memberId,sam_id:samId,date,status:true}]);
-      setSaving(true);
-      await supabase.from("sam_attendance").insert([{member_id:memberId,sam_id:samId,date,status:true}]);
+      const {error}=await supabase.from("sam_attendance").insert([{member_id:memberId,sam_id:samId,date,status:newStatus}]);
+      writeError=error;
     }
     const {data}=await supabase.from("sam_attendance").select("*");
     if(data)setSamAttendanceList(data);
     setSaving(false);
+    if(writeError) alert(`샘모임 출석 저장에 실패했습니다: ${writeError.message}\n다시 시도해 주세요.`);
   };
   const saveNewMember = async (m) => {
     setSaving(true);
