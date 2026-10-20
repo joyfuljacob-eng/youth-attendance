@@ -61,6 +61,21 @@ const Icon = ({ name, size = 20, color = "currentColor" }) => {
 
 // ==================== UTILS ====================
 const today = () => { const d = new Date(); const kst = new Date(d.getTime() + 9*60*60*1000); return kst.toISOString().split("T")[0]; };
+// Supabase는 프로젝트 설정(Max Rows, 기본 1000)에 따라 .limit()을 줘도 서버에서 한 번에 넘겨주는 행 수가 제한될 수 있어,
+// .range()로 나눠서 끝까지(빈 페이지가 나올 때까지) 모두 읽어오는 헬퍼
+const fetchAllRows = async (table) => {
+  let all = [];
+  let from = 0;
+  const pageSize = 1000;
+  while (true) {
+    const { data, error } = await supabase.from(table).select("*").range(from, from + pageSize - 1);
+    if (error || !data || data.length === 0) break;
+    all = all.concat(data);
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+  return all;
+};
 const formatDate = (d) => { if (!d) return ""; const dt = new Date(d + "T00:00:00"); return `${dt.getFullYear()}.${String(dt.getMonth()+1).padStart(2,"0")}.${String(dt.getDate()).padStart(2,"0")}`; };
 const getDayLabel = (d) => { const days=["일","월","화","수","목","금","토"]; return days[new Date(d+"T00:00:00").getDay()]; };
 const sortByName = (arr) => [...arr].sort((a, b) => a.name.localeCompare(b.name, "ko"));
@@ -672,18 +687,18 @@ export default function App() {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [m,nm,s,a,sa] = await Promise.all([
+      const [m,nm,s,aRows,saRows] = await Promise.all([
         supabase.from("members").select("*").order("created_at"),
         supabase.from("new_members").select("*").order("created_at"),
         supabase.from("sams").select("*").order("created_at"),
-        supabase.from("attendance").select("*").limit(50000),
-        supabase.from("sam_attendance").select("*").limit(50000),
+        fetchAllRows("attendance"),
+        fetchAllRows("sam_attendance"),
       ]);
       if(m.data) setMembers(m.data);
       if(nm.data) setNewMembers(nm.data);
       if(s.data) setSams(s.data);
-      if(a.data) setAttendanceList(a.data);
-      if(sa.data) setSamAttendanceList(sa.data);
+      setAttendanceList(aRows);
+      setSamAttendanceList(saRows);
 
       // 나눔 기록 건수 및 최근 기록 fetch
       const { data: notesData } = await supabase
@@ -795,8 +810,8 @@ export default function App() {
       writeError=insErr;
       insertedRow=insData&&insData[0];
     }
-    const {data}=await supabase.from("attendance").select("*").limit(50000);
-    if(data)setAttendanceList(data);
+    const data=await fetchAllRows("attendance");
+    setAttendanceList(data);
     setSaving(false);
     const confirmed=!!data?.find(a=>a.member_id===memberId&&a.date===date&&a.status===newStatus);
     if(writeError){
@@ -807,7 +822,7 @@ export default function App() {
       alert("저장은 된 것으로 보이나, 목록 재조회 시 반영이 안 됩니다(SELECT 권한 문제일 가능성). 화면을 새로고침해서 실제 반영 여부를 확인해주세요.");
     }
   };
-  const setAllAttendance = async (memberIds,date,status) => { setSaving(true); for(const memberId of memberIds){const ex=attendanceList.find(a=>a.member_id===memberId&&a.date===date); if(ex){await supabase.from("attendance").update({status}).eq("id",ex.id);}else{await supabase.from("attendance").insert([{member_id:memberId,date,status}]);}} const {data}=await supabase.from("attendance").select("*").limit(50000); if(data)setAttendanceList(data); setSaving(false); };
+  const setAllAttendance = async (memberIds,date,status) => { setSaving(true); for(const memberId of memberIds){const ex=attendanceList.find(a=>a.member_id===memberId&&a.date===date); if(ex){await supabase.from("attendance").update({status}).eq("id",ex.id);}else{await supabase.from("attendance").insert([{member_id:memberId,date,status}]);}} const data=await fetchAllRows("attendance"); setAttendanceList(data); setSaving(false); };
   const toggleSamAttendance = async (memberId,samId,date) => {
     const ex=samAttendanceList.find(a=>a.member_id===memberId&&a.sam_id===samId&&a.date===date);
     const newStatus = ex ? !ex.status : true;
@@ -826,8 +841,8 @@ export default function App() {
       writeError=insErr;
       insertedRow=insData&&insData[0];
     }
-    const {data}=await supabase.from("sam_attendance").select("*").limit(50000);
-    if(data)setSamAttendanceList(data);
+    const data=await fetchAllRows("sam_attendance");
+    setSamAttendanceList(data);
     const confirmed=!!data?.find(a=>a.member_id===memberId&&a.sam_id===samId&&a.date===date&&a.status===newStatus);
     setSaving(false);
     if(writeError){
