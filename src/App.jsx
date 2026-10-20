@@ -782,23 +782,23 @@ export default function App() {
     setAttendanceList(prev=> ex ? prev.map(a=>a.id===ex.id?{...a,status:newStatus}:a) : [...prev,{id:`temp-${memberId}-${date}`,member_id:memberId,date,status:newStatus}]);
     setSaving(true);
     // 화면에 남아있는 값 대신 서버의 실제 최신 상태를 다시 확인해서 처리 (중복/오래된 데이터로 인한 오저장 방지)
+    // UPDATE 권한(RLS) 이슈를 피하기 위해 기존 기록은 삭제 후 새로 추가하는 방식으로 처리
     const {data:rows}=await supabase.from("attendance").select("*").eq("member_id",memberId).eq("date",date);
     let writeError=null;
     if(rows&&rows.length>0){
-      const keep=rows[0];
-      if(rows.length>1){
-        await supabase.from("attendance").delete().in("id",rows.slice(1).map(r=>r.id));
-      }
-      const {error}=await supabase.from("attendance").update({status:newStatus}).eq("id",keep.id);
-      writeError=error;
-    }else{
-      const {error}=await supabase.from("attendance").insert([{member_id:memberId,date,status:newStatus}]);
-      writeError=error;
+      const {error:delErr}=await supabase.from("attendance").delete().in("id",rows.map(r=>r.id));
+      writeError=delErr;
+    }
+    if(!writeError){
+      const {error:insErr}=await supabase.from("attendance").insert([{member_id:memberId,date,status:newStatus}]);
+      writeError=insErr;
     }
     const {data}=await supabase.from("attendance").select("*");
     if(data)setAttendanceList(data);
     setSaving(false);
+    const confirmed=!!data?.find(a=>a.member_id===memberId&&a.date===date&&a.status===newStatus);
     if(writeError) alert(`출석 저장에 실패했습니다: ${writeError.message}\n다시 시도해 주세요.`);
+    else if(!confirmed) alert("출석 저장이 서버에 반영되지 않았습니다. Supabase의 attendance 테이블 권한(RLS) 설정을 확인해주세요.");
   };
   const setAllAttendance = async (memberIds,date,status) => { setSaving(true); for(const memberId of memberIds){const ex=attendanceList.find(a=>a.member_id===memberId&&a.date===date); if(ex){await supabase.from("attendance").update({status}).eq("id",ex.id);}else{await supabase.from("attendance").insert([{member_id:memberId,date,status}]);}} const {data}=await supabase.from("attendance").select("*"); if(data)setAttendanceList(data); setSaving(false); };
   const toggleSamAttendance = async (memberId,samId,date) => {
@@ -806,21 +806,21 @@ export default function App() {
     const newStatus = ex ? !ex.status : true;
     setSamAttendanceList(prev=> ex ? prev.map(a=>a.id===ex.id?{...a,status:newStatus}:a) : [...prev,{id:`temp-${memberId}-${samId}-${date}`,member_id:memberId,sam_id:samId,date,status:newStatus}]);
     setSaving(true);
+    // UPDATE 권한(RLS) 이슈를 피하기 위해 기존 기록은 삭제 후 새로 추가하는 방식으로 처리
     const {data:rows}=await supabase.from("sam_attendance").select("*").eq("member_id",memberId).eq("sam_id",samId).eq("date",date);
     let writeError=null;
     if(rows&&rows.length>0){
-      const keep=rows[0];
-      if(rows.length>1){
-        await supabase.from("sam_attendance").delete().in("id",rows.slice(1).map(r=>r.id));
-      }
-      const {error}=await supabase.from("sam_attendance").update({status:newStatus}).eq("id",keep.id);
-      writeError=error;
-    }else{
-      const {error}=await supabase.from("sam_attendance").insert([{member_id:memberId,sam_id:samId,date,status:newStatus}]);
-      writeError=error;
+      const {error:delErr}=await supabase.from("sam_attendance").delete().in("id",rows.map(r=>r.id));
+      writeError=delErr;
+    }
+    if(!writeError){
+      const {error:insErr}=await supabase.from("sam_attendance").insert([{member_id:memberId,sam_id:samId,date,status:newStatus}]);
+      writeError=insErr;
     }
     const {data}=await supabase.from("sam_attendance").select("*");
     if(data)setSamAttendanceList(data);
+    const confirmed=!!data?.find(a=>a.member_id===memberId&&a.sam_id===samId&&a.date===date&&a.status===newStatus);
+    if(!writeError&&!confirmed) writeError={message:"서버에 저장이 반영되지 않았습니다 (RLS 정책 확인 필요)"};
     setSaving(false);
     if(writeError) alert(`샘모임 출석 저장에 실패했습니다: ${writeError.message}\n다시 시도해 주세요.`);
   };
