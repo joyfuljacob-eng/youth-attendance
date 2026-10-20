@@ -676,8 +676,8 @@ export default function App() {
         supabase.from("members").select("*").order("created_at"),
         supabase.from("new_members").select("*").order("created_at"),
         supabase.from("sams").select("*").order("created_at"),
-        supabase.from("attendance").select("*"),
-        supabase.from("sam_attendance").select("*"),
+        supabase.from("attendance").select("*").limit(50000),
+        supabase.from("sam_attendance").select("*").limit(50000),
       ]);
       if(m.data) setMembers(m.data);
       if(nm.data) setNewMembers(nm.data);
@@ -795,7 +795,7 @@ export default function App() {
       writeError=insErr;
       insertedRow=insData&&insData[0];
     }
-    const {data}=await supabase.from("attendance").select("*");
+    const {data}=await supabase.from("attendance").select("*").limit(50000);
     if(data)setAttendanceList(data);
     setSaving(false);
     const confirmed=!!data?.find(a=>a.member_id===memberId&&a.date===date&&a.status===newStatus);
@@ -807,7 +807,7 @@ export default function App() {
       alert("저장은 된 것으로 보이나, 목록 재조회 시 반영이 안 됩니다(SELECT 권한 문제일 가능성). 화면을 새로고침해서 실제 반영 여부를 확인해주세요.");
     }
   };
-  const setAllAttendance = async (memberIds,date,status) => { setSaving(true); for(const memberId of memberIds){const ex=attendanceList.find(a=>a.member_id===memberId&&a.date===date); if(ex){await supabase.from("attendance").update({status}).eq("id",ex.id);}else{await supabase.from("attendance").insert([{member_id:memberId,date,status}]);}} const {data}=await supabase.from("attendance").select("*"); if(data)setAttendanceList(data); setSaving(false); };
+  const setAllAttendance = async (memberIds,date,status) => { setSaving(true); for(const memberId of memberIds){const ex=attendanceList.find(a=>a.member_id===memberId&&a.date===date); if(ex){await supabase.from("attendance").update({status}).eq("id",ex.id);}else{await supabase.from("attendance").insert([{member_id:memberId,date,status}]);}} const {data}=await supabase.from("attendance").select("*").limit(50000); if(data)setAttendanceList(data); setSaving(false); };
   const toggleSamAttendance = async (memberId,samId,date) => {
     const ex=samAttendanceList.find(a=>a.member_id===memberId&&a.sam_id===samId&&a.date===date);
     const newStatus = ex ? !ex.status : true;
@@ -826,7 +826,7 @@ export default function App() {
       writeError=insErr;
       insertedRow=insData&&insData[0];
     }
-    const {data}=await supabase.from("sam_attendance").select("*");
+    const {data}=await supabase.from("sam_attendance").select("*").limit(50000);
     if(data)setSamAttendanceList(data);
     const confirmed=!!data?.find(a=>a.member_id===memberId&&a.sam_id===samId&&a.date===date&&a.status===newStatus);
     setSaving(false);
