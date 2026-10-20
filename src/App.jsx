@@ -776,9 +776,39 @@ export default function App() {
   };
   const saveSam = async (name) => { setSaving(true); await supabase.from("sams").insert([{name}]); await fetchAll(); setSaving(false); closeModal(); };
   const deleteSam = async (id) => { if(!window.confirm("샘을 삭제하시겠습니까?")) return; setSaving(true); await supabase.from("sams").delete().eq("id",id); await fetchAll(); setSaving(false); };
-  const toggleAttendance = async (memberId, date) => { const ex=attendanceList.find(a=>a.member_id===memberId&&a.date===date); setSaving(true); if(ex){await supabase.from("attendance").update({status:!ex.status}).eq("id",ex.id);}else{await supabase.from("attendance").insert([{member_id:memberId,date,status:true}]);} const {data}=await supabase.from("attendance").select("*"); if(data)setAttendanceList(data); setSaving(false); };
+  const toggleAttendance = async (memberId, date) => {
+    const ex=attendanceList.find(a=>a.member_id===memberId&&a.date===date);
+    if(ex){
+      const newStatus=!ex.status;
+      setAttendanceList(prev=>prev.map(a=>a.id===ex.id?{...a,status:newStatus}:a));
+      setSaving(true);
+      await supabase.from("attendance").update({status:newStatus}).eq("id",ex.id);
+    }else{
+      setAttendanceList(prev=>[...prev,{id:`temp-${memberId}-${date}`,member_id:memberId,date,status:true}]);
+      setSaving(true);
+      await supabase.from("attendance").insert([{member_id:memberId,date,status:true}]);
+    }
+    const {data}=await supabase.from("attendance").select("*");
+    if(data)setAttendanceList(data);
+    setSaving(false);
+  };
   const setAllAttendance = async (memberIds,date,status) => { setSaving(true); for(const memberId of memberIds){const ex=attendanceList.find(a=>a.member_id===memberId&&a.date===date); if(ex){await supabase.from("attendance").update({status}).eq("id",ex.id);}else{await supabase.from("attendance").insert([{member_id:memberId,date,status}]);}} const {data}=await supabase.from("attendance").select("*"); if(data)setAttendanceList(data); setSaving(false); };
-  const toggleSamAttendance = async (memberId,samId,date) => { const ex=samAttendanceList.find(a=>a.member_id===memberId&&a.sam_id===samId&&a.date===date); setSaving(true); if(ex){await supabase.from("sam_attendance").update({status:!ex.status}).eq("id",ex.id);}else{await supabase.from("sam_attendance").insert([{member_id:memberId,sam_id:samId,date,status:true}]);} const {data}=await supabase.from("sam_attendance").select("*"); if(data)setSamAttendanceList(data); setSaving(false); };
+  const toggleSamAttendance = async (memberId,samId,date) => {
+    const ex=samAttendanceList.find(a=>a.member_id===memberId&&a.sam_id===samId&&a.date===date);
+    if(ex){
+      const newStatus=!ex.status;
+      setSamAttendanceList(prev=>prev.map(a=>a.id===ex.id?{...a,status:newStatus}:a));
+      setSaving(true);
+      await supabase.from("sam_attendance").update({status:newStatus}).eq("id",ex.id);
+    }else{
+      setSamAttendanceList(prev=>[...prev,{id:`temp-${memberId}-${samId}-${date}`,member_id:memberId,sam_id:samId,date,status:true}]);
+      setSaving(true);
+      await supabase.from("sam_attendance").insert([{member_id:memberId,sam_id:samId,date,status:true}]);
+    }
+    const {data}=await supabase.from("sam_attendance").select("*");
+    if(data)setSamAttendanceList(data);
+    setSaving(false);
+  };
   const saveNewMember = async (m) => {
     setSaving(true);
     await supabase.from("new_members").insert([{
@@ -890,8 +920,8 @@ export default function App() {
     switch(activeNav) {
       case "home": return <HomePage members={members} newMembers={newMembers} sams={sams} attendanceList={attendanceList} samAttendanceList={samAttendanceList} setActiveNav={handleNavChange} todayBirthdays={todayBirthdays} userEmail={user?.email} recentNotes={recentNotes} onSelectMember={setSelectedMember} notices={notices} />;
       case "members": return <MembersPage members={members} sams={sams} setModal={setModal} onDelete={deleteMember} onInactivate={(id,reason)=>inactivateMember(id,reason)} onRestore={restoreMember} onPermanentDelete={permanentDeleteMember} admin={admin} userEmail={user?.email} onSelectMember={setSelectedMember} noteCountMap={noteCountMap} activeTab={membersTab} filterSam={membersFilterSam} />;
-      case "attendance": return <AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} tab={attendanceTab} selectedDate={attendanceDate} filterSam={attendanceFilterSam} />;
-      case "sam": return <SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} selectedSam={samSelected} setSelectedSam={setSamSelected} tab={samTab} />;
+      case "attendance": return <AttendancePage members={members} sams={sams} attendanceList={attendanceList} onToggle={toggleAttendance} onSetAll={setAllAttendance} admin={admin} tab={attendanceTab} selectedDate={attendanceDate} filterSam={attendanceFilterSam} saving={saving} />;
+      case "sam": return <SamAttendancePage members={members} sams={sams} samAttendanceList={samAttendanceList} onToggle={toggleSamAttendance} onDeleteSam={deleteSam} admin={admin} selectedSam={samSelected} setSelectedSam={setSamSelected} tab={samTab} saving={saving} />;
       case "more": return <MorePage setActiveNav={setActiveNav} admin={admin} userEmail={user?.email} newMembersCount={newMembers.length} noticesCount={notices.filter(n=>!(n.category==="schedule"&&n.event_date&&n.event_date<today())).length} prayersCount={prayers.filter(p=>!p.is_answered).length} eventsCount={events.length} />;
       case "notices": return <NoticePage notices={notices} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />;
       case "prayers": return <PrayerPage prayers={prayers} members={members} admin={admin} userEmail={user?.email} onRefresh={fetchAll} setModal={setModal} />;
@@ -1767,7 +1797,7 @@ function MembersPage({members,sams,setModal,onDelete,onInactivate,onRestore,onPe
 }
 
 // ==================== ATTENDANCE PAGE ====================
-function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin,tab,selectedDate,filterSam}){
+function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin,tab,selectedDate,filterSam,saving}){
   const activeMembers=sortByName(members.filter(m=>!m.military&&m.is_active!==false));
   const filteredMembers=filterSam==="all"?activeMembers:activeMembers.filter(m=>m.sam_id===filterSam);
   const isPresent=memberId=>!!attendanceList.find(a=>a.member_id===memberId&&a.date===selectedDate&&a.status);
@@ -1789,7 +1819,7 @@ function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin,tab
               const present=isPresent(m.id);
               const absentWeeks=getAbsentWeeks(m.id,attendanceList);
               return(
-                <div key={m.id} className="member-item" style={{cursor:admin?"pointer":"default"}} onClick={()=>admin&&onToggle(m.id,selectedDate)}>
+                <div key={m.id} className="member-item" style={{cursor:admin?"pointer":"default"}} onClick={()=>admin&&!saving&&onToggle(m.id,selectedDate)}>
                   <div className={`member-avatar ${m.gender}`}>{m.name.charAt(0)}</div>
                   <div className="member-info">
                     <div className="member-name">{m.name}</div>
@@ -1798,7 +1828,7 @@ function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin,tab
                       {absentWeeks!==null&&absentWeeks>=4&&!present&&<span className={`badge ${absentWeeks>=8?"badge-red":"badge-yellow"}`}>{absentWeeks}주 결석</span>}
                     </div>
                   </div>
-                  <button className={`attendance-check-btn ${present?"checked":""}`} style={{cursor:admin?"pointer":"default"}} onClick={e=>{e.stopPropagation();admin&&onToggle(m.id,selectedDate);}}>
+                  <button className={`attendance-check-btn ${present?"checked":""}`} style={{cursor:admin?"pointer":"default",opacity:saving?0.6:1}} disabled={saving} onClick={e=>{e.stopPropagation();admin&&!saving&&onToggle(m.id,selectedDate);}}>
                     {present&&<Icon name="check" size={14}/>}
                   </button>
                 </div>
@@ -1819,7 +1849,7 @@ function AttendancePage({members,sams,attendanceList,onToggle,onSetAll,admin,tab
 }
 
 // ==================== SAM ATTENDANCE PAGE ====================
-function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,admin,selectedSam,setSelectedSam,tab}){
+function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,admin,selectedSam,setSelectedSam,tab,saving}){
   const [selectedDate,setSelectedDate]=useState(today());
   useEffect(()=>{if(sams.length>0&&!selectedSam)setSelectedSam(sams[0].id);},[sams]);
   const allSamMembers=members.filter(m=>m.sam_id===selectedSam);
@@ -1854,13 +1884,13 @@ function SamAttendancePage({members,sams,samAttendanceList,onToggle,onDeleteSam,
                       {activeMembers.map(m=>{
                         const present=isPresent(m.id);
                         return(
-                          <div key={m.id} className="member-item" style={{cursor:admin?"pointer":"default"}} onClick={()=>admin&&onToggle(m.id,selectedSam,selectedDate)}>
+                          <div key={m.id} className="member-item" style={{cursor:admin?"pointer":"default"}} onClick={()=>admin&&!saving&&onToggle(m.id,selectedSam,selectedDate)}>
                             <div className={`member-avatar ${m.gender}`}>{m.name.charAt(0)}</div>
                             <div className="member-info">
                               <div className="member-name">{m.name}</div>
                               <div className="member-meta"><span className="badge badge-green">{sams.find(s=>s.id===selectedSam)?.name}샘</span></div>
                             </div>
-                            <button className={`attendance-check-btn ${present?"checked":""}`} style={{cursor:admin?"pointer":"default"}} onClick={e=>{e.stopPropagation();admin&&onToggle(m.id,selectedSam,selectedDate);}}>
+                            <button className={`attendance-check-btn ${present?"checked":""}`} style={{cursor:admin?"pointer":"default",opacity:saving?0.6:1}} disabled={saving} onClick={e=>{e.stopPropagation();admin&&!saving&&onToggle(m.id,selectedSam,selectedDate);}}>
                               {present&&<Icon name="check" size={14}/>}
                             </button>
                           </div>
