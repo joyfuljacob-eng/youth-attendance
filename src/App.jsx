@@ -789,16 +789,23 @@ export default function App() {
       const {error:delErr}=await supabase.from("attendance").delete().in("id",rows.map(r=>r.id));
       writeError=delErr;
     }
+    let insertedRow=null;
     if(!writeError){
-      const {error:insErr}=await supabase.from("attendance").insert([{member_id:memberId,date,status:newStatus}]);
+      const {data:insData,error:insErr}=await supabase.from("attendance").insert([{member_id:memberId,date,status:newStatus}]).select();
       writeError=insErr;
+      insertedRow=insData&&insData[0];
     }
     const {data}=await supabase.from("attendance").select("*");
     if(data)setAttendanceList(data);
     setSaving(false);
     const confirmed=!!data?.find(a=>a.member_id===memberId&&a.date===date&&a.status===newStatus);
-    if(writeError) alert(`출석 저장에 실패했습니다: ${writeError.message}\n다시 시도해 주세요.`);
-    else if(!confirmed) alert("출석 저장이 서버에 반영되지 않았습니다. Supabase의 attendance 테이블 권한(RLS) 설정을 확인해주세요.");
+    if(writeError){
+      alert(`출석 저장에 실패했습니다: ${writeError.message}\n다시 시도해 주세요.`);
+    }else if(!insertedRow){
+      alert("저장 요청은 성공했지만 insert 결과를 확인할 수 없습니다(INSERT 직후 SELECT 권한 문제일 가능성). Supabase > attendance 테이블 > RLS 정책을 확인해주세요.");
+    }else if(!confirmed){
+      alert("저장은 된 것으로 보이나, 목록 재조회 시 반영이 안 됩니다(SELECT 권한 문제일 가능성). 화면을 새로고침해서 실제 반영 여부를 확인해주세요.");
+    }
   };
   const setAllAttendance = async (memberIds,date,status) => { setSaving(true); for(const memberId of memberIds){const ex=attendanceList.find(a=>a.member_id===memberId&&a.date===date); if(ex){await supabase.from("attendance").update({status}).eq("id",ex.id);}else{await supabase.from("attendance").insert([{member_id:memberId,date,status}]);}} const {data}=await supabase.from("attendance").select("*"); if(data)setAttendanceList(data); setSaving(false); };
   const toggleSamAttendance = async (memberId,samId,date) => {
@@ -813,16 +820,23 @@ export default function App() {
       const {error:delErr}=await supabase.from("sam_attendance").delete().in("id",rows.map(r=>r.id));
       writeError=delErr;
     }
+    let insertedRow=null;
     if(!writeError){
-      const {error:insErr}=await supabase.from("sam_attendance").insert([{member_id:memberId,sam_id:samId,date,status:newStatus}]);
+      const {data:insData,error:insErr}=await supabase.from("sam_attendance").insert([{member_id:memberId,sam_id:samId,date,status:newStatus}]).select();
       writeError=insErr;
+      insertedRow=insData&&insData[0];
     }
     const {data}=await supabase.from("sam_attendance").select("*");
     if(data)setSamAttendanceList(data);
     const confirmed=!!data?.find(a=>a.member_id===memberId&&a.sam_id===samId&&a.date===date&&a.status===newStatus);
-    if(!writeError&&!confirmed) writeError={message:"서버에 저장이 반영되지 않았습니다 (RLS 정책 확인 필요)"};
     setSaving(false);
-    if(writeError) alert(`샘모임 출석 저장에 실패했습니다: ${writeError.message}\n다시 시도해 주세요.`);
+    if(writeError){
+      alert(`샘모임 출석 저장에 실패했습니다: ${writeError.message}\n다시 시도해 주세요.`);
+    }else if(!insertedRow){
+      alert("저장 요청은 성공했지만 insert 결과를 확인할 수 없습니다(INSERT 직후 SELECT 권한 문제일 가능성). Supabase > sam_attendance 테이블 > RLS 정책을 확인해주세요.");
+    }else if(!confirmed){
+      alert("저장은 된 것으로 보이나, 목록 재조회 시 반영이 안 됩니다(SELECT 권한 문제일 가능성). 화면을 새로고침해서 실제 반영 여부를 확인해주세요.");
+    }
   };
   const saveNewMember = async (m) => {
     setSaving(true);
