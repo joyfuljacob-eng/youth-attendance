@@ -933,7 +933,7 @@ export default function App() {
   ];
   const pageTitles = {
     home:{title:"학익교회 청년부 예배현황",sub:"오늘도 주님을 예배합니다 🙏"},
-    members:{title:"청년 명단",sub:`전체 ${members.length}명 · 군복무 ${members.filter(m=>m.military).length}명`},
+    members:{title:"청년 명단",sub:`전체 ${members.filter(m=>m.is_active!==false).length}명 · 군복무 ${members.filter(m=>m.military&&m.is_active!==false).length}명`},
     attendance:{title:"예배참석",sub:"주일예배 참석 체크"},
     sam:{title:"샘별참석",sub:"소그룹 참석 체크"},
     more:{title:"더보기",sub:"추가 기능 메뉴"},
@@ -1456,7 +1456,7 @@ function HomePage({members,newMembers,sams,attendanceList,samAttendanceList,setA
   const allPeople=[...members,...newMembers];
   const thisMonthBirthdays=getThisMonthBirthdays(allPeople);
   const now=new Date(); const mm=String(now.getMonth()+1).padStart(2,"0");
-  const militaryCount=members.filter(m=>m.military).length;
+  const militaryCount=members.filter(m=>m.military&&m.is_active!==false).length;
   const alerts=members.filter(m=>!m.military&&m.is_active!==false).map(m=>{const w=getAbsentWeeks(m.id,attendanceList);return(w!==null&&w>=4)?{member:m,weeks:w}:null;}).filter(Boolean).sort((a,b)=>b.weeks-a.weeks);
   const showNotes = canWriteNotes(userEmail) || canViewAllNotes(userEmail);
   const authorLabel = (email) => email?.replace("@hiyouth.com","") || "";
@@ -1475,7 +1475,7 @@ function HomePage({members,newMembers,sams,attendanceList,samAttendanceList,setA
       .map(a=>a.date)
   )].sort().reverse().slice(0,4);
 
-  const activeMembers = members.filter(m=>!m.military);
+  const activeMembers = members.filter(m=>!m.military&&m.is_active!==false);
   const totalActive = activeMembers.length;
 
   // 샘별참석현황 — 최근 4주 일요일 평균
@@ -1508,7 +1508,7 @@ function HomePage({members,newMembers,sams,attendanceList,samAttendanceList,setA
 
       {/* 통계 카드 3개 */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
-        <div className="stat-card"><div className="stat-number">{members.length}</div><div className="stat-label">전체 청년</div></div>
+        <div className="stat-card"><div className="stat-number">{members.filter(m=>m.is_active!==false).length}</div><div className="stat-label">전체 청년</div></div>
         <div className="stat-card"><div className="stat-number" style={{color:"#F59E0B"}}>{sams.length}</div><div className="stat-label">샘 그룹 수</div></div>
         <div className="stat-card"><div className="stat-number" style={{color:"#8B5CF6"}}>{newMembers.length}</div><div className="stat-label">새가족</div></div>
       </div>
