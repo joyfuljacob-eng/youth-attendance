@@ -1610,9 +1610,9 @@ function HomePage({members,newMembers,sams,attendanceList,samAttendanceList,setA
           <div className="section-header"><div className="section-title">🌱 샘별 인원 현황</div></div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:16}}>
             {sams.map(s=>{
-              const total=members.filter(m=>m.sam_id===s.id).length;
-              const active=members.filter(m=>m.sam_id===s.id&&!m.military).length;
-              const mil=members.filter(m=>m.sam_id===s.id&&m.military).length;
+              const total=members.filter(m=>m.sam_id===s.id&&m.is_active!==false).length;
+              const active=members.filter(m=>m.sam_id===s.id&&!m.military&&m.is_active!==false).length;
+              const mil=members.filter(m=>m.sam_id===s.id&&m.military&&m.is_active!==false).length;
               return(
                 <div key={s.id} style={{background:"var(--primary-light)",border:"1px solid #BFDBFE",borderRadius:"var(--radius)",padding:"8px 10px"}}>
                   <div style={{fontSize:11,fontWeight:700,color:"var(--primary)",marginBottom:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{s.name}샘</div>
@@ -1627,7 +1627,7 @@ function HomePage({members,newMembers,sams,attendanceList,samAttendanceList,setA
             })}
             {/* 샘 미지정 카드 */}
             {(()=>{
-              const unassigned=members.filter(m=>!m.sam_id);
+              const unassigned=members.filter(m=>!m.sam_id&&m.is_active!==false);
               const unassignedActive=unassigned.filter(m=>!m.military).length;
               const unassignedMil=unassigned.filter(m=>m.military).length;
               if(unassigned.length===0) return null;
