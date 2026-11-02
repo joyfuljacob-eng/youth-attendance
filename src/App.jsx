@@ -883,13 +883,28 @@ export default function App() {
   };
   const assignNewMemberToSam = async (newMember, samId) => {
     setSaving(true);
-    await supabase.from("members").insert([{
+    const { data: created, error: insErr } = await supabase.from("members").insert([{
       name: newMember.name, gender: newMember.gender,
       phone: newMember.phone, birth_year: newMember.birth_year,
       birthday: newMember.birthday, sam_id: samId||null, military: false,
       assigned_at: today(), // 샘 배정 날짜 자동 기록
       new_member_registered_at: newMember.registered_at||null, // 새가족 등록일 이력 보존
-    }]);
+    }]).select().single();
+    if (insErr || !created?.id) {
+      setSaving(false);
+      alert("샘 배정에 실패했습니다: " + (insErr?.message || "알 수 없는 오류"));
+      return;
+    }
+    // 새가족 시절 메모를 새 멤버에게 연결 (new_member_id는 ON DELETE CASCADE라 먼저 해제해야 메모가 삭제되지 않음)
+    const { error: memoErr } = await supabase.from("new_member_memos")
+      .update({ member_id: created.id, new_member_id: null })
+      .eq("new_member_id", newMember.id);
+    if (memoErr) {
+      setSaving(false);
+      alert("새가족 메모 이전에 실패하여 배정을 중단했습니다(메모 보존): " + memoErr.message);
+      await fetchAll();
+      return;
+    }
     await supabase.from("new_members").delete().eq("id", newMember.id);
     await fetchAll(); setSaving(false); closeModal();
   };
@@ -2126,6 +2141,8 @@ function MemberDetailPage({ member, sams, userEmail, onClose }) {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingNote, setEditingNote] = useState(null); // 수정할 노트
+  const [newMemberMemos, setNewMemberMemos] = useState([]); // 새가족 시절 메모
+  const canReadMemo = canReadNewMemberMemo(userEmail);
 
   const viewAll = canViewAllNotes(userEmail);
   const viewOwn = canViewOwnNotes(userEmail);
@@ -2141,6 +2158,10 @@ function MemberDetailPage({ member, sams, userEmail, onClose }) {
     }
     const { data } = await query;
     if (data) setNotes(data);
+    if (canReadMemo) {
+      const { data: memoData } = await supabase.from("new_member_memos").select("*").eq("member_id", member.id).order("date", { ascending: false });
+      setNewMemberMemos(memoData || []);
+    }
     setLoading(false);
   };
 
@@ -2201,6 +2222,26 @@ function MemberDetailPage({ member, sams, userEmail, onClose }) {
         {viewOwn && !viewAll && (
           <div className="info-hint" style={{ marginBottom: 12 }}>
             📝 본인이 작성한 나눔 기록만 볼 수 있습니다
+          </div>
+        )}
+
+        {/* 새가족 시절 메모 (샘 배정 전 작성된 메모) */}
+        {canReadMemo && newMemberMemos.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <div style={{ flex: 1, height: 1, background: "var(--gray-200)" }} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--gray-400)", whiteSpace: "nowrap" }}>📋 새가족 시절 메모</span>
+              <div style={{ flex: 1, height: 1, background: "var(--gray-200)" }} />
+            </div>
+            {newMemberMemos.map(memo => (
+              <div key={memo.id} style={{ background: "#F5F3FF", border: "1px solid #DDD6FE", borderRadius: "var(--radius)", padding: "10px 12px", marginBottom: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#7C3AED", marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
+                  <span>📅 {formatDate(memo.date)}</span>
+                  <span style={{ color: "var(--gray-400)" }}>👤 {memo.author_email?.replace("@hiyouth.com", "")}</span>
+                </div>
+                <div style={{ fontSize: 13, color: "var(--gray-700)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{memo.content}</div>
+              </div>
+            ))}
           </div>
         )}
 
